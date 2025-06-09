@@ -1,13 +1,75 @@
+<script setup lang="ts">
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import AppLayout from '@/layouts/AppLayout.vue';
+import InputLabel from '@/components/InputLabel.vue';
+import TextInput from '@/components/TextInput.vue';
+import InputError from '@/components/InputError.vue';
+import PrimaryButton from '@/components/PrimaryButton.vue';
+import Swal from 'sweetalert2';
+
+const form = useForm({
+  name: '',
+  email: '',
+  password: '',
+  password_confirmation: ''
+});
+
+const handleSubmit = async () => {
+  try {
+    // Show loading state
+    Swal.fire({
+      title: 'Creating Admin...',
+      allowOutsideClick: false,
+      backdrop: 'rgba(0,0,0,0.4)',
+      timer: 2000,
+      showConfirmButton: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    // Submit the form
+    await form.post('/admins', {
+      onSuccess: () => {
+        Swal.fire({
+          icon: 'success',
+          title: 'Success!',
+          text: 'Admin created successfully',
+          timer: 2000,
+          showConfirmButton: false,
+          backdrop: 'rgba(0,0,0,0.4)'
+        });
+      },
+      onError: (errors) => {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error!',
+          text: Object.values(errors).join('\n'),
+          confirmButtonText: 'OK',
+          backdrop: 'rgba(0,0,0,0.4)'
+        });
+      }
+    });
+  } catch (error) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Error!',
+      text: 'An unexpected error occurred',
+      confirmButtonText: 'OK',
+      backdrop: 'rgba(0,0,0,0.4)'
+    });
+  }
+};
+</script>
+
 <template>
   <AppLayout>
-    <Head title="Add Seller" />
+    <Head title="Add Admin" />
 
     <template #header>
-      <div class="flex justify-between items-center">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-          Add Seller
-        </h2>
-      </div>
+      <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+        Add Admin
+      </h2>
     </template>
 
     <div class="py-12">
@@ -68,7 +130,7 @@
 
               <div class="flex items-center justify-end">
                 <Link
-                  href="/sellers"
+                  href="/admins"
                   class="text-sm text-gray-600 hover:text-gray-900 mr-4"
                 >
                   Cancel
@@ -78,9 +140,10 @@
                   class="ml-4"
                   :class="{ 'opacity-25': form.processing }"
                   :disabled="form.processing"
+                  @click="handleSubmit"
                 >
                   <span v-if="form.processing">Creating...</span>
-                  <span v-else>Create Seller</span>
+                  <span v-else>Add Admin</span>
                 </PrimaryButton>
               </div>
             </form>
@@ -89,79 +152,4 @@
       </div>
     </div>
   </AppLayout>
-</template>
-
-<script setup lang="ts">
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
-import InputLabel from '@/components/InputLabel.vue';
-import TextInput from '@/components/TextInput.vue';
-import InputError from '@/components/InputError.vue';
-import PrimaryButton from '@/components/PrimaryButton.vue';
-import Swal from 'sweetalert2';
-
-const props = defineProps({
-  business: {
-    type: Object,
-    required: true
-  },
-  branch: {
-    type: Object,
-    required: true
-  }
-});
-
-const form = useForm({
-  name: '',
-  email: '',
-  password: '',
-  password_confirmation: ''
-});
-
-const handleSubmit = async () => {
-  try {
-    // Show loading state
-    Swal.fire({
-      title: 'Creating Seller...',
-      allowOutsideClick: false,
-      backdrop: 'rgba(0,0,0,0.4)',
-      timer: 2000,
-      showConfirmButton: false,
-      didOpen: () => {
-        Swal.showLoading();
-      }
-    });
-
-    // Submit the form
-    await form.post(`/businesses/${props.business.id}/branches/${props.branch.id}/sellers`, {
-      onSuccess: () => {
-        Swal.fire({
-          icon: 'success',
-          title: 'Success!',
-          text: 'Seller created successfully',
-          timer: 2000,
-          showConfirmButton: false,
-          backdrop: 'rgba(0,0,0,0.4)'
-        });
-      },
-      onError: (errors) => {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error!',
-          text: Object.values(errors).join('\n'),
-          confirmButtonText: 'OK',
-          backdrop: 'rgba(0,0,0,0.4)'
-        });
-      }
-    });
-  } catch (error) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Error!',
-      text: 'An unexpected error occurred',
-      confirmButtonText: 'OK',
-      backdrop: 'rgba(0,0,0,0.4)'
-    });
-  }
-};
-</script> 
+</template> 

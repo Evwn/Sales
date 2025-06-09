@@ -2,10 +2,8 @@ export interface User {
     id: number;
     name: string;
     email: string;
-    email_verified_at: string | null;
+    email_verified_at: string;
     role: 'admin' | 'owner' | 'seller';
-    business_id: number | null;
-    branch_id: number | null;
     created_at: string;
     updated_at: string;
 }
@@ -88,4 +86,11 @@ export interface Discount {
     end_date: string | null;
     created_at: string;
     updated_at: string;
+}
+
+export interface PageProps {
+    auth: {
+        user: User;
+    };
+    [key: string]: any;
 } 

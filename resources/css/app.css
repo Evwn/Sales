@@ -92,6 +92,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Modern forced colors mode support */
+@media (forced-colors: active) {
+    .dark {
+        forced-color-adjust: none;
+    }
+    
+    .dark * {
+        forced-color-adjust: none;
+    }
+}
+
 :root {
   --background: hsl(0 0% 100%);
   --foreground: hsl(0 0% 3.9%);
@@ -121,8 +132,7 @@
   --sidebar-accent-foreground: hsl(0 0% 30%);
   --sidebar-border: hsl(0 0% 91%);
   --sidebar-ring: hsl(217.2 91.2% 59.8%);
-  --sidebar:
-    hsl(0 0% 98%);
+  --sidebar: hsl(0 0% 98%);
 }
 
 .dark {
@@ -158,8 +168,7 @@
   --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
   --sidebar-border: hsl(0 0% 15.9%);
   --sidebar-ring: hsl(217.2 91.2% 59.8%);
-  --sidebar:
-    hsl(240 5.9% 10%);
+  --sidebar: hsl(240 5.9% 10%);
 }
 
 @layer base {
@@ -170,6 +179,67 @@
         @apply bg-background text-foreground;
         font-feature-settings: "rlig" 1, "calt" 1;
     }
+}
+
+/* Add smooth transitions for theme changes */
+* {
+    @apply transition-colors duration-200;
+}
+
+/* Ensure proper dark mode for form elements */
+.dark input,
+.dark select,
+.dark textarea {
+    @apply bg-neutral-800 border-neutral-700 text-neutral-100;
+}
+
+.dark input::placeholder,
+.dark select::placeholder,
+.dark textarea::placeholder {
+    @apply text-neutral-400;
+}
+
+/* Dark mode styles for buttons */
+.dark button {
+    @apply bg-neutral-800 text-neutral-100 border-neutral-700;
+}
+
+.dark button:hover {
+    @apply bg-neutral-700;
+}
+
+/* Dark mode styles for cards and containers */
+.dark .card,
+.dark .container {
+    @apply bg-neutral-800 border-neutral-700;
+}
+
+/* Dark mode styles for tables */
+.dark table {
+    @apply border-neutral-700;
+}
+
+.dark th {
+    @apply bg-neutral-800 text-neutral-100;
+}
+
+.dark td {
+    @apply border-neutral-700 text-neutral-100;
+}
+
+/* Dark mode styles for modals and dropdowns */
+.dark .modal,
+.dark .dropdown {
+    @apply bg-neutral-800 border-neutral-700;
+}
+
+/* Dark mode styles for links */
+.dark a {
+    @apply text-blue-400;
+}
+
+.dark a:hover {
+    @apply text-blue-300;
 }
 
 /*

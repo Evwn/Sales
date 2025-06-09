@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowDown, ArrowUp } from 'lucide-vue-next';
@@ -27,6 +27,11 @@ interface Stats {
 
 const props = defineProps<{
     stats: Stats;
+    name: string;
+    quote: {
+        message: string;
+        author: string;
+    };
 }>();
 
 defineOptions({
@@ -39,13 +44,23 @@ defineOptions({
         <Head title="Dashboard" />
 
         <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            <h2 class="font-semibold text-xl text-gray-800 dark:text-neutral-200 leading-tight">
                 Dashboard
             </h2>
         </template>
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div class="bg-white dark:bg-neutral-800 overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6 text-gray-900 dark:text-neutral-100">
+                        <h1 class="text-2xl font-semibold mb-4">Welcome, {{ name }}!</h1>
+                        <div class="bg-gray-50 dark:bg-neutral-700 p-4 rounded-lg">
+                            <p class="text-lg italic">"{{ quote.message }}"</p>
+                            <p class="text-right mt-2">- {{ quote.author }}</p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Stats Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                     <Card>

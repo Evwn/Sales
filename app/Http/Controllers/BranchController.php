@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Branch;
 use App\Models\Business;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -14,27 +15,28 @@ class BranchController extends Controller
     {
         $user = Auth::user();
         
-        // Get the first business for the current user
-        $business = Business::when($user->role === 'admin', function ($query) use ($user) {
+        // Get all businesses for the current user
+        $businesses = Business::when($user->role === 'admin', function ($query) use ($user) {
                 return $query->where('owner_id', $user->id);
             })
             ->when($user->role === 'owner', function ($query) use ($user) {
                 return $query->where('owner_id', $user->id);
             })
-            ->first();
+            ->get(['id', 'name']);
 
-        if (!$business) {
+        if ($businesses->isEmpty()) {
             return Inertia::render('Branches/NoBusiness');
         }
 
-        // Get branches for the business
-        $branches = $business->branches()
+        // Get branches for all businesses
+        $branches = Branch::whereIn('business_id', $businesses->pluck('id'))
             ->with('business')
             ->get();
 
         return Inertia::render('Branches/Index', [
-            'business' => $business,
-            'branches' => $branches
+            'business' => null,
+            'branches' => $branches,
+            'businesses' => $businesses
         ]);
     }
 
@@ -45,9 +47,21 @@ class BranchController extends Controller
             abort(403);
         }
 
+        $user = Auth::user();
+        
+        // Get all businesses that belong to the current admin
+        $businesses = Business::when($user->role === 'admin', function ($query) use ($user) {
+                return $query->where('owner_id', $user->id);
+            })
+            ->when($user->role === 'owner', function ($query) use ($user) {
+                return $query->where('owner_id', $user->id);
+            })
+            ->get(['id', 'name']);
+
         return Inertia::render('Branches/Index', [
             'business' => $business,
-            'branches' => $business->branches()->with('business')->get()
+            'branches' => $business->branches()->with('business')->get(),
+            'businesses' => $businesses
         ]);
     }
 
@@ -58,8 +72,33 @@ class BranchController extends Controller
             abort(403);
         }
 
+        $user = Auth::user();
+        
+        // Get all businesses for the current user
+        $businesses = Business::when($user->role === 'admin', function ($query) use ($user) {
+                return $query->where('owner_id', $user->id);
+            })
+            ->when($user->role === 'owner', function ($query) use ($user) {
+                return $query->where('owner_id', $user->id);
+            })
+            ->get(['id', 'name']);
+
+        // Get all sellers that belong to the user's businesses
+        $sellers = User::whereHas('branch.business', function ($query) use ($user) {
+                $query->when($user->role === 'admin', function ($q) use ($user) {
+                    return $q->where('owner_id', $user->id);
+                })
+                ->when($user->role === 'owner', function ($q) use ($user) {
+                    return $q->where('owner_id', $user->id);
+                });
+            })
+            ->where('role', 'seller')
+            ->get(['id', 'name', 'email']);
+
         return Inertia::render('Branches/Create', [
-            'business' => $business
+            'business' => $business,
+            'businesses' => $businesses,
+            'sellers' => $sellers
         ]);
     }
 
@@ -74,9 +113,29 @@ class BranchController extends Controller
             'name' => 'required|string|max:255',
             'address' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
+            'business_id' => 'required|exists:businesses,id',
+            'seller_ids' => 'array',
+            'seller_ids.*' => 'exists:users,id'
         ]);
 
-        $branch = $business->branches()->create($validated);
+        // Create the branch
+        $branch = Branch::create([
+            'name' => $validated['name'],
+            'address' => $validated['address'],
+            'phone' => $validated['phone'],
+            'business_id' => $validated['business_id']
+        ]);
+
+        // Handle seller assignments
+        if (isset($validated['seller_ids'])) {
+            // First, remove sellers from their current branches
+            User::whereIn('id', $validated['seller_ids'])
+                ->update(['branch_id' => null]);
+
+            // Then assign them to this branch
+            User::whereIn('id', $validated['seller_ids'])
+                ->update(['branch_id' => $branch->id]);
+        }
 
         return redirect()->route('branches.index', $business)
             ->with('success', 'Branch created successfully.');
@@ -102,9 +161,29 @@ class BranchController extends Controller
             abort(403);
         }
 
+        $user = Auth::user();
+        
+        // Get businesses that belong to the current admin
+        $businesses = Business::when($user->role === 'admin', function ($query) use ($user) {
+                return $query->where('owner_id', $user->id);
+            })
+            ->when($user->role === 'owner', function ($query) use ($user) {
+                return $query->where('owner_id', $user->id);
+            })
+            ->get(['id', 'name']);
+
+        // Get sellers that belong to the current admin's businesses
+        $sellers = User::where('role', 'seller')
+            ->whereHas('branch.business', function ($query) use ($user) {
+                $query->where('owner_id', $user->id);
+            })
+            ->get(['id', 'name', 'email']);
+
         return Inertia::render('Branches/Edit', [
             'business' => $business,
-            'branch' => $branch
+            'branch' => $branch->load('sellers'),
+            'businesses' => $businesses,
+            'sellers' => $sellers
         ]);
     }
 
@@ -119,9 +198,29 @@ class BranchController extends Controller
             'name' => 'required|string|max:255',
             'address' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
+            'business_id' => 'required|exists:businesses,id',
+            'seller_ids' => 'array',
+            'seller_ids.*' => 'exists:users,id'
         ]);
 
-        $branch->update($validated);
+        // Update branch details
+        $branch->update([
+            'name' => $validated['name'],
+            'address' => $validated['address'],
+            'phone' => $validated['phone'],
+            'business_id' => $validated['business_id']
+        ]);
+
+        // Handle seller assignments
+        if (isset($validated['seller_ids'])) {
+            // First, remove sellers from their current branches
+            User::whereIn('id', $validated['seller_ids'])
+                ->update(['branch_id' => null]);
+
+            // Then assign them to this branch
+            User::whereIn('id', $validated['seller_ids'])
+                ->update(['branch_id' => $branch->id]);
+        }
 
         return redirect()->route('branches.index', $business)
             ->with('success', 'Branch updated successfully.');

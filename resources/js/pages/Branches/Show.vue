@@ -61,6 +61,10 @@ const breadcrumbs: BreadcrumbItemType[] = [
                                         <dt class="text-sm font-medium text-gray-500">Phone</dt>
                                         <dd class="mt-1 text-sm text-gray-900">{{ branch.phone }}</dd>
                                     </div>
+                                    <div>
+                                        <dt class="text-sm font-medium text-gray-500">Business</dt>
+                                        <dd class="mt-1 text-sm text-gray-900">{{ business.name }}</dd>
+                                    </div>
                                 </dl>
                             </div>
                             <div>

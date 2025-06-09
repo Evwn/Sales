@@ -1,5 +1,7 @@
 <template>
   <AppLayout>
+    <Head title="Edit Business" />
+
     <template #header>
       <h2 class="font-semibold text-xl text-gray-800 leading-tight">
         Edit Business
@@ -10,7 +12,7 @@
       <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
           <div class="p-6 lg:p-8">
-            <form @submit.prevent="submit" class="space-y-6">
+            <form @submit.prevent="handleSubmit" class="space-y-6">
               <div>
                 <InputLabel for="name" value="Name" />
                 <TextInput
@@ -38,7 +40,7 @@
               <div class="flex items-center justify-end">
                 <Link
                   href="/businesses"
-                  class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                  class="text-sm text-gray-600 hover:text-gray-900 mr-4"
                 >
                   Back to Businesses
                 </Link>
@@ -59,29 +61,66 @@
   </AppLayout>
 </template>
 
-<script setup>
-import AppLayout from '@/Layouts/AppLayout.vue';
-import { Link } from '@inertiajs/vue3';
-import { useForm } from '@inertiajs/vue3';
-import InputLabel from '@/Components/InputLabel.vue';
-import TextInput from '@/Components/TextInput.vue';
-import TextArea from '@/Components/TextArea.vue';
-import InputError from '@/Components/InputError.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
+<script setup lang="ts">
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import AppLayout from '@/layouts/AppLayout.vue';
+import InputLabel from '@/components/InputLabel.vue';
+import TextInput from '@/components/TextInput.vue';
+import TextArea from '@/components/TextArea.vue';
+import InputError from '@/components/InputError.vue';
+import PrimaryButton from '@/components/PrimaryButton.vue';
+import Swal from 'sweetalert2';
 
 const props = defineProps({
   business: {
     type: Object,
-    required: true,
-  },
+    required: true
+  }
 });
 
 const form = useForm({
   name: props.business.name,
-  description: props.business.description,
+  description: props.business.description
 });
 
-const submit = () => {
-  form.patch(`/businesses/${props.business.id}`);
+const handleSubmit = async () => {
+  try {
+    // Show loading state
+    Swal.fire({
+      title: 'Updating Business...',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    // Submit the form
+    await form.put(`/businesses/${props.business.id}`, {
+      onSuccess: () => {
+        Swal.fire({
+          icon: 'success',
+          title: 'Success!',
+          text: 'Business updated successfully',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      },
+      onError: (errors) => {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error!',
+          text: Object.values(errors).join('\n'),
+          confirmButtonText: 'OK'
+        });
+      }
+    });
+  } catch (error) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Error!',
+      text: 'An unexpected error occurred',
+      confirmButtonText: 'OK'
+    });
+  }
 };
 </script> 

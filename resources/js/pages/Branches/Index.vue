@@ -7,13 +7,25 @@
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
           Branches
         </h2>
-        <Link
-          v-if="business"
-          :href="`/businesses/${business.id}/branches/create`"
-          class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
-        >
-          Add Branch
-        </Link>
+        <div class="flex items-center space-x-4">
+          <select
+            v-model="selectedBusinessId"
+            @change="handleBusinessChange"
+            class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base py-2"
+          >
+            <option value="">All Businesses</option>
+            <option v-for="b in businesses" :key="b.id" :value="b.id">
+              {{ b.name }}
+            </option>
+          </select>
+          <Link
+            v-if="business"
+            :href="`/businesses/${business.id}/branches/create`"
+            class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
+          >
+            Add Branch
+          </Link>
+        </div>
       </div>
     </template>
 
@@ -21,7 +33,7 @@
       <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
           <div class="p-6 lg:p-8">
-            <div v-if="!business" class="text-center">
+            <div v-if="!businesses.length" class="text-center">
               <p class="text-gray-500">No business found. Please create a business first.</p>
               <Link
                 href="/businesses/create"
@@ -44,6 +56,9 @@
                       Phone
                     </th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Business
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -60,15 +75,18 @@
                       {{ branch.phone }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {{ branch.business?.name }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div class="flex space-x-3">
                         <Link
-                          :href="`/businesses/${business.id}/branches/${branch.id}`"
+                          :href="`/businesses/${branch.business.id}/branches/${branch.id}`"
                           class="text-indigo-600 hover:text-indigo-900"
                         >
                           View
                         </Link>
                         <Link
-                          :href="`/businesses/${business.id}/branches/${branch.id}/edit`"
+                          :href="`/businesses/${branch.business.id}/branches/${branch.id}/edit`"
                           class="text-green-600 hover:text-green-900"
                         >
                           Edit
@@ -92,10 +110,11 @@
 </template>
 
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { ref } from 'vue';
 
-defineProps({
+const props = defineProps({
   business: {
     type: Object,
     required: false,
@@ -105,6 +124,21 @@ defineProps({
     type: Array,
     required: true,
     default: () => []
+  },
+  businesses: {
+    type: Array,
+    required: true,
+    default: () => []
   }
 });
+
+const selectedBusinessId = ref(props.business?.id || '');
+
+const handleBusinessChange = () => {
+  if (selectedBusinessId.value) {
+    router.visit(`/businesses/${selectedBusinessId.value}/branches`);
+  } else {
+    router.visit('/branches');
+  }
+};
 </script> 

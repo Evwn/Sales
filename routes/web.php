@@ -10,6 +10,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SellerController;
 use App\Http\Controllers\InventoryItemController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\AppearanceController;
 use App\Http\Middleware\BusinessAccess;
 use App\Http\Middleware\CheckBranchAccess;
 use Illuminate\Foundation\Application;
@@ -113,6 +114,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             });
         });
     });
+
+    Route::get('/settings/appearance', [AppearanceController::class, 'edit'])->name('settings.appearance');
+    Route::post('/settings/appearance', [AppearanceController::class, 'update'])->name('settings.appearance.update');
 });
 
 // Inventory Items
