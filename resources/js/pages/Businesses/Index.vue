@@ -21,38 +21,42 @@
         <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
           <div class="p-6 lg:p-8">
             <div class="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead class="w-[100px]">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow v-for="business in businesses" :key="business.id">
-                    <TableCell>{{ business.name }}</TableCell>
-                    <TableCell>{{ business.description }}</TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link :href="`/businesses/${business.id}`">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead>
+                  <tr>
+                    <th scope="col" class="w-1/3 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th scope="col" class="w-1/3 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                    <th scope="col" class="w-1/3 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  <tr v-for="business in businesses" :key="business.id" class="hover:bg-gray-50">
+                    <td class="w-1/3 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ business.name }}</td>
+                    <td class="w-1/3 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ business.description }}</td>
+                    <td class="w-1/3 px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <div class="flex space-x-3">
+                        <Link
+                          :href="`/businesses/${business.id}`"
+                          class="text-blue-600 hover:text-blue-900"
+                        >
                           View
                         </Link>
-                      </Button>
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link :href="`/businesses/${business.id}/edit`">
+                        <Link
+                          :href="`/businesses/${business.id}/edit`"
+                          class="text-blue-600 hover:text-blue-900"
+                        >
                           Edit
                         </Link>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow v-if="businesses.length === 0">
-                    <TableCell colspan="3" class="text-center text-muted-foreground">
+                      </div>
+                    </td>
+                  </tr>
+                  <tr v-if="businesses.length === 0" class="hover:bg-gray-50">
+                    <td colspan="3" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                       No businesses found.
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -65,14 +69,6 @@
 import { Head, Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 
 interface Business {
   id: number;

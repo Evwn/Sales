@@ -5,14 +5,6 @@ import Swal from 'sweetalert2';
 import AppLayout from '@/layouts';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import Pagination from '@/components/Pagination.vue';
 import type { BreadcrumbItemType } from '@/types';
 
@@ -332,32 +324,32 @@ const addToBusiness = async (inventoryItem: InventoryItem) => {
 
                         <!-- Inventory Items Table -->
                         <div class="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Name</TableHead>
-                                        <TableHead>Brand</TableHead>
-                                        <TableHead>Model</TableHead>
-                                        <TableHead>SKU</TableHead>
-                                        <TableHead>Unit</TableHead>
-                                        <TableHead>Last Updated</TableHead>
-                                        <TableHead>Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow v-for="item in items.data" :key="item.id">
-                                        <TableCell>{{ item.name }}</TableCell>
-                                        <TableCell>{{ item.brand || '-' }}</TableCell>
-                                        <TableCell>{{ item.model || '-' }}</TableCell>
-                                        <TableCell>{{ item.sku || '-' }}</TableCell>
-                                        <TableCell>{{ item.unit_display || '-' }}</TableCell>
-                                        <TableCell>
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="w-1/4 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                        <th scope="col" class="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Brand</th>
+                                        <th scope="col" class="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Model</th>
+                                        <th scope="col" class="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+                                        <th scope="col" class="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit</th>
+                                        <th scope="col" class="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Updated</th>
+                                        <th scope="col" class="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr v-for="item in items.data" :key="item.id" class="hover:bg-gray-50">
+                                        <td class="w-1/4 px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ item.name }}</td>
+                                        <td class="w-1/6 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.brand || '-' }}</td>
+                                        <td class="w-1/6 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.model || '-' }}</td>
+                                        <td class="w-1/6 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.sku || '-' }}</td>
+                                        <td class="w-1/6 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.unit_display || '-' }}</td>
+                                        <td class="w-1/6 px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <div>{{ new Date(item.updated_at).toLocaleDateString() }}</div>
                                             <div class="text-xs text-gray-500">
                                                 by {{ item.last_updated_by.name }}
                                             </div>
-                                        </TableCell>
-                                        <TableCell>
+                                        </td>
+                                        <td class="w-1/6 px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <div class="flex space-x-3">
                                                 <Link
                                                     :href="`/inventory-items/${item.id}`"
@@ -379,10 +371,10 @@ const addToBusiness = async (inventoryItem: InventoryItem) => {
                                                     Add to Business
                                                 </button>
                                             </div>
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
 
                         <Pagination :links="items.links" class="mt-6" />

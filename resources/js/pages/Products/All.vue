@@ -5,14 +5,6 @@ import Swal from 'sweetalert2';
 import type { SweetAlertOptions } from 'sweetalert2';
 
 import AppLayout from '@/layouts';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import Pagination from '@/components/Pagination.vue';
 import {
     Select,
@@ -246,55 +238,67 @@ const removeProduct = (product: PageProps['products']['data'][0]) => {
                         </div>
 
                         <div class="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Name</TableHead>
-                                        <TableHead>Price</TableHead>
-                                        <TableHead>SKU</TableHead>
-                                        <TableHead>Stock</TableHead>
-                                        <TableHead>Business</TableHead>
-                                        <TableHead>Branch</TableHead>
-                                        <TableHead class="text-right">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow v-for="product in filteredProducts" :key="product.id">
-                                        <TableCell>{{ product.name }}</TableCell>
-                                        <TableCell class="text-right">KES {{ Number(product.price).toFixed(2) }}</TableCell>
-                                        <TableCell>{{ product.sku }}</TableCell>
-                                        <TableCell>{{ product.stock }}</TableCell>
-                                        <TableCell>{{ product.business.name }}</TableCell>
-                                        <TableCell>{{ product.branch?.name || 'No branch assigned' }}</TableCell>
-                                        <TableCell class="text-right">
-                                            <template v-if="page.props.auth.user.role === 'seller'">
-                                                <Button 
-                                                    variant="default" 
-                                                    size="sm"
-                                                    :disabled="isProcessing || product.stock <= 0"
-                                                    @click="handleSell(product)"
-                                                >
-                                                    {{ isProcessing ? 'Processing...' : 'Sell' }}
-                                                </Button>
-                                            </template>
-                                            <template v-else>
-                                                <Button variant="ghost" size="sm" asChild>
-                                                    <Link :href="`/products/${product.id}`">View</Link>
-                                                </Button>
-                                                <Button variant="ghost" size="sm" asChild>
-                                                    <Link :href="`/products/${product.id}/edit`">Edit</Link>
-                                                </Button>
-                                                <Button variant="ghost" size="sm" @click="removeProduct(product)">Delete</Button>
-                                            </template>
-                                        </TableCell>
-                                    </TableRow>
-                                    <TableRow v-if="filteredProducts.length === 0">
-                                        <TableCell colspan="7" class="text-center">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="w-1/7 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                        <th scope="col" class="w-1/7 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                                        <th scope="col" class="w-1/7 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+                                        <th scope="col" class="w-1/7 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                                        <th scope="col" class="w-1/7 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Business</th>
+                                        <th scope="col" class="w-1/7 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
+                                        <th scope="col" class="w-1/7 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr v-for="product in filteredProducts" :key="product.id" class="hover:bg-gray-50">
+                                        <td class="w-1/7 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.name }}</td>
+                                        <td class="w-1/7 px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">KES {{ Number(product.price).toFixed(2) }}</td>
+                                        <td class="w-1/7 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.sku }}</td>
+                                        <td class="w-1/7 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.stock }}</td>
+                                        <td class="w-1/7 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.business.name }}</td>
+                                        <td class="w-1/7 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.branch?.name || 'No branch assigned' }}</td>
+                                        <td class="w-1/7 px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <div class="flex space-x-3">
+                                                <template v-if="page.props.auth.user.role === 'seller'">
+                                                    <button
+                                                        class="text-blue-600 hover:text-blue-900"
+                                                        :disabled="isProcessing || product.stock <= 0"
+                                                        @click="handleSell(product)"
+                                                    >
+                                                        {{ isProcessing ? 'Processing...' : 'Sell' }}
+                                                    </button>
+                                                </template>
+                                                <template v-else>
+                                                    <Link
+                                                        :href="`/products/${product.id}`"
+                                                        class="text-blue-600 hover:text-blue-900"
+                                                    >
+                                                        View
+                                                    </Link>
+                                                    <Link
+                                                        :href="`/products/${product.id}/edit`"
+                                                        class="text-blue-600 hover:text-blue-900"
+                                                    >
+                                                        Edit
+                                                    </Link>
+                                                    <button
+                                                        @click="removeProduct(product)"
+                                                        class="text-red-600 hover:text-red-900"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </template>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="filteredProducts.length === 0" class="hover:bg-gray-50">
+                                        <td colspan="7" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                             No products found. Go to Inventory to add products to your business.
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
 
                         <div class="mt-6">

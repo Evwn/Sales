@@ -17,11 +17,19 @@ class DashboardController extends Controller
         // If user is a seller, only show their branch's sales
         if ($user->role === 'seller') {
             $query->where('branch_id', $user->branch_id);
+        } else {
+            // For admins, only show sales from their business's branches
+            $query->whereHas('branch.business', function ($q) use ($user) {
+                $q->where('owner_id', $user->id)
+                    ->orWhereHas('admins', function ($query) use ($user) {
+                        $query->where('admin_id', $user->id);
+                    });
+            });
         }
 
         // Get today's sales
         $todaySales = $query->whereDate('created_at', today())
-            ->with(['seller'])
+            ->with(['seller', 'branch.business'])
             ->get();
 
         // Get yesterday's sales for comparison

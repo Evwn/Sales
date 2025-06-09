@@ -106,58 +106,52 @@ const removeProduct = (product) => {
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                     <div class="p-6 lg:p-8">
                         <div class="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Name</TableHead>
-                                        <TableHead>Description</TableHead>
-                                        <TableHead>Price</TableHead>
-                                        <TableHead>SKU</TableHead>
-                                        <TableHead>Barcode</TableHead>
-                                        <TableHead>Stock</TableHead>
-                                        <TableHead>Branch</TableHead>
-                                        <TableHead>Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow v-for="product in products.data" :key="product.id">
-                                        <TableCell>{{ product.name }}</TableCell>
-                                        <TableCell>{{ product.description }}</TableCell>
-                                        <TableCell class="text-right">KES {{ product.price }}</TableCell>
-                                        <TableCell>{{ product.sku }}</TableCell>
-                                        <TableCell>{{ product.barcode }}</TableCell>
-                                        <TableCell>{{ product.stock }}</TableCell>
-                                        <TableCell>{{ product.branch?.name || 'No branch assigned' }}</TableCell>
-                                        <TableCell>
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                        <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                        <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                                        <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+                                        <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Barcode</th>
+                                        <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                                        <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
+                                        <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr v-for="product in products.data" :key="product.id" class="hover:bg-gray-50">
+                                        <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.name }}</td>
+                                        <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.description }}</td>
+                                        <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">KES {{ product.price }}</td>
+                                        <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.sku }}</td>
+                                        <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.barcode }}</td>
+                                        <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.stock }}</td>
+                                        <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.branch?.name || 'No branch assigned' }}</td>
+                                        <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <div class="flex space-x-3">
                                                 <Link
-                                                    :href="`/businesses/${business.id}/products/${product.id}`"
-                                                    class="text-indigo-600 hover:text-indigo-900"
+                                                    :href="`/products/${product.id}`"
+                                                    class="text-blue-600 hover:text-blue-900"
                                                 >
                                                     View
                                                 </Link>
                                                 <Link
-                                                    :href="`/businesses/${business.id}/products/${product.id}/edit`"
-                                                    class="text-green-600 hover:text-green-900"
+                                                    :href="`/products/${product.id}/edit`"
+                                                    class="text-blue-600 hover:text-blue-900"
                                                 >
                                                     Edit
                                                 </Link>
-                                                <button
-                                                    @click="removeProduct(product)"
-                                                    class="text-red-600 hover:text-red-900"
-                                                >
-                                                    Remove
-                                                </button>
                                             </div>
-                                        </TableCell>
-                                    </TableRow>
-                                    <TableRow v-if="products.data.length === 0">
-                                        <TableCell colspan="8" class="text-center">
-                                            No products found. Go to Inventory to add products to your business.
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="products.data.length === 0" class="hover:bg-gray-50">
+                                        <td colspan="8" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                            No products found
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
 
                         <div class="mt-6">

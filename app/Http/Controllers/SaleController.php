@@ -180,8 +180,24 @@ class SaleController extends Controller
 
     public function all()
     {
+        $user = Auth::user();
+        $query = Sale::query();
+
+        // If user is a seller, only show their branch's sales
+        if ($user->role === 'seller') {
+            $query->where('branch_id', $user->branch_id);
+        } else {
+            // For admins, only show sales from their business's branches
+            $query->whereHas('branch.business', function ($q) use ($user) {
+                $q->where('owner_id', $user->id)
+                    ->orWhereHas('admins', function ($query) use ($user) {
+                        $query->where('admin_id', $user->id);
+                    });
+            });
+        }
+
         return Inertia::render('Sales/Index', [
-            'sales' => Sale::with(['branch.business', 'seller', 'products'])->paginate(10),
+            'sales' => $query->with(['branch.business', 'seller', 'products'])->paginate(10),
         ]);
     }
 } 

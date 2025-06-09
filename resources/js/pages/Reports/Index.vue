@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { ref, watch } from 'vue';
 
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import Pagination from '@/Components/Pagination.vue';
+import type { BreadcrumbItemType } from '@/types';
 
 const props = defineProps<{
     reports: {
@@ -79,48 +80,49 @@ const props = defineProps<{
                                     <CardDescription>Revenue from all sales</CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <p class="text-2xl font-bold">${{ reports.total_revenue.toFixed(2) }}</p>
+                                    <p class="text-2xl font-bold">kes {{ reports.total_revenue.toFixed(2) }}</p>
                                 </CardContent>
                             </Card>
                         </div>
 
+                        <!-- Reports Table -->
                         <div class="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>Business</TableHead>
-                                        <TableHead>Branch</TableHead>
-                                        <TableHead>Seller</TableHead>
-                                        <TableHead>Products</TableHead>
-                                        <TableHead>Amount</TableHead>
-                                        <TableHead class="w-[100px]">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow v-for="sale in reports.recent_sales" :key="sale.id">
-                                        <TableCell>{{ new Date(sale.created_at).toLocaleDateString() }}</TableCell>
-                                        <TableCell>{{ sale.branch?.business?.name || 'N/A' }}</TableCell>
-                                        <TableCell>{{ sale.branch?.name || 'N/A' }}</TableCell>
-                                        <TableCell>{{ sale.seller?.name || 'N/A' }}</TableCell>
-                                        <TableCell>{{ sale.products?.map(p => p.name).join(', ') || 'N/A' }}</TableCell>
-                                        <TableCell>KES {{ Number(sale.total_amount).toFixed(2) }}</TableCell>
-                                        <TableCell>
-                                            <Button v-if="sale.branch?.id" variant="ghost" size="sm" asChild>
-                                                <Link :href="`/branches/${sale.branch.id}/sales/${sale.id}`">
-                                                    View
-                                                </Link>
-                                            </Button>
-                                            <span v-else class="text-gray-400">N/A</span>
-                                        </TableCell>
-                                    </TableRow>
-                                    <TableRow v-if="reports.recent_sales.length === 0">
-                                        <TableCell colspan="7" class="text-center">
-                                            No sales found.
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                        <th scope="col" class="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Business</th>
+                                        <th scope="col" class="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
+                                        <th scope="col" class="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Seller</th>
+                                        <th scope="col" class="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Products</th>
+                                        <th scope="col" class="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                        <th scope="col" class="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr v-for="sale in reports.recent_sales" :key="sale.id" class="hover:bg-gray-50">
+                                        <td class="w-1/6 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ new Date(sale.created_at).toLocaleDateString() }}</td>
+                                        <td class="w-1/6 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ sale.branch?.business?.name || 'N/A' }}</td>
+                                        <td class="w-1/6 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ sale.branch?.name || 'N/A' }}</td>
+                                        <td class="w-1/6 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ sale.seller?.name || 'N/A' }}</td>
+                                        <td class="w-1/6 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ sale.products?.map(p => p.name).join(', ') || 'N/A' }}</td>
+                                        <td class="w-1/6 px-6 py-4 whitespace-nowrap text-sm text-gray-500">KES {{ Number(sale.total_amount).toFixed(2) }}</td>
+                                        <td class="w-1/6 px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <Link
+                                                :href="`/sales/${sale.id}`"
+                                                class="text-blue-600 hover:text-blue-900"
+                                            >
+                                                View
+                                            </Link>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="reports.recent_sales.length === 0" class="hover:bg-gray-50">
+                                        <td colspan="7" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                            No sales found
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
