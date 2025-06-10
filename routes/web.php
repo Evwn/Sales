@@ -40,7 +40,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/branches', [BranchController::class, 'all'])->name('branches.all');
     Route::get('/sellers', [SellerController::class, 'all'])->name('sellers.all');
     Route::get('/sales', [SaleController::class, 'all'])->name('sales.all');
-    Route::post('/sales', [SaleController::class, 'store'])->name('sales.store');
+    Route::post('/sales', [SaleController::class, 'store'])->name('sales.global.store');
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
     Route::get('/discounts', [DiscountController::class, 'index'])->name('discounts.index');
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
@@ -104,7 +104,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                     Route::prefix('{branch}/sales')->group(function () {
                         Route::get('/', [SaleController::class, 'index'])->name('sales.index');
                         Route::get('/create', [SaleController::class, 'create'])->name('sales.create');
-                        Route::post('/', [SaleController::class, 'store'])->name('sales.store');
+                        Route::post('/', [SaleController::class, 'store'])->name('sales.branch.store');
                         Route::get('/{sale}', [SaleController::class, 'show'])->name('sales.show');
                         Route::get('/{sale}/edit', [SaleController::class, 'edit'])->name('sales.edit');
                         Route::put('/{sale}', [SaleController::class, 'update'])->name('sales.update');

@@ -124,7 +124,7 @@ const handleSell = async (product: PageProps['products']['data'][0]) => {
         });
 
         try {
-            await form.post('/sales', {
+            await form.post(product.branch?.id ? `/businesses/${product.business.id}/branches/${product.branch.id}/sales` : '/sales', {
                 preserveScroll: true,
                 onSuccess: () => {
                     // Update the product's stock locally
