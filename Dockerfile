@@ -20,6 +20,12 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 # Install PHP extensions
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd pdo_sqlite
 
+# Configure PHP
+RUN echo "memory_limit=512M" > /usr/local/etc/php/conf.d/memory-limit.ini && \
+    echo "upload_max_filesize=50M" >> /usr/local/etc/php/conf.d/upload-limit.ini && \
+    echo "post_max_size=50M" >> /usr/local/etc/php/conf.d/upload-limit.ini && \
+    echo "max_execution_time=600" >> /usr/local/etc/php/conf.d/time-limit.ini
+
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
@@ -57,7 +63,7 @@ RUN cd resources/js && \
 RUN npm run build
 
 # Set permissions
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache && \
+RUN chown -R www-data:www-data /var/www && \
     chmod -R 775 /var/www/storage /var/www/bootstrap/cache && \
     mkdir -p /var/log/nginx && \
     chown -R www-data:www-data /var/log/nginx && \

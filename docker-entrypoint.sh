@@ -11,7 +11,7 @@ chown www-data:www-data .env
 chmod 644 .env
 
 # Set proper permissions for storage and cache directories
-chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+chown -R www-data:www-data /var/www
 chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
 # Generate application key if not set
@@ -27,6 +27,10 @@ php artisan storage:link
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
+
+# Enable error reporting in PHP
+echo "display_errors = On" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+echo "error_reporting = E_ALL" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 
 # Start Nginx
 service nginx start
