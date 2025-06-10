@@ -25,18 +25,14 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www
 
-# Copy package files first
-COPY package*.json ./
-COPY composer*.json ./
+# Copy the entire application first
+COPY . .
 
 # Install Node.js dependencies
 RUN npm install
 
 # Install PHP dependencies
 RUN composer install --no-interaction --no-dev --optimize-autoloader
-
-# Copy the rest of the application
-COPY . .
 
 # Fix case sensitivity issues
 RUN if [ -d "resources/js/components" ]; then \
