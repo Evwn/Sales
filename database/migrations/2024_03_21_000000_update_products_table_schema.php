@@ -22,8 +22,8 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Copy data from the old table to the new one
-        DB::statement('INSERT INTO products_new (id, business_id, inventory_item_id, branch_id, price, buying_price, stock, status, created_at, updated_at) SELECT id, business_id, inventory_item_id, branch_id, price, buying_price, stock, status, created_at, updated_at FROM products');
+        // Copy data from the old table to the new one, excluding branch_id
+        DB::statement('INSERT INTO products_new (id, business_id, inventory_item_id, price, buying_price, stock, status, created_at, updated_at) SELECT id, business_id, inventory_item_id, price, buying_price, stock, status, created_at, updated_at FROM products');
 
         // Drop the old table
         Schema::drop('products');
@@ -53,7 +53,7 @@ return new class extends Migration
         });
 
         // Copy data from the new table to the old one
-        DB::statement('INSERT INTO products_old (id, business_id, inventory_item_id, branch_id, price, buying_price, stock, status, created_at, updated_at) SELECT id, business_id, inventory_item_id, branch_id, price, buying_price, stock, status, created_at, updated_at FROM products');
+        DB::statement('INSERT INTO products_old (id, business_id, inventory_item_id, price, buying_price, stock, status, created_at, updated_at) SELECT id, business_id, inventory_item_id, price, buying_price, stock, status, created_at, updated_at FROM products');
 
         // Drop the new table
         Schema::drop('products');
