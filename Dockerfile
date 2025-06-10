@@ -38,6 +38,10 @@ RUN composer install --no-interaction --no-dev --optimize-autoloader
 RUN if [ -d "resources/js/components" ]; then \
     mv resources/js/components resources/js/Components_temp && \
     mv resources/js/Components_temp resources/js/Components; \
+    fi && \
+    if [ -d "resources/js/layouts" ]; then \
+    mv resources/js/layouts resources/js/Layouts_temp && \
+    mv resources/js/Layouts_temp resources/js/Layouts; \
     fi
 
 # Build assets
