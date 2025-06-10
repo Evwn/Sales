@@ -24,8 +24,8 @@
     </svg>
 </template>
 
-<script setup lang="ts">
-defineOptions({
+<script lang="ts">
+export default {
     name: 'ApplicationLogo'
-});
+};
 </script> 

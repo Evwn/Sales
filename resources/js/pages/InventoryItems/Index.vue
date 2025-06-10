@@ -287,6 +287,7 @@ const addToBusiness = async (inventoryItem: InventoryItem) => {
                     Central Inventory Items
                 </h2>
                 <Link
+                    v-if="page.props.auth.user.role !== 'seller'"
                     href="/inventory-items/create"
                     class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                 >
@@ -333,7 +334,7 @@ const addToBusiness = async (inventoryItem: InventoryItem) => {
                                         <th scope="col" class="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
                                         <th scope="col" class="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit</th>
                                         <th scope="col" class="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Updated</th>
-                                        <th scope="col" class="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        <th v-if="page.props.auth.user.role !== 'seller'" scope="col" class="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
@@ -349,7 +350,7 @@ const addToBusiness = async (inventoryItem: InventoryItem) => {
                                                 by {{ item.last_updated_by.name }}
                                             </div>
                                         </td>
-                                        <td class="w-1/6 px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td v-if="page.props.auth.user.role !== 'seller'" class="w-1/6 px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <div class="flex space-x-3">
                                                 <Link
                                                     :href="`/inventory-items/${item.id}`"

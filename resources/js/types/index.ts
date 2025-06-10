@@ -2,8 +2,10 @@ export interface User {
     id: number;
     name: string;
     email: string;
-    email_verified_at: string;
+    email_verified_at: string | null;
     role: 'admin' | 'owner' | 'seller';
+    business_id: number | null;
+    logo_url: string | null;
     created_at: string;
     updated_at: string;
 }

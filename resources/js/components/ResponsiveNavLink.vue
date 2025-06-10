@@ -23,4 +23,10 @@ defineOptions({
     >
         <slot />
     </Link>
-</template> 
+</template>
+
+<script lang="ts">
+export default {
+    name: 'ResponsiveNavLink'
+};
+</script> 
