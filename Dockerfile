@@ -25,14 +25,22 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www
 
-# Copy the entire application first
-COPY . .
-
-# Install Node.js dependencies
-RUN npm install
+# Copy composer files first
+COPY composer*.json ./
 
 # Install PHP dependencies
 RUN composer install --no-interaction --no-dev --optimize-autoloader
+
+# Copy the rest of the application
+COPY . .
+
+# Create .env file if it doesn't exist
+RUN if [ ! -f .env ]; then \
+    cp .env.example .env; \
+    fi
+
+# Install Node.js dependencies
+RUN npm install
 
 # Fix all case sensitivity issues in one go
 RUN cd resources/js && \

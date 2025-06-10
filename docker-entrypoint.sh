@@ -1,6 +1,15 @@
 #!/bin/bash
 set -e
 
+# Ensure .env file exists
+if [ ! -f .env ]; then
+    cp .env.example .env
+fi
+
+# Set proper permissions for .env
+chown www-data:www-data .env
+chmod 644 .env
+
 # Generate application key if not set
 php artisan key:generate --no-interaction
 
