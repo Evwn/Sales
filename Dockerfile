@@ -57,7 +57,11 @@ RUN cd resources/js && \
 RUN npm run build
 
 # Set permissions
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache && \
+    chmod -R 775 /var/www/storage /var/www/bootstrap/cache && \
+    mkdir -p /var/log/nginx && \
+    chown -R www-data:www-data /var/log/nginx && \
+    chmod -R 755 /var/log/nginx
 
 # Copy Nginx configuration
 COPY nginx.conf /etc/nginx/sites-available/default

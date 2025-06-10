@@ -10,6 +10,10 @@ fi
 chown www-data:www-data .env
 chmod 644 .env
 
+# Set proper permissions for storage and cache directories
+chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+
 # Generate application key if not set
 php artisan key:generate --no-interaction
 
