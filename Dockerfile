@@ -9,7 +9,9 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     zip \
     unzip \
-    libsqlite3-dev
+    libsqlite3-dev \
+    nodejs \
+    npm
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -23,11 +25,21 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www
 
-# Copy existing application directory
+# Copy package files first for better caching
+COPY package*.json ./
+COPY composer*.json ./
+
+# Install Node.js dependencies
+RUN npm install
+
+# Install PHP dependencies
+RUN composer install --no-interaction --no-dev --optimize-autoloader
+
+# Copy the rest of the application
 COPY . .
 
-# Install dependencies
-RUN composer install --no-interaction --no-dev --optimize-autoloader
+# Build assets
+RUN npm run build
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
