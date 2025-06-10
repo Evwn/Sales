@@ -11,7 +11,8 @@ RUN apt-get update && apt-get install -y \
     unzip \
     libsqlite3-dev \
     nodejs \
-    npm
+    npm \
+    nginx
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -58,12 +59,15 @@ RUN npm run build
 # Set permissions
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
+# Copy Nginx configuration
+COPY nginx.conf /etc/nginx/sites-available/default
+
 # Create startup script
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Expose port 9000
-EXPOSE 9000
+# Expose ports
+EXPOSE 80 9000
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["php-fpm"] 
