@@ -34,15 +34,18 @@ RUN npm install
 # Install PHP dependencies
 RUN composer install --no-interaction --no-dev --optimize-autoloader
 
-# Fix case sensitivity issues
-RUN if [ -d "resources/js/components" ]; then \
-    mv resources/js/components resources/js/Components_temp && \
-    mv resources/js/Components_temp resources/js/Components; \
-    fi && \
-    if [ -d "resources/js/layouts" ]; then \
-    mv resources/js/layouts resources/js/Layouts_temp && \
-    mv resources/js/Layouts_temp resources/js/Layouts; \
-    fi
+# Fix all case sensitivity issues in one go
+RUN cd resources/js && \
+    for dir in */; do \
+        if [ -d "$dir" ]; then \
+            dir_name=$(basename "$dir"); \
+            upper_name=$(echo "$dir_name" | tr '[:lower:]' '[:upper:]'); \
+            if [ "$dir_name" != "$upper_name" ]; then \
+                mv "$dir" "${upper_name}_temp" && \
+                mv "${upper_name}_temp" "$upper_name"; \
+            fi; \
+        fi; \
+    done
 
 # Build assets
 RUN npm run build
