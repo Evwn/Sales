@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import Swal from 'sweetalert2';
 import AppLayout from '@/layouts';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Pagination from '@/components/Pagination.vue';
 import type { BreadcrumbItemType } from '@/types';
+import { route } from '@/ziggy';
 
 const breadcrumbs: BreadcrumbItemType[] = [
     {
@@ -15,16 +16,31 @@ const breadcrumbs: BreadcrumbItemType[] = [
     },
 ];
 
+type RoleName = 'admin' | 'owner' | 'seller' | 'customer' | 'supplier';
+
+interface Role {
+    id: number;
+    name: RoleName;
+    description: string;
+    permissions: string[];
+}
+
 interface User {
-    role: 'admin' | 'owner' | 'seller';
-    managedBranches: Array<{
+    id: number;
+    name: string;
+    email: string;
+    role: Role;
+    branch_id: number | null;
+    business_id: number | null;
+}
+
+interface Branch {
+    id: number;
+    name: string;
+    business: {
         id: number;
         name: string;
-        business: {
-            id: number;
-            name: string;
-        };
-    }>;
+    };
 }
 
 interface PageProps {
@@ -36,6 +52,24 @@ interface PageProps {
         name: string;
         description: string;
     }>;
+    branches: Branch[];
+    inventoryItems: {
+        data: Array<{
+            id: number;
+            name: string;
+            brand: string;
+            model: string;
+            sku: string;
+            unit: number;
+            updated_at: string;
+            updated_by: string;
+        }>;
+        links: Array<{
+            url: string | null;
+            label: string;
+            active: boolean;
+        }>;
+    };
     [key: string]: any;
 }
 
@@ -49,10 +83,17 @@ interface InventoryItem {
     upc: string | null;
     unit: string | null;
     unit_display: string | null;
+    image_url: string | null;
     updated_at: string;
     last_updated_by: {
         name: string;
     };
+}
+
+interface Business {
+    id: number;
+    name: string;
+    branches: Branch[];
 }
 
 interface Props {
@@ -69,6 +110,15 @@ interface Props {
         search?: string;
         brand?: string;
     };
+    branches: Array<{
+        id: number;
+        name: string;
+        business: {
+            id: number;
+            name: string;
+        };
+    }>;
+    businesses: Business[];
 }
 
 const props = defineProps<Props>();
@@ -82,12 +132,6 @@ interface FormState {
     buying_price: string;
     stock: string;
     branch_id: string;
-}
-
-interface Business {
-    id: number;
-    name: string;
-    description: string;
 }
 
 // Add form and modal state
@@ -115,168 +159,164 @@ watch([search, selectedBrand], ([newSearch, newBrand]) => {
     );
 });
 
-const addToBusiness = async (inventoryItem: InventoryItem) => {
-    try {
-        // Show business selection form
-        const result = await Swal.fire({
-            title: 'Add to Business',
-            html: `
-                <form id="addToBusinessForm" class="text-left">
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Business</label>
-                        <select id="business_id" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            <option value="">Select a business</option>
-                            ${page.props.businesses.map(business => `
-                                <option value="${business.id}">${business.name}</option>
-                            `).join('')}
-                        </select>
-                    </div>
-                    <div id="branch_container" class="mb-4 hidden">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Branch (Optional)</label>
-                        <select id="branch_id" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            <option value="">Select a branch</option>
-                        </select>
-                    </div>
-                    <div id="no_branches_message" class="mb-4 hidden text-sm text-yellow-600">
-                        This business has no branches. You can still add the product to the business.
-                    </div>
-                    <div class="mb-4">
+const addToBusiness = (item: InventoryItem) => {
+    Swal.fire({
+        title: 'Add to Branch',
+        html: `
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Business</label>
+                    <select id="business_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        <option value="">Select a business</option>
+                        ${props.businesses.map((business: Business) => `
+                            <option value="${business.id}">${business.name}</option>
+                        `).join('')}
+                    </select>
+                </div>
+                <div id="branch_container" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Branch</label>
+                    <select id="branch_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        <option value="">Select a branch</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Stock</label>
-                        <input type="number" id="stock" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" min="0" step="1" required>
+                        <input type="number" id="stock" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required min="0">
                     </div>
-                    <div class="mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Min Stock Level</label>
+                        <input type="number" id="min_stock_level" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required min="0">
+                    </div>
+                    <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Buying Price</label>
-                        <input type="number" id="buying_price" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" min="0" step="0.01" required>
+                        <input type="number" id="buying_price" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required min="0" step="0.01">
                     </div>
-                    <div class="mb-4">
+                    <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Selling Price</label>
-                        <input type="number" id="price" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" min="0" step="0.01" required>
+                        <input type="number" id="price" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required min="0" step="0.01">
                     </div>
-                </form>
-            `,
-            showCancelButton: true,
-            confirmButtonText: 'Add to Business',
-            cancelButtonText: 'Cancel',
-            focusConfirm: false,
-            didOpen: () => {
-                const businessSelect = document.getElementById('business_id') as HTMLSelectElement;
-                const branchSelect = document.getElementById('branch_id') as HTMLSelectElement;
-                const branchContainer = document.getElementById('branch_container');
-                const noBranchesMessage = document.getElementById('no_branches_message');
-                
-                if (businessSelect) {
-                    businessSelect.addEventListener('change', () => {
-                        const selectedBusiness = page.props.businesses.find(b => b.id === Number(businessSelect.value));
-                        if (selectedBusiness) {
-                            // Filter branches for the selected business
-                            const branches = page.props.auth.user?.managedBranches.filter(branch => 
-                                branch.business && branch.business.id === selectedBusiness.id
-                            ) || [];
-                            
-                            if (branches.length > 0) {
-                                branchContainer?.classList.remove('hidden');
-                                noBranchesMessage?.classList.add('hidden');
-                                branchSelect.innerHTML = branches.map(branch => `
-                                    <option value="${branch.id}">${branch.name}</option>
-                                `).join('');
-                            } else {
-                                branchContainer?.classList.add('hidden');
-                                noBranchesMessage?.classList.remove('hidden');
-                                branchSelect.innerHTML = '<option value="">No branches available</option>';
-                            }
-                        } else {
-                            branchContainer?.classList.add('hidden');
-                            noBranchesMessage?.classList.add('hidden');
-                            branchSelect.innerHTML = '<option value="">Select a business first</option>';
-                        }
-                    });
-                }
-            },
-            preConfirm: () => {
-                const form = document.getElementById('addToBusinessForm') as HTMLFormElement;
-                if (!form) return false;
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Add to Branch',
+        cancelButtonText: 'Cancel',
+        showLoaderOnConfirm: true,
+        width: '32rem',
+        customClass: {
+            container: 'swal-wide',
+            popup: 'swal-wide'
+        },
+        preConfirm: () => {
+            const businessId = (document.getElementById('business_id') as HTMLSelectElement)?.value;
+            const branchId = (document.getElementById('branch_id') as HTMLSelectElement)?.value;
+            const stock = (document.getElementById('stock') as HTMLInputElement)?.value;
+            const minStockLevel = (document.getElementById('min_stock_level') as HTMLInputElement)?.value;
+            const buyingPrice = (document.getElementById('buying_price') as HTMLInputElement)?.value;
+            const price = (document.getElementById('price') as HTMLInputElement)?.value;
 
-                const businessId = (document.getElementById('business_id') as HTMLSelectElement)?.value;
-                const branchId = (document.getElementById('branch_id') as HTMLSelectElement)?.value;
-                const stock = (document.getElementById('stock') as HTMLInputElement)?.value;
-                const buyingPrice = (document.getElementById('buying_price') as HTMLInputElement)?.value;
-                const price = (document.getElementById('price') as HTMLInputElement)?.value;
-
-                if (!businessId || !stock || !buyingPrice || !price) {
-                    Swal.showValidationMessage('Please fill in all required fields');
-                    return false;
-                }
-
-                return {
-                    business_id: businessId,
-                    branch_id: branchId || null,
-                    stock: stock,
-                    buying_price: buyingPrice,
-                    price: price
-                };
+            if (!businessId) {
+                Swal.showValidationMessage('Please select a business');
+                return false;
             }
-        });
 
-        if (result.isConfirmed && result.value) {
+            if (!branchId) {
+                Swal.showValidationMessage('Please select a branch');
+                return false;
+            }
+
+            if (!stock || !minStockLevel || !buyingPrice || !price) {
+                Swal.showValidationMessage('Please fill in all fields');
+                return false;
+            }
+
+            return {
+                branch_id: branchId,
+                stock,
+                min_stock_level: minStockLevel,
+                buying_price: buyingPrice,
+                price
+            };
+        },
+        didOpen: () => {
+            const businessSelect = document.getElementById('business_id') as HTMLSelectElement;
+            const branchContainer = document.getElementById('branch_container');
+            const branchSelect = document.getElementById('branch_id') as HTMLSelectElement;
+
+            if (businessSelect && branchContainer && branchSelect) {
+                businessSelect.addEventListener('change', () => {
+                    const selectedBusiness = props.businesses.find(b => b.id === parseInt(businessSelect.value));
+                    branchContainer.classList.remove('hidden');
+                    
+                    // Clear and update branch options
+                    branchSelect.innerHTML = '<option value="">Select a branch</option>';
+                    
+                    if (selectedBusiness && selectedBusiness.branches && selectedBusiness.branches.length > 0) {
+                        selectedBusiness.branches.forEach(branch => {
+                            const option = document.createElement('option');
+                            option.value = branch.id.toString();
+                            option.textContent = branch.name;
+                            branchSelect.appendChild(option);
+                        });
+                        branchSelect.disabled = false;
+                    } else {
+                        branchSelect.innerHTML = '<option value="">No branches available</option>';
+                        branchSelect.disabled = true;
+                    }
+                });
+            }
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
             // Show loading state
             Swal.fire({
-                title: 'Adding Product...',
-                text: 'Please wait while we add the product to your business.',
+                title: 'Adding to Branch...',
                 allowOutsideClick: false,
-                allowEscapeKey: false,
-                showConfirmButton: false,
                 didOpen: () => {
                     Swal.showLoading();
                 }
             });
 
-            try {
-                // Post the product
-                await router.post(`/businesses/${result.value.business_id}/products`, {
-                    inventory_item_id: inventoryItem.id,
-                    business_id: Number(result.value.business_id),
-                    price: result.value.price,
-                    buying_price: result.value.buying_price,
-                    stock: result.value.stock,
-                    branch_id: result.value.branch_id
-                }, {
-                    onSuccess: () => {
-                        // Show success message
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Success!',
-                            text: 'Product added successfully.',
-                            timer: 2000,
-                            showConfirmButton: false
-                        });
-                    },
-                    onError: (errors) => {
-                        // Show error message
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: errors.message || 'Failed to add product to business. Please try again.'
-                        });
-                    }
-                });
-            } catch (error) {
-                // Show error message
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Failed to add product to business. Please try again.'
-                });
-            }
+            // Make the API call
+            router.post(`/branches/${result.value.branch_id}/products`, {
+                inventory_item_id: item.id,
+                stock: result.value.stock,
+                min_stock_level: result.value.min_stock_level,
+                buying_price: result.value.buying_price,
+                price: result.value.price
+            }, {
+                onSuccess: () => {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: 'Product added to branch successfully',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                },
+                onError: (errors) => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: errors.message || 'Failed to add product to branch',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            });
         }
-    } catch (error) {
-        // Show error message
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Failed to add product to business. Please try again.'
-        });
-    }
+    });
 };
+
+const isAdminOrOwner = computed(() => {
+    const roles = page.props.auth.user.roles || [];
+    return roles.some(role => role.name === 'admin' || role.name === 'owner');
+});
+
+const isSeller = computed(() => {
+    const roles = page.props.auth.user.roles || [];
+    return roles.some(role => role.name === 'seller');
+});
 </script>
 
 <template>
@@ -284,7 +324,7 @@ const addToBusiness = async (inventoryItem: InventoryItem) => {
         <template #header>
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                    Central Inventory Items
+                    Central Product Items
                 </h2>
                 <Link
                     v-if="page.props.auth.user.role !== 'seller'"
@@ -323,7 +363,7 @@ const addToBusiness = async (inventoryItem: InventoryItem) => {
                             </div>
                         </div>
 
-                        <!-- Inventory Items Table -->
+                        <!-- product Items Table -->
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead>
@@ -347,7 +387,7 @@ const addToBusiness = async (inventoryItem: InventoryItem) => {
                                         <td class="w-1/6 px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <div>{{ new Date(item.updated_at).toLocaleDateString() }}</div>
                                             <div class="text-xs text-gray-500">
-                                                by {{ item.last_updated_by.name }}
+                                                by {{ item.last_updated_by ? item.last_updated_by.name : 'N/A' }}
                                             </div>
                                         </td>
                                         <td v-if="page.props.auth.user.role !== 'seller'" class="w-1/6 px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -358,19 +398,21 @@ const addToBusiness = async (inventoryItem: InventoryItem) => {
                                                 >
                                                     View
                                                 </Link>
-                                                <Link
-                                                    :href="`/inventory-items/${item.id}/edit`"
-                                                    class="text-blue-600 hover:text-blue-900"
-                                                >
-                                                    Edit
-                                                </Link>
-                                                <button
-                                                    @click="addToBusiness(item)"
-                                                    class="text-green-600 hover:text-green-900 cursor-pointer"
-                                                    type="button"
-                                                >
-                                                    Add to Business
-                                                </button>
+                                                <template v-if="isAdminOrOwner">
+                                                    <Link
+                                                        :href="`/inventory-items/${item.id}/edit`"
+                                                        class="text-blue-600 hover:text-blue-900"
+                                                    >
+                                                        Edit
+                                                    </Link>
+                                                    <button
+                                                        @click="addToBusiness(item)"
+                                                        class="text-green-600 hover:text-green-900 cursor-pointer"
+                                                        type="button"
+                                                    >
+                                                        Add to Business
+                                                    </button>
+                                                </template>
                                             </div>
                                         </td>
                                     </tr>

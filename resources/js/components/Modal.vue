@@ -5,6 +5,7 @@ const props = defineProps<{
     show: boolean;
     maxWidth?: string;
     closeable?: boolean;
+    backdrop?: boolean;
 }>();
 
 const emit = defineEmits(['close']);
@@ -54,6 +55,7 @@ const maxWidthClass = computed(() => {
         <div v-show="show" class="fixed inset-0 z-50 flex items-center justify-center">
             <!-- Backdrop -->
             <div
+                v-if="props.backdrop !== false"
                 class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity z-50"
                 @click="close"
             ></div>

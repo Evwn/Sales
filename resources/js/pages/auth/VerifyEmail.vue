@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { LoaderCircle } from 'lucide-vue-next';
+import PrimaryButton from '@/components/PrimaryButton.vue';
+import SecondaryButton from '@/components/SecondaryButton.vue';
 
-defineProps<{
+const props = defineProps<{
     status?: string;
 }>();
 
@@ -14,23 +16,39 @@ const form = useForm({});
 const submit = () => {
     form.post(route('verification.send'));
 };
+
+const logout = () => {
+    form.post(route('logout'));
+};
 </script>
 
 <template>
-    <AuthLayout title="Verify email" description="Please verify your email address by clicking on the link we just emailed to you.">
-        <Head title="Email verification" />
+    <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
+        <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-bold text-gray-900">Email Verification</h2>
+                <p class="mt-2 text-sm text-gray-600">
+                    Thanks for signing up! Please verify your email address.
+                </p>
+            </div>
 
-        <div v-if="status === 'verification-link-sent'" class="mb-4 text-center text-sm font-medium text-green-600">
-            A new verification link has been sent to the email address you provided during registration.
+            <div v-if="status === 'verification-link-sent'" class="mb-4 font-medium text-sm text-green-600">
+                A new verification link has been sent to your email address.
+            </div>
+
+            <div class="mt-4 flex items-center justify-between">
+                <form method="POST" @submit.prevent="submit">
+                    <PrimaryButton :disabled="form.processing">
+                        Resend Verification Email
+                    </PrimaryButton>
+                </form>
+
+                <form method="POST" @submit.prevent="logout">
+                    <SecondaryButton type="submit" class="ml-4">
+                        Log Out
+                    </SecondaryButton>
+                </form>
+            </div>
         </div>
-
-        <form @submit.prevent="submit" class="space-y-6 text-center">
-            <Button :disabled="form.processing" variant="secondary">
-                <LoaderCircle v-if="form.processing" class="h-4 w-4 animate-spin" />
-                Resend verification email
-            </Button>
-
-            <TextLink :href="route('logout')" method="post" as="button" class="mx-auto block text-sm"> Log out </TextLink>
-        </form>
-    </AuthLayout>
+    </div>
 </template>

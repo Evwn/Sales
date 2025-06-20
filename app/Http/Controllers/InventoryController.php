@@ -7,13 +7,38 @@ use App\Models\Product;
 use App\Models\Branch;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 class InventoryController extends Controller
 {
     public function index()
     {
+        $user = Auth::user();
+        
+        // Get all businesses the user has access to
+        $businesses = $user->businesses()->get();
+        
+        if ($businesses->isEmpty()) {
+            return Inertia::render('Inventory/NoBusiness', [
+                'message' => 'You do not have access to any businesses. Please contact your administrator.'
+            ]);
+        }
+
+        // Get all inventory items from accessible businesses
+        $query = Inventory::with(['branch.business', 'product.inventoryItem'])
+            ->whereHas('branch.business', function($q) use ($businesses) {
+                $q->whereIn('id', $businesses->pluck('id'));
+            });
+        
+        // If user is a seller, only show inventory from their branch
+        if ($user->isSeller()) {
+            $query->where('branch_id', $user->branch_id);
+        }
+
+        $inventory = $query->paginate(10);
+
         return Inertia::render('Inventory/Index', [
-            'inventory' => Inventory::with(['branch.business', 'product'])->paginate(10),
+            'inventory' => $inventory,
         ]);
     }
 

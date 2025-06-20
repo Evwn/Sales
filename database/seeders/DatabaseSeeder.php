@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             BranchSeeder::class,
             InventoryItemSeeder::class,
             ProductSeeder::class,
+            DefaultCustomerSeeder::class,
         ]);
     }
 }

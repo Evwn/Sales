@@ -11,12 +11,12 @@ class SellerPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->role === 'admin' || $user->ownedBusinesses()->exists() || $user->managedBusinesses()->exists();
+        return $user->role->name === 'admin' || $user->ownedBusinesses()->exists() || $user->managedBusinesses()->exists();
     }
 
     public function view(User $user, User $seller): bool
     {
-        if ($user->role === 'admin') {
+        if ($user->role->name === 'admin') {
             return true;
         }
 
@@ -26,12 +26,12 @@ class SellerPolicy
 
     public function create(User $user): bool
     {
-        return $user->role === 'admin' || $user->ownedBusinesses()->exists() || $user->managedBusinesses()->exists();
+        return $user->role->name === 'admin' || $user->ownedBusinesses()->exists() || $user->managedBusinesses()->exists();
     }
 
     public function update(User $user, User $seller): bool
     {
-        if ($user->role === 'admin') {
+        if ($user->role->name === 'admin') {
             return true;
         }
 
@@ -41,7 +41,7 @@ class SellerPolicy
 
     public function delete(User $user, User $seller): bool
     {
-        if ($user->role === 'admin') {
+        if ($user->role->name === 'admin') {
             return true;
         }
 

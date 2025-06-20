@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Storage;
 
 class InventoryItemController extends Controller
 {
@@ -38,10 +39,28 @@ class InventoryItemController extends Controller
             ->orWhereHas('admins', function ($query) {
                 $query->where('admin_id', Auth::id());
             })
-            ->get(['id', 'name', 'description']);
+            ->with('branches')
+            ->get()
+            ->map(function ($business) {
+                return [
+                    'id' => $business->id,
+                    'name' => $business->name,
+                    'description' => $business->description,
+                    'branches' => $business->branches->map(function ($branch) {
+                        return [
+                            'id' => $branch->id,
+                            'name' => $branch->name,
+                            'business' => [
+                                'id' => $branch->business->id,
+                                'name' => $branch->business->name
+                            ]
+                        ];
+                    })
+                ];
+            });
 
         // Get user with managed branches and their business relationship
-        $user = Auth::user();
+        $user = Auth::user()->load('roles', 'roles.permissions');
         $managedBranches = \App\Models\Branch::whereHas('business', function ($query) use ($user) {
             $query->where('owner_id', $user->id)
                 ->orWhereHas('admins', function ($q) use ($user) {
@@ -53,7 +72,15 @@ class InventoryItemController extends Controller
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
-            'role' => $user->role,
+            'roles' => $user->roles->map(function ($role) {
+                return [
+                    'id' => $role->id,
+                    'name' => $role->name,
+                    'permissions' => $role->permissions->pluck('name')->toArray(),
+                ];
+            }),
+            'branch_id' => $user->branch_id,
+            'business_id' => $user->business_id,
             'managedBranches' => $managedBranches
         ];
 
@@ -62,6 +89,7 @@ class InventoryItemController extends Controller
             'brands' => $brands,
             'filters' => $request->only(['search', 'brand']),
             'businesses' => $businesses,
+            'branches' => $managedBranches,
             'auth' => [
                 'user' => $userData
             ]
@@ -75,6 +103,8 @@ class InventoryItemController extends Controller
 
     public function store(Request $request)
     {
+        Log::info('Received inventory item data:', $request->all());
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -88,13 +118,23 @@ class InventoryItemController extends Controller
             'mpn' => 'nullable|string|max:255',
             'unit' => 'nullable|string|max:50',
             'unit_value' => 'nullable|numeric|min:0',
+            'image' => 'nullable|image|max:2048', // Max 2MB
         ]);
+
+        Log::info('Validated data:', $validated);
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('inventory-items', 'public');
+            $validated['image_url'] = $path;
+        }
 
         $item = InventoryItem::create([
             ...$validated,
             'created_by' => Auth::id(),
             'last_updated_by' => Auth::id(),
         ]);
+
+        Log::info('Created inventory item:', $item->toArray());
 
         return redirect()->route('inventory-items.show', $item)
             ->with('success', 'Inventory item created successfully.');
@@ -103,6 +143,7 @@ class InventoryItemController extends Controller
     public function show(InventoryItem $inventoryItem)
     {
         $inventoryItem->load(['creator', 'lastUpdatedBy', 'products.business']);
+        $inventoryItem->append('unit_display');
         return Inertia::render('InventoryItems/Show', [
             'inventoryItem' => $inventoryItem
         ]);
@@ -130,7 +171,17 @@ class InventoryItemController extends Controller
             'mpn' => 'nullable|string|max:255',
             'unit' => 'nullable|string|max:50',
             'unit_value' => 'nullable|numeric|min:0',
+            'image' => 'nullable|image|max:2048', // Max 2MB
         ]);
+
+        if ($request->hasFile('image')) {
+            // Delete old image if exists
+            if ($inventoryItem->image_url) {
+                Storage::disk('public')->delete($inventoryItem->image_url);
+            }
+            $path = $request->file('image')->store('inventory-items', 'public');
+            $validated['image_url'] = $path;
+        }
 
         $inventoryItem->update([
             ...$validated,

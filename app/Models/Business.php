@@ -4,18 +4,48 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Storage;
 
 class Business extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'name',
         'description',
+        'phone',
+        'email',
+        'tax_number',
+        'registration_number',
+        'industry',
+        'address',
+        'city',
+        'state',
+        'country',
+        'postal_code',
+        'logo_path',
+        'tax_document_path',
+        'registration_document_path',
         'owner_id',
+        'website',
+        'receipt_footer',
+        'terms_and_conditions',
+        'contact_information',
+        'receipt_template',
+    ];
+
+    protected $appends = [
+        'logo_url',
+        'tax_document_url',
+        'registration_document_url',
+    ];
+
+    protected $casts = [
+        'receipt_template' => 'array',
     ];
 
     public function owner(): BelongsTo
@@ -35,28 +65,81 @@ class Business extends Model
 
     public function sellers(): HasMany
     {
-        return $this->hasMany(User::class)->where('role', 'seller');
+        return $this->hasMany(User::class)->where('role_id', 3);
     }
 
     public function admins()
     {
         return $this->belongsToMany(User::class, 'business_admin')
-            ->where('role', 'admin')
+            ->where('role_id', 1)
             ->withTimestamps();
     }
 
-    public function products()
+    public function products(): HasMany
     {
         return $this->hasMany(Product::class);
     }
 
-    public function sales()
+    public function sales(): HasMany
     {
         return $this->hasMany(Sale::class);
+    }
+
+    public function purchases(): HasMany
+    {
+        return $this->hasMany(Purchase::class);
+    }
+
+    public function customers(): HasMany
+    {
+        return $this->hasMany(Customer::class);
+    }
+
+    public function suppliers(): HasMany
+    {
+        return $this->hasMany(Supplier::class);
     }
 
     public function discounts()
     {
         return $this->hasMany(Discount::class);
+    }
+
+    public function accounts()
+    {
+        return $this->hasMany(Account::class);
+    }
+
+    public function businessAdmins(): HasMany
+    {
+        return $this->hasMany(BusinessAdmin::class);
+    }
+
+    public function getLogoUrlAttribute()
+    {
+        return $this->logo_path ? Storage::url($this->logo_path) : null;
+    }
+
+    public function getTaxDocumentUrlAttribute()
+    {
+        return $this->tax_document_path ? Storage::url($this->tax_document_path) : null;
+    }
+
+    public function getRegistrationDocumentUrlAttribute()
+    {
+        return $this->registration_document_path ? Storage::url($this->registration_document_path) : null;
+    }
+
+    public function getFullAddressAttribute()
+    {
+        $parts = array_filter([
+            $this->address,
+            $this->city,
+            $this->state,
+            $this->postal_code,
+            $this->country,
+        ]);
+
+        return implode(', ', $parts);
     }
 } 

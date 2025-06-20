@@ -83,13 +83,13 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div class="flex space-x-3">
-                        <Link
+                        <button
                           v-if="seller.branch"
-                          :href="`/businesses/${seller.branch.business.id}/branches/${seller.branch.id}/sellers/${seller.id}`"
+                          @click="showSellerDetails(seller)"
                           class="text-indigo-600 hover:text-indigo-900"
                         >
                           View
-                        </Link>
+                        </button>
                         <Link
                           v-if="seller.branch"
                           :href="`/businesses/${seller.branch.business.id}/branches/${seller.branch.id}/sellers/${seller.id}/edit`"
@@ -126,6 +126,7 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { ref } from 'vue';
+import Swal from 'sweetalert2'
 
 const props = defineProps({
   business: {
@@ -167,4 +168,19 @@ const deleteSeller = (seller) => {
     router.delete(`/businesses/${seller.branch.business.id}/branches/${seller.branch.id}/sellers/${seller.id}`);
   }
 };
+
+const showSellerDetails = (seller) => {
+  Swal.fire({
+    title: 'Seller Details',
+    html: `
+      <div style='text-align:left'>
+        <p><strong>Name:</strong> ${seller.name}</p>
+        <p><strong>Email:</strong> ${seller.email}</p>
+        <p><strong>Branch:</strong> ${seller.branch?.name || 'N/A'}</p>
+        <p><strong>Business:</strong> ${seller.branch?.business?.name || 'N/A'}</p>
+      </div>
+    `,
+    confirmButtonText: 'Close'
+  });
+}
 </script> 

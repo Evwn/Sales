@@ -8,15 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('products', function (Blueprint $table) {
-            $table->decimal('buying_price', 10, 2)->default(0)->after('price');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('role');
         });
     }
 
     public function down(): void
     {
-        Schema::table('products', function (Blueprint $table) {
-            $table->dropColumn('buying_price');
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('role')->nullable();
         });
     }
 }; 

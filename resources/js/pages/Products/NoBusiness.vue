@@ -6,7 +6,7 @@ import type { BreadcrumbItemType } from '@/types';
 
 const breadcrumbs: BreadcrumbItemType[] = [
     {
-        title: 'Products',
+        title: 'Inventory',
         href: '/products',
     },
 ];
@@ -16,7 +16,7 @@ const breadcrumbs: BreadcrumbItemType[] = [
     <AppLayout :breadcrumbs="breadcrumbs">
         <template #header>
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Products
+                Inventory
             </h2>
         </template>
 
@@ -28,7 +28,7 @@ const breadcrumbs: BreadcrumbItemType[] = [
                             No Branch Found
                         </h3>
                         <p class="text-gray-600 mb-6">
-                            You need to be associated with a branch to manage products.
+                            You need to be associated with a branch to manage inventory.
                         </p>
                         <Link
                             href="/branches"

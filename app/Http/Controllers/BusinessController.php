@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Business;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use App\Models\User;
 
@@ -48,14 +49,47 @@ class BusinessController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'phone' => 'required|string|max:50',
+            'email' => 'required|email|max:255',
+            'tax_number' => 'nullable|string|max:50',
+            'registration_number' => 'nullable|string|max:50',
+            'industry' => 'nullable|string|max:100',
+            'address' => 'required|string|max:255',
+            'city' => 'required|string|max:100',
+            'state' => 'required|string|max:100',
+            'country' => 'required|string|max:100',
+            'postal_code' => 'required|string|max:20',
+            'logo' => 'nullable|image|max:1024', // max 1MB
+            'tax_document' => 'nullable|file|mimes:pdf,doc,docx|max:5120', // max 5MB
+            'registration_document' => 'nullable|file|mimes:pdf,doc,docx|max:5120', // max 5MB
         ]);
 
-        $business = Business::create([
-            ...$validated,
-            'owner_id' => Auth::id(),
-        ]);
+        $business = new Business();
+        $business->fill($validated);
 
-        return redirect()->route('businesses.show', $business);
+        // Handle logo upload
+        if ($request->hasFile('logo')) {
+            $logoPath = $request->file('logo')->store('business-logos', 'public');
+            $business->logo_path = $logoPath;
+        }
+
+        // Handle tax document upload
+        if ($request->hasFile('tax_document')) {
+            $taxDocPath = $request->file('tax_document')->store('business-documents', 'public');
+            $business->tax_document_path = $taxDocPath;
+        }
+
+        // Handle registration document upload
+        if ($request->hasFile('registration_document')) {
+            $regDocPath = $request->file('registration_document')->store('business-documents', 'public');
+            $business->registration_document_path = $regDocPath;
+        }
+
+        $business->owner_id = Auth::id();
+        $business->save();
+
+        return redirect()->route('businesses.index')
+            ->with('success', 'Business created successfully.');
     }
 
     public function show(Business $business)
@@ -77,18 +111,76 @@ class BusinessController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'phone' => 'required|string|max:50',
+            'email' => 'required|email|max:255',
+            'tax_number' => 'nullable|string|max:50',
+            'registration_number' => 'nullable|string|max:50',
+            'industry' => 'nullable|string|max:100',
+            'address' => 'required|string|max:255',
+            'city' => 'required|string|max:100',
+            'state' => 'required|string|max:100',
+            'country' => 'required|string|max:100',
+            'postal_code' => 'required|string|max:20',
+            'logo' => 'nullable|image|max:1024', // max 1MB
+            'tax_document' => 'nullable|file|mimes:pdf,doc,docx|max:5120', // max 5MB
+            'registration_document' => 'nullable|file|mimes:pdf,doc,docx|max:5120', // max 5MB
         ]);
 
-        $business->update($validated);
+        $business->fill($validated);
 
-        return redirect()->route('businesses.show', $business);
+        // Handle logo upload
+        if ($request->hasFile('logo')) {
+            // Delete old logo if exists
+            if ($business->logo_path) {
+                Storage::disk('public')->delete($business->logo_path);
+            }
+            $logoPath = $request->file('logo')->store('business-logos', 'public');
+            $business->logo_path = $logoPath;
+        }
+
+        // Handle tax document upload
+        if ($request->hasFile('tax_document')) {
+            // Delete old document if exists
+            if ($business->tax_document_path) {
+                Storage::disk('public')->delete($business->tax_document_path);
+            }
+            $taxDocPath = $request->file('tax_document')->store('business-documents', 'public');
+            $business->tax_document_path = $taxDocPath;
+        }
+
+        // Handle registration document upload
+        if ($request->hasFile('registration_document')) {
+            // Delete old document if exists
+            if ($business->registration_document_path) {
+                Storage::disk('public')->delete($business->registration_document_path);
+            }
+            $regDocPath = $request->file('registration_document')->store('business-documents', 'public');
+            $business->registration_document_path = $regDocPath;
+        }
+
+        $business->save();
+
+        return redirect()->route('businesses.index')
+            ->with('success', 'Business updated successfully.');
     }
 
     public function destroy(Business $business)
     {
+        // Delete associated files
+        if ($business->logo_path) {
+            Storage::disk('public')->delete($business->logo_path);
+        }
+        if ($business->tax_document_path) {
+            Storage::disk('public')->delete($business->tax_document_path);
+        }
+        if ($business->registration_document_path) {
+            Storage::disk('public')->delete($business->registration_document_path);
+        }
+
         $business->delete();
 
-        return redirect()->route('businesses.index');
+        return redirect()->route('businesses.index')
+            ->with('success', 'Business deleted successfully.');
     }
 
     public function addAdmin(Request $request, Business $business)
@@ -108,13 +200,13 @@ class BusinessController extends Controller
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => bcrypt($validated['password']),
-                'role' => 'admin',
+                'role_id' => 1, // Using role_id 1 for admin role
                 'business_id' => $business->id,
             ]);
         } else {
             // Update existing user's role and business
             $user->update([
-                'role' => 'admin',
+                'role_id' => 1, // Using role_id 1 for admin role
                 'business_id' => $business->id,
             ]);
         }
@@ -140,7 +232,7 @@ class BusinessController extends Controller
         // Update user's role and business if they're not an admin of any other business
         if (!$user->managedBusinesses()->exists()) {
             $user->update([
-                'role' => 'user',
+                'role_id' => 3, // Using role_id 3 for seller role as default
                 'business_id' => null
             ]);
         }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Inventory extends Model
 {
@@ -12,23 +13,25 @@ class Inventory extends Model
     protected $table = 'inventory';
 
     protected $fillable = [
-        'product_id',
-        'branch_id',
-        'quantity',
-        'threshold',
+        'product_id', 'quantity', 'location', 'status',
     ];
 
-    public function product()
+    protected $casts = [
+        'quantity' => 'integer',
+        'threshold' => 'integer',
+    ];
+
+    public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
     }
 
-    public function branch()
+    public function business(): BelongsTo
     {
-        return $this->belongsTo(Branch::class);
+        return $this->belongsTo(Business::class);
     }
 
-    public function isLowStock()
+    public function isLowStock(): bool
     {
         return $this->quantity <= $this->threshold;
     }

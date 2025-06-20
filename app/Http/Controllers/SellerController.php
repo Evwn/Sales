@@ -11,12 +11,15 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use App\Mail\SellerAccountCreatedMail;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\SellerAccountUpdatedMail;
 
 class SellerController extends Controller
 {
     public function index(Business $business, Branch $branch)
     {
-        $sellers = User::where('role', 'seller')
+        $sellers = User::where('role_id', 3)
             ->where('business_id', $business->id)
             ->where('branch_id', $branch->id)
             ->get();
@@ -24,7 +27,8 @@ class SellerController extends Controller
         return Inertia::render('Sellers/Index', [
             'business' => $business,
             'branch' => $branch,
-            'sellers' => $sellers
+            'sellers' => $sellers,
+            'userRole' => Auth::user()->getRoleNames()->first()
         ]);
     }
 
@@ -48,18 +52,26 @@ class SellerController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role' => 'seller',
             'business_id' => $business->id,
             'branch_id' => $branch->id,
         ]);
 
+        // Assign the seller role using Spatie
+        $seller->assignRole('seller');
+
+        // Send email verification
+        $seller->sendEmailVerificationNotification();
+
+        // Send professional welcome email
+        Mail::to($seller->email)->send(new SellerAccountCreatedMail($seller, $branch, $business));
+
         return redirect()->route('sellers.index', [$business, $branch])
-            ->with('success', 'Seller created successfully.');
+            ->with('success', 'Seller created successfully. An email has been sent for verification.');
     }
 
     public function show(Business $business, Branch $branch, User $seller)
     {
-        if ($seller->role !== 'seller' || $seller->business_id !== $business->id || $seller->branch_id !== $branch->id) {
+        if (!$seller->hasRole('seller') || $seller->business_id !== $business->id || $seller->branch_id !== $branch->id) {
             abort(404);
         }
 
@@ -72,20 +84,30 @@ class SellerController extends Controller
 
     public function edit(Business $business, Branch $branch, User $seller)
     {
-        if ($seller->role !== 'seller' || $seller->business_id !== $business->id || $seller->branch_id !== $branch->id) {
+        if (!$seller->hasRole('seller') || $seller->business_id !== $business->id || $seller->branch_id !== $branch->id) {
             abort(404);
         }
+
+        // Get all businesses the current user can manage
+        $user = Auth::user();
+        $businesses = Business::with('branches')
+            ->where('owner_id', $user->id)
+            ->orWhereHas('admins', function ($q) use ($user) {
+                $q->where('admin_id', $user->id);
+            })
+            ->get();
 
         return Inertia::render('Sellers/Edit', [
             'business' => $business,
             'branch' => $branch,
-            'seller' => $seller
+            'seller' => $seller->load('branch.business'),
+            'businesses' => $businesses,
         ]);
     }
 
     public function update(Request $request, Business $business, Branch $branch, User $seller)
     {
-        if ($seller->role !== 'seller' || $seller->business_id !== $business->id || $seller->branch_id !== $branch->id) {
+        if (!$seller->hasRole('seller') || $seller->business_id !== $business->id || $seller->branch_id !== $branch->id) {
             abort(404);
         }
 
@@ -93,28 +115,48 @@ class SellerController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $seller->id,
             'password' => 'nullable|string|min:8|confirmed',
+            'branch_id' => 'required|exists:branches,id',
         ]);
+
+        $changes = [];
+        if ($seller->name !== $validated['name']) {
+            $changes[] = 'Name changed';
+        }
+        if ($seller->email !== $validated['email']) {
+            $changes[] = 'Email changed';
+        }
+        if ($seller->branch_id != $validated['branch_id']) {
+            $changes[] = 'Branch changed';
+        }
+        if (!empty($validated['password'])) {
+            $changes[] = 'Password changed';
+        }
 
         $seller->name = $validated['name'];
         $seller->email = $validated['email'];
-        
-        if (isset($validated['password'])) {
+        $seller->branch_id = $validated['branch_id'];
+        $seller->business_id = $business->id;
+        if (!empty($validated['password'])) {
             $seller->password = Hash::make($validated['password']);
         }
-
         $seller->save();
 
+        // Send custom email to seller about changes
+        $branchModel = \App\Models\Branch::find($seller->branch_id);
+        $businessModel = \App\Models\Business::find($seller->business_id);
+        Mail::to($seller->email)->send(new SellerAccountUpdatedMail($seller, $branchModel, $businessModel, $changes));
+
         return redirect()->route('sellers.index', [$business, $branch])
-            ->with('success', 'Seller updated successfully.');
+            ->with('success', 'Seller updated successfully. The seller has been notified of the changes.');
     }
 
     public function destroy(Business $business, Branch $branch, User $seller)
     {
-        if ($seller->role !== 'seller' || $seller->business_id !== $business->id || $seller->branch_id !== $branch->id) {
+        if (!$seller->hasRole('seller') || $seller->business_id !== $business->id || $seller->branch_id !== $branch->id) {
             abort(404);
         }
 
-        if (Auth::user()->role !== 'admin' && Auth::user()->role !== 'business_admin') {
+        if (!Auth::user()->hasRole('admin') && !Auth::user()->hasRole('business_admin')) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -147,7 +189,7 @@ class SellerController extends Controller
         
         // Get the user's business if they're not an admin
         $business = null;
-        if ($user->role !== 'super_admin') {
+        if (!$user->hasRole('super_admin')) {
             $business = Business::where('owner_id', $user->id)->first();
             
             if (!$business) {
@@ -156,21 +198,21 @@ class SellerController extends Controller
             }
         }
         
-        $sellers = User::where('role', 'seller')
+        $sellers = User::role('seller')
             ->with(['branch.business'])
-            ->when($user->role === 'admin', function ($query) use ($user) {
+            ->when($user->hasRole('admin'), function ($query) use ($user) {
                 // Admin is treated as a business owner
                 return $query->whereHas('branch.business', function ($q) use ($user) {
                     $q->where('owner_id', $user->id);
                 });
             })
-            ->when($user->role === 'owner', function ($query) use ($user) {
+            ->when($user->hasRole('owner'), function ($query) use ($user) {
                 // Owner can only see sellers in their businesses
                 return $query->whereHas('branch.business', function ($q) use ($user) {
                     $q->where('owner_id', $user->id);
                 });
             })
-            ->when($user->role === 'seller', function ($query) use ($user) {
+            ->when($user->hasRole('seller'), function ($query) use ($user) {
                 // Seller can only see themselves
                 return $query->where('id', $user->id);
             })
@@ -187,7 +229,7 @@ class SellerController extends Controller
             'branch' => null,
             'sellers' => $sellers,
             'branches' => $branches,
-            'userRole' => $user->role
+            'userRole' => $user->getRoleNames()->first()
         ]);
     }
 } 

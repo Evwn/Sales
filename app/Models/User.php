@@ -9,25 +9,19 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'logo_url',
-        'role',
-        'business_id',
-        'branch_id',
-        'theme',
+        'name', 'email', 'password', 'business_id', 'branch_id', 'logo_path', 'logo_url', 'theme',
     ];
 
     protected $hidden = [
-        'password',
-        'remember_token',
+        'password', 'remember_token',
     ];
 
     protected $casts = [
@@ -35,12 +29,12 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    public function business(): BelongsTo
+    public function business()
     {
         return $this->belongsTo(Business::class);
     }
 
-    public function branch(): BelongsTo
+    public function branch()
     {
         return $this->belongsTo(Branch::class);
     }
@@ -56,17 +50,37 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    public function sales()
+    {
+        return $this->hasMany(Sale::class, 'seller_id');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'created_by');
+    }
+
+    public function salesReceipts(): HasMany
+    {
+        return $this->hasMany(SalesReceipt::class, 'cashier_id');
+    }
+
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class, 'created_by');
+    }
+
     public function managedBranches()
     {
-        if ($this->isSuperAdmin()) {
+        if ($this->hasRole('admin') && is_null($this->business_id)) {
             return Branch::query();
         }
 
-        if ($this->isBusinessAdmin()) {
+        if ($this->hasRole('admin') && !is_null($this->business_id)) {
             return Branch::where('business_id', $this->business_id);
         }
 
-        if ($this->isSeller()) {
+        if ($this->hasRole('seller')) {
             return Branch::where('id', $this->branch_id);
         }
 
@@ -75,17 +89,37 @@ class User extends Authenticatable
 
     public function isSuperAdmin(): bool
     {
-        return $this->role === 'admin' && is_null($this->business_id);
+        return $this->hasRole('admin') && is_null($this->business_id);
     }
 
     public function isBusinessAdmin(): bool
     {
-        return $this->role === 'admin' && !is_null($this->business_id);
+        return $this->hasRole('admin') && !is_null($this->business_id);
     }
 
     public function isSeller(): bool
     {
-        return $this->role === 'seller';
+        return $this->hasRole('seller');
+    }
+
+    public function businesses()
+    {
+        if ($this->isSuperAdmin()) {
+            return Business::where(function ($query) {
+                $query->where('owner_id', $this->id)
+                    ->orWhereHas('admins', function ($q) {
+                        $q->where('admin_id', $this->id);
+                    });
+            });
+        }
+
+        return Business::where(function ($query) {
+            $query->where('owner_id', $this->id)
+                ->orWhereHas('admins', function ($q) {
+                    $q->where('admin_id', $this->id);
+                })
+                ->orWhere('id', $this->business_id);
+        });
     }
 
     public function canAccessBusiness($businessId): bool
@@ -120,28 +154,8 @@ class User extends Authenticatable
         return $this->branch_id === $branchId;
     }
 
-    public function sales(): HasMany
+    public function salesCommission()
     {
-        return $this->hasMany(Sale::class, 'seller_id');
-    }
-
-    public function businesses()
-    {
-        if ($this->isSuperAdmin()) {
-            return Business::where(function ($query) {
-                $query->where('owner_id', $this->id)
-                    ->orWhereHas('admins', function ($q) {
-                        $q->where('admin_id', $this->id);
-                    });
-            });
-        }
-
-        return Business::where(function ($query) {
-            $query->where('owner_id', $this->id)
-                ->orWhereHas('admins', function ($q) {
-                    $q->where('admin_id', $this->id);
-                })
-                ->orWhere('id', $this->business_id);
-        });
+        return $this->hasMany(SalesCommission::class, 'seller_id');
     }
 }

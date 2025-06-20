@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Business;
+use App\Models\Customer;
+use App\Services\ActivityLogger;
 
 class ProductController extends Controller
 {
@@ -16,24 +18,15 @@ class ProductController extends Controller
     {
         $user = Auth::user();
         
-        // Get all businesses the user has access to
-        $businesses = $user->businesses()->get();
-        
-        if ($businesses->isEmpty()) {
-            return Inertia::render('Products/NoBusiness', [
-                'message' => 'You do not have access to any businesses. Please contact your administrator.'
-            ]);
-        }
-
-        // Get all products from accessible businesses, filtered by user's branch if they are a seller
-        $query = Product::whereIn('business_id', $businesses->pluck('id'));
+        // Get all products, filtered by user's branch if they are a seller
+        $query = Product::query();
         
         // If user is a seller, only show products from their branch
-        if ($user->isSeller()) {
+        if ($user->role === 'seller') {
             $query->where('branch_id', $user->branch_id);
         }
 
-        $products = $query->with(['inventoryItem', 'business', 'branch'])
+        $products = $query->with(['inventoryItem', 'branch.business'])
             ->paginate(10)
             ->through(function ($product) {
                 return [
@@ -44,26 +37,53 @@ class ProductController extends Controller
                     'barcode' => $product->inventoryItem->barcode,
                     'sku' => $product->inventoryItem->sku,
                     'stock' => $product->stock,
-                    'business' => [
-                        'id' => $product->business->id,
-                        'name' => $product->business->name
-                    ],
+                    'min_stock_level' => $product->min_stock_level,
+                    'tax_rate' => $product->inventoryItem->tax_rate,
+                    'is_taxable' => $product->inventoryItem->is_taxable,
                     'branch' => $product->branch ? [
                         'id' => $product->branch->id,
                         'name' => $product->branch->name
-                    ] : null
+                    ] : null,
+                    'business' => $product->branch ? [
+                        'id' => $product->branch->business->id,
+                        'name' => $product->branch->business->name
+                    ] : null,
+                    'inventory_item' => [
+                        'image_url' => $product->inventoryItem->image_url ?? null
+                    ],
+                    'image_url' => $product->inventoryItem->image_url ?? null
                 ];
             });
 
+        // Get businesses for the current user
+        $businesses = Business::when($user->role === 'admin', function ($query) use ($user) {
+                return $query->where('owner_id', $user->id);
+            })
+            ->when($user->role === 'owner', function ($query) use ($user) {
+                return $query->where('owner_id', $user->id);
+            })
+            ->when($user->role === 'seller', function ($query) use ($user) {
+                return $query->whereHas('branches', function ($q) use ($user) {
+                    $q->whereHas('sellers', function ($q) use ($user) {
+                        $q->where('id', $user->id);
+                    });
+                });
+            })
+            ->get(['id', 'name']);
+
+        $defaultCustomer = Customer::where('email', 'walkin@default.com')->first();
+
         return Inertia::render('Products/All', [
+            'products' => $products,
             'businesses' => $businesses,
-            'products' => $products
+            'defaultCustomerId' => $defaultCustomer ? $defaultCustomer->id : null,
+            'sales' => [], // Always provide sales, even if empty
         ]);
     }
 
-    public function index(Business $business)
+    public function index(Branch $branch)
     {
-        $products = $business->products()
+        $products = $branch->products()
             ->with('inventoryItem')
             ->paginate(10)
             ->through(function ($product) {
@@ -73,8 +93,10 @@ class ProductController extends Controller
                     'description' => $product->inventoryItem->description,
                     'price' => $product->price,
                     'barcode' => $product->inventoryItem->barcode,
-                    'sku' => $product->inventoryItem->sku,
                     'stock' => $product->stock,
+                    'min_stock_level' => $product->min_stock_level,
+                    'tax_rate' => $product->inventoryItem->tax_rate,
+                    'is_taxable' => $product->inventoryItem->is_taxable,
                     'branch' => $product->branch ? [
                         'id' => $product->branch->id,
                         'name' => $product->branch->name
@@ -83,7 +105,7 @@ class ProductController extends Controller
             });
 
         return Inertia::render('Products/Index', [
-            'business' => $business,
+            'branch' => $branch,
             'products' => $products
         ]);
     }
@@ -95,93 +117,75 @@ class ProductController extends Controller
         ]);
     }
 
-    public function store(Request $request, Business $business)
+    public function store(Request $request, Branch $branch)
     {
         $validated = $request->validate([
             'inventory_item_id' => 'required|exists:inventory_items,id',
             'price' => 'required|numeric|min:0',
             'buying_price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
-            'branch_id' => 'required|exists:branches,id',
+            'min_stock_level' => 'required|integer|min:0',
         ]);
 
-        // Check if product already exists
-        $existingProduct = $business->products()
-            ->where('inventory_item_id', $validated['inventory_item_id'])
+        // Check if product already exists in this branch
+        $existingProduct = Product::where('inventory_item_id', $validated['inventory_item_id'])
+            ->where('branch_id', $branch->id)
             ->first();
 
         if ($existingProduct) {
             return back()->withErrors([
-                'message' => 'This product is already added to your business.'
+                'message' => 'This product is already added to this branch.'
             ]);
         }
-
-        // Get the inventory item
-        $inventoryItem = InventoryItem::findOrFail($validated['inventory_item_id']);
 
         // Create the product
         $product = Product::create([
             'inventory_item_id' => $validated['inventory_item_id'],
-            'business_id' => $business->id,
             'price' => $validated['price'],
             'buying_price' => $validated['buying_price'],
             'stock' => $validated['stock'],
-            'branch_id' => $validated['branch_id'],
+            'min_stock_level' => $validated['min_stock_level'],
+            'branch_id' => $branch->id,
             'status' => 'active'
         ]);
 
         return back()->with('success', 'Product added successfully.');
     }
 
-    public function show(Business $business, Product $product)
+    public function show(Branch $branch, Product $product)
     {
-        // Check if user has access to this business
-        if (!Auth::user()->canAccessBusiness($business->id)) {
-            abort(403);
-        }
-
-        // Check if product belongs to this business
-        if ($product->business_id !== $business->id) {
+        // Check if product belongs to this branch
+        if ($product->branch_id !== $branch->id) {
             abort(404);
         }
 
-        $product->load(['branch', 'inventory', 'inventoryItem']);
+        $product->load(['branch', 'inventoryItem']);
 
         return Inertia::render('Products/Show', [
-            'business' => $business,
+            'branch' => $branch,
             'product' => $product,
         ]);
     }
 
-    public function edit(Business $business, Product $product)
+    public function edit(Branch $branch, Product $product)
     {
-        // Check if user has access to this business
-        if (!Auth::user()->canAccessBusiness($business->id)) {
-            abort(403);
-        }
-
-        // Check if product belongs to this business
-        if ($product->business_id !== $business->id) {
+        // Check if product belongs to this branch
+        if ($product->branch_id !== $branch->id) {
             abort(404);
         }
 
         $product->load(['branch', 'inventoryItem']);
 
         return Inertia::render('Products/Edit', [
-            'business' => $business,
+            'branch' => $branch,
             'product' => $product,
         ]);
     }
 
-    public function update(Request $request, Business $business, Product $product)
+    public function update(Request $request, Branch $branch, Product $product)
     {
-        // Check if user has access to this business
-        if (!Auth::user()->canAccessBusiness($business->id)) {
-            abort(403);
-        }
-
-        // Check if product belongs to this business
-        if ($product->business_id !== $business->id) {
+        // Check if product belongs to this branch
+        if ($product->branch_id !== $branch->id) {
             abort(404);
         }
 
@@ -189,24 +193,28 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0',
             'buying_price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
-            'branch_id' => 'required|exists:branches,id',
+            'min_stock_level' => 'required|integer|min:0',
         ]);
 
+        $oldStock = $product->stock;
         $product->update($validated);
 
-        return redirect()->route('products.index', $business)
+        // Log the activity
+        ActivityLogger::logProductUpdated($product, auth()->user());
+
+        // If stock was adjusted, log that separately
+        if ($oldStock !== $product->stock) {
+            ActivityLogger::logInventoryAdjusted($product, auth()->user(), $oldStock, $product->stock);
+        }
+
+        return redirect()->route('products.index', $branch)
             ->with('success', 'Product updated successfully.');
     }
 
-    public function destroy(Business $business, Product $product)
+    public function destroy(Branch $branch, Product $product)
     {
-        // Check if user has access to this business
-        if (!Auth::user()->canAccessBusiness($business->id)) {
-            abort(403);
-        }
-
-        // Check if product belongs to this business
-        if ($product->business_id !== $business->id) {
+        // Check if product belongs to this branch
+        if ($product->branch_id !== $branch->id) {
             abort(404);
         }
 

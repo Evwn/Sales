@@ -17,7 +17,7 @@ class Role
             return redirect('/login');
         }
 
-        $userRole = $request->user()->role;
+        $userRole = $request->user()->role->name;
         
         // If no roles are specified, allow access
         if (empty($roles)) {

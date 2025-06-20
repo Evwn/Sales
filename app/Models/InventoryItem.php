@@ -13,21 +13,13 @@ class InventoryItem extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'name',
-        'description',
-        'brand',
-        'model',
-        'sku',
-        'barcode',
-        'upc',
-        'ean',
-        'isbn',
-        'mpn',
-        'unit',
-        'unit_value',
-        'created_by',
-        'last_updated_by',
+        'name', 'description', 'brand', 'model', 'sku', 'barcode', 'upc', 'ean', 'isbn', 'mpn',
+        'unit', 'unit_value', 'category_id', 'unit_id', 'cost_price', 'selling_price',
+        'min_stock_level', 'max_stock_level', 'status', 'image_url', 'created_by', 'last_updated_by',
+        'tax_rate', 'is_taxable',
     ];
+
+    protected $appends = ['unit_display'];
 
     protected $casts = [
         'unit_value' => 'decimal:2',
@@ -46,6 +38,21 @@ class InventoryItem extends Model
     public function lastUpdatedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'last_updated_by');
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    public function unit()
+    {
+        return $this->belongsTo(Unit::class);
+    }
+
+    public function stockMovements()
+    {
+        return $this->hasMany(StockMovement::class);
     }
 
     // Helper method to get formatted unit display

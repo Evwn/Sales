@@ -36,6 +36,7 @@ interface InventoryItem {
     mpn: string | null;
     unit: string | null;
     unit_display: string | null;
+    image_url: string | null;
     created_by: {
         name: string;
     };
@@ -68,7 +69,7 @@ const breadcrumbs: BreadcrumbItemType[] = [
         <template #header>
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                    Inventory Item Details
+                    Product Item Details
                 </h2>
                 <Link
                     :href="`/inventory-items/${inventoryItem.id}/edit`"
@@ -104,6 +105,17 @@ const breadcrumbs: BreadcrumbItemType[] = [
                             <div>
                                 <div class="text-sm font-medium text-gray-500">Description</div>
                                 <div class="mt-1">{{ inventoryItem.description || '-' }}</div>
+                            </div>
+
+                            <div v-if="inventoryItem.image_url" class="md:col-span-2">
+                                <div class="text-sm font-medium text-gray-500">Image</div>
+                                <div class="mt-1">
+                                    <img
+                                        :src="`/storage/${inventoryItem.image_url}`"
+                                        :alt="inventoryItem.name"
+                                        class="h-48 w-48 object-cover rounded-lg"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -156,43 +168,6 @@ const breadcrumbs: BreadcrumbItemType[] = [
                                 <div class="text-sm font-medium text-gray-500">Unit</div>
                                 <div class="mt-1">{{ inventoryItem.unit_display || '-' }}</div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Products Using This Item -->
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6">
-                        <h3 class="text-lg font-medium text-gray-900 mb-4">Products Using This Item</h3>
-                        <div v-if="inventoryItem.products.length > 0">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Business</TableHead>
-                                        <TableHead>Price</TableHead>
-                                        <TableHead>Stock</TableHead>
-                                        <TableHead>Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow v-for="product in inventoryItem.products" :key="product.id">
-                                        <TableCell>{{ product.business.name }}</TableCell>
-                                        <TableCell>{{ product.price }}</TableCell>
-                                        <TableCell>{{ product.stock }}</TableCell>
-                                        <TableCell>
-                                            <Link
-                                                :href="`/products/${product.id}`"
-                                                class="text-blue-600 hover:text-blue-900"
-                                            >
-                                                View
-                                            </Link>
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
-                        </div>
-                        <div v-else class="text-gray-500 text-sm">
-                            No products are currently using this inventory item.
                         </div>
                     </div>
                 </div>

@@ -8,6 +8,13 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Endroid\QrCode\QrCode as EndroidQrCode;
+use Endroid\QrCode\Writer\PngWriter;
+use Endroid\QrCode\Color\Color;
+use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelHigh;
+use Endroid\QrCode\RoundBlockSizeMode\RoundBlockSizeModeMargin;
+use Endroid\QrCode\Label\Label;
 
 class BranchController extends Controller
 {
@@ -42,103 +49,52 @@ class BranchController extends Controller
 
     public function index(Business $business)
     {
-        // Check if user has access to this business
-        if (!Auth::user()->canAccessBusiness($business->id)) {
-            abort(403);
-        }
-
-        $user = Auth::user();
+        $branches = $business->branches()->with(['business'])->get();
         
-        // Get all businesses that belong to the current admin
-        $businesses = Business::when($user->role === 'admin', function ($query) use ($user) {
-                return $query->where('owner_id', $user->id);
-            })
-            ->when($user->role === 'owner', function ($query) use ($user) {
-                return $query->where('owner_id', $user->id);
-            })
-            ->get(['id', 'name']);
-
         return Inertia::render('Branches/Index', [
             'business' => $business,
-            'branches' => $business->branches()->with('business')->get(),
-            'businesses' => $businesses
+            'branches' => $branches,
         ]);
     }
 
     public function create(Business $business)
     {
-        // Check if user has access to this business
-        if (!Auth::user()->canAccessBusiness($business->id)) {
-            abort(403);
-        }
-
-        $user = Auth::user();
-        
-        // Get all businesses for the current user
-        $businesses = Business::when($user->role === 'admin', function ($query) use ($user) {
-                return $query->where('owner_id', $user->id);
-            })
-            ->when($user->role === 'owner', function ($query) use ($user) {
-                return $query->where('owner_id', $user->id);
-            })
-            ->get(['id', 'name']);
-
-        // Get all sellers that belong to the user's businesses
-        $sellers = User::whereHas('branch.business', function ($query) use ($user) {
-                $query->when($user->role === 'admin', function ($q) use ($user) {
-                    return $q->where('owner_id', $user->id);
-                })
-                ->when($user->role === 'owner', function ($q) use ($user) {
-                    return $q->where('owner_id', $user->id);
-                });
-            })
-            ->where('role', 'seller')
-            ->get(['id', 'name', 'email']);
-
         return Inertia::render('Branches/Create', [
             'business' => $business,
-            'businesses' => $businesses,
-            'sellers' => $sellers
         ]);
     }
 
     public function store(Request $request, Business $business)
     {
-        // Check if user has access to this business
-        if (!Auth::user()->canAccessBusiness($business->id)) {
-            abort(403);
-        }
-
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'address' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
-            'business_id' => 'required|exists:businesses,id',
-            'seller_ids' => 'array',
-            'seller_ids.*' => 'exists:users,id'
+            'address' => 'required|string',
+            'gps_latitude' => 'nullable|numeric|between:-90,90',
+            'gps_longitude' => 'nullable|numeric|between:-180,180',
+            'phone' => 'required|string|max:50',
+            'email' => 'required|email|max:255',
         ]);
 
-        // Create the branch
-        $branch = Branch::create([
-            'name' => $validated['name'],
-            'address' => $validated['address'],
-            'phone' => $validated['phone'],
-            'business_id' => $validated['business_id']
-        ]);
+        try {
+            $branch = $business->branches()->create([
+                'name' => $validated['name'],
+                'address' => $validated['address'],
+                'gps_latitude' => $validated['gps_latitude'] ?? null,
+                'gps_longitude' => $validated['gps_longitude'] ?? null,
+                'phone' => $validated['phone'],
+                'email' => $validated['email'],
+            ]);
 
-        // Handle seller assignments
-        if (isset($validated['seller_ids'])) {
-            // First, remove sellers from their current branches
-            User::whereIn('id', $validated['seller_ids'])
-                ->update(['branch_id' => null]);
+            // Generate barcode for the new branch
+            $branch->generateBarcode();
+            $branch->refresh(); // Refresh to get the updated barcode
 
-            // Then assign them to this branch
-            User::whereIn('id', $validated['seller_ids'])
-                ->update(['branch_id' => $branch->id]);
+            return redirect()->route('businesses.branches.index', $business)
+                ->with('success', 'Branch created successfully.')
+                ->with('branch', $branch);
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Failed to create branch: ' . $e->getMessage()]);
         }
-
-        return redirect()->route('branches.index', $business)
-            ->with('success', 'Branch created successfully.');
     }
 
     public function show(Business $business, Branch $branch)
@@ -156,85 +112,99 @@ class BranchController extends Controller
 
     public function edit(Business $business, Branch $branch)
     {
-        // Check if user has access to this business
-        if (!Auth::user()->canAccessBusiness($business->id)) {
-            abort(403);
-        }
-
-        $user = Auth::user();
-        
-        // Get businesses that belong to the current admin
-        $businesses = Business::when($user->role === 'admin', function ($query) use ($user) {
-                return $query->where('owner_id', $user->id);
-            })
-            ->when($user->role === 'owner', function ($query) use ($user) {
-                return $query->where('owner_id', $user->id);
-            })
-            ->get(['id', 'name']);
-
-        // Get sellers that belong to the current admin's businesses
-        $sellers = User::where('role', 'seller')
-            ->whereHas('branch.business', function ($query) use ($user) {
-                $query->where('owner_id', $user->id);
-            })
-            ->get(['id', 'name', 'email']);
-
         return Inertia::render('Branches/Edit', [
             'business' => $business,
-            'branch' => $branch->load('sellers'),
-            'businesses' => $businesses,
-            'sellers' => $sellers
+            'branch' => $branch,
+            'businesses' => Business::where('owner_id', Auth::id())->get(),
+            'sellers' => $branch->sellers
         ]);
     }
 
     public function update(Request $request, Business $business, Branch $branch)
     {
-        // Check if user has access to this business
-        if (!Auth::user()->canAccessBusiness($business->id)) {
-            abort(403);
-        }
-
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'address' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
-            'business_id' => 'required|exists:businesses,id',
-            'seller_ids' => 'array',
-            'seller_ids.*' => 'exists:users,id'
+            'address' => 'required|string',
+            'gps_latitude' => 'nullable|numeric|between:-90,90',
+            'gps_longitude' => 'nullable|numeric|between:-180,180',
+            'phone' => 'required|string|max:50',
+            'email' => 'required|email|max:255',
         ]);
 
-        // Update branch details
         $branch->update([
             'name' => $validated['name'],
             'address' => $validated['address'],
+            'gps_latitude' => $validated['gps_latitude'] ?? null,
+            'gps_longitude' => $validated['gps_longitude'] ?? null,
             'phone' => $validated['phone'],
-            'business_id' => $validated['business_id']
+            'email' => $validated['email'],
         ]);
 
-        // Handle seller assignments
-        if (isset($validated['seller_ids'])) {
-            // First, remove sellers from their current branches
-            User::whereIn('id', $validated['seller_ids'])
-                ->update(['branch_id' => null]);
-
-            // Then assign them to this branch
-            User::whereIn('id', $validated['seller_ids'])
-                ->update(['branch_id' => $branch->id]);
-        }
-
-        return redirect()->route('branches.index', $business)
+        return redirect()->route('businesses.branches.index', $business)
             ->with('success', 'Branch updated successfully.');
     }
 
     public function destroy(Business $business, Branch $branch)
     {
-        // Check if user has access to this business
-        if (!Auth::user()->canAccessBusiness($business->id)) {
-            abort(403);
-        }
-
         $branch->delete();
+
         return redirect()->route('branches.index', $business)
             ->with('success', 'Branch deleted successfully.');
+    }
+
+    public function generateBarcode(Business $business, Branch $branch)
+    {
+        $barcode = $branch->generateBarcode();
+
+        return response()->json([
+            'barcode' => $barcode,
+            'message' => 'Barcode generated successfully'
+        ]);
+    }
+
+    public function downloadBarcode(Business $business, Branch $branch)
+    {
+        if (!$branch->barcode_path) {
+            return response()->json(['error' => 'No barcode found'], 404);
+        }
+
+        $qrCode = EndroidQrCode::create($branch->barcode_path)
+            ->setEncoding(new Encoding('UTF-8'))
+            ->setErrorCorrectionLevel(new ErrorCorrectionLevelHigh())
+            ->setSize(300)
+            ->setMargin(10)
+            ->setRoundBlockSizeMode(new RoundBlockSizeModeMargin())
+            ->setForegroundColor(new Color(0, 0, 0))
+            ->setBackgroundColor(new Color(255, 255, 255));
+
+        $writer = new PngWriter();
+        $result = $writer->write($qrCode);
+
+        return response($result->getString(), 200)
+            ->header('Content-Type', 'image/png')
+            ->header('Content-Disposition', 'attachment; filename="barcode-' . $branch->barcode_path . '.png"');
+    }
+
+    public function printBarcode(Business $business, Branch $branch)
+    {
+        if (!$branch->barcode_path) {
+            return response()->json(['error' => 'No barcode found'], 404);
+        }
+
+        $qrCode = EndroidQrCode::create($branch->barcode_path)
+            ->setEncoding(new Encoding('UTF-8'))
+            ->setErrorCorrectionLevel(new ErrorCorrectionLevelHigh())
+            ->setSize(300)
+            ->setMargin(10)
+            ->setRoundBlockSizeMode(new RoundBlockSizeModeMargin())
+            ->setForegroundColor(new Color(0, 0, 0))
+            ->setBackgroundColor(new Color(255, 255, 255));
+
+        $writer = new PngWriter();
+        $result = $writer->write($qrCode);
+
+        return response($result->getString(), 200)
+            ->header('Content-Type', 'image/png')
+            ->header('Content-Disposition', 'inline; filename="barcode-' . $branch->barcode_path . '.png"');
     }
 }

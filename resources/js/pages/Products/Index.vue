@@ -59,12 +59,12 @@ const props = defineProps<{
 const removeProduct = (product) => {
     Swal.fire({
         title: 'Are you sure?',
-        text: `Do you want to remove ${product.name} from your products?`,
+        text: `Do you want to remove ${product?.name || 'N/A'} from your inventory?`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#3085d6',
         cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, remove product',
+        confirmButtonText: 'Yes, remove',
         cancelButtonText: 'Cancel'
     }).then((result) => {
         if (result.isConfirmed) {
@@ -72,14 +72,14 @@ const removeProduct = (product) => {
                 onSuccess: () => {
                     Swal.fire(
                         'Removed!',
-                        'Product has been removed successfully.',
+                        'Item has been removed successfully form inventory.',
                         'success'
                     );
                 },
                 onError: () => {
                     Swal.fire(
                         'Error!',
-                        'Failed to remove product. Please try again.',
+                        'Failed to remove item from inventory. Please try again.',
                         'error'
                     );
                 }
@@ -91,12 +91,12 @@ const removeProduct = (product) => {
 
 <template>
     <AppLayout>
-        <Head title="Products" />
+        <Head title="Inventory" />
 
         <template #header>
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                    Products
+                    Inventory
                 </h2>
             </div>
         </template>
@@ -121,7 +121,7 @@ const removeProduct = (product) => {
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <tr v-for="product in products.data" :key="product.id" class="hover:bg-gray-50">
-                                        <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.name }}</td>
+                                        <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product?.name || 'N/A' }}</td>
                                         <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.description }}</td>
                                         <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">KES {{ product.price }}</td>
                                         <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.sku }}</td>
@@ -147,7 +147,7 @@ const removeProduct = (product) => {
                                     </tr>
                                     <tr v-if="products.data.length === 0" class="hover:bg-gray-50">
                                         <td colspan="8" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                            No products found
+                                            No Item found in thr inventory
                                         </td>
                                     </tr>
                                 </tbody>

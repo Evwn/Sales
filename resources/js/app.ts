@@ -26,10 +26,17 @@ createInertiaApp({
     title: (title) => `${title} - ${appName}`,
     resolve: (name) => resolvePageComponent(`./pages/${name}.vue`, import.meta.glob<DefineComponent>('./pages/**/*.vue')),
     setup({ el, App, props, plugin }) {
-        createApp({ render: () => h(App, props) })
-            .use(plugin)
-            .use(ZiggyVue)
-            .mount(el);
+        const app = createApp({ render: () => h(App, props) });
+        
+        // Configure Vue DevTools in development mode
+        if (import.meta.env.DEV) {
+            app.config.performance = true;
+            app.config.devtools = true;
+        }
+
+        app.use(plugin)
+           .use(ZiggyVue)
+           .mount(el);
     },
     progress: {
         color: '#4B5563',

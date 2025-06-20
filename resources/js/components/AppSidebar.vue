@@ -45,12 +45,12 @@ const mainNavItems: NavItem[] = [
         icon: Users,
     },
     {
-        title: 'Products',
+        title: 'Inventory',
         href: '/products',
         icon: Package,
     },
     {
-        title: 'Inventory',
+        title: 'Products',
         href: '/inventory',
         icon: BoxesIcon,
     },

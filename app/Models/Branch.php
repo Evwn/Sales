@@ -4,18 +4,28 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Branch extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'business_id',
         'name',
         'address',
+        'gps_latitude',
+        'gps_longitude',
         'phone',
-        'business_id',
+        'email',
+        'barcode_path',
+    ];
+
+    protected $casts = [
+        'gps_latitude' => 'decimal:8',
+        'gps_longitude' => 'decimal:8',
     ];
 
     public function business(): BelongsTo
@@ -30,7 +40,7 @@ class Branch extends Model
 
     public function sellers(): HasMany
     {
-        return $this->hasMany(User::class)->where('role', 'seller');
+        return $this->hasMany(User::class)->where('role_id', 3);
     }
 
     public function inventory()
@@ -46,5 +56,52 @@ class Branch extends Model
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
+    }
+
+    public function accounts()
+    {
+        return $this->hasMany(Account::class);
+    }
+
+    public function purchases(): HasMany
+    {
+        return $this->hasMany(Purchase::class);
+    }
+
+    public function getFullAddressAttribute(): string
+    {
+        return "{$this->address}, {$this->business->city}, {$this->business->country}";
+    }
+
+    public function getGpsLocationAttribute(): ?array
+    {
+        if (!$this->gps_latitude || !$this->gps_longitude) {
+            return null;
+        }
+
+        return [
+            'latitude' => $this->gps_latitude,
+            'longitude' => $this->gps_longitude,
+        ];
+    }
+
+    public function updateGpsLocation(float $latitude, float $longitude): bool
+    {
+        return $this->update([
+            'gps_latitude' => $latitude,
+            'gps_longitude' => $longitude,
+        ]);
+    }
+
+    public function generateBarcode(): string
+    {
+        // Generate a unique barcode for the branch
+        $barcode = 'BR' . str_pad($this->id, 8, '0', STR_PAD_LEFT);
+        
+        // Save the barcode path
+        $this->barcode_path = $barcode;
+        $this->save();
+        
+        return $barcode;
     }
 } 

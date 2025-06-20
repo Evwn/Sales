@@ -10,12 +10,7 @@ class Discount extends Model
     use HasFactory;
 
     protected $fillable = [
-        'business_id',
-        'product_id',
-        'type',
-        'value',
-        'starts_at',
-        'ends_at',
+        'name', 'description', 'amount', 'type', 'status',
     ];
 
     protected $casts = [
@@ -44,5 +39,10 @@ class Discount extends Model
             return ($price * $this->value) / 100;
         }
         return $this->value;
+    }
+
+    public function sales()
+    {
+        return $this->belongsToMany(Sale::class);
     }
 } 

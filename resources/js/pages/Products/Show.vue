@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import type { BreadcrumbItemType } from '@/types';
 
 const props = defineProps<{
-    business: {
+    branch: {
         id: number;
         name: string;
     };
@@ -16,7 +16,6 @@ const props = defineProps<{
         price: number;
         buying_price: number;
         stock: number;
-        sku: string;
         barcode: string;
         branch: {
             id: number;
@@ -25,20 +24,20 @@ const props = defineProps<{
         inventoryItem: {
             name: string;
             description: string;
-            sku: string;
             barcode: string;
         };
+        min_stock_level: number;
     };
 }>();
 
 const breadcrumbs: BreadcrumbItemType[] = [
     {
-        title: 'Products',
+        title: 'Inventory',
         href: '/products',
     },
     {
-        title: props.product.name,
-        href: `/businesses/${props.business.id}/products/${props.product.id}`,
+        title: props.product?.name || 'N/A',
+        href: `/branches/${props.branch.id}/products/${props.product.id}`,
     },
 ];
 </script>
@@ -47,7 +46,7 @@ const breadcrumbs: BreadcrumbItemType[] = [
     <AppLayout :breadcrumbs="breadcrumbs">
         <template #header>
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Product Details
+                Inventory Item Details
             </h2>
         </template>
 
@@ -57,7 +56,7 @@ const breadcrumbs: BreadcrumbItemType[] = [
                     <div class="p-6">
                         <div class="grid grid-cols-2 gap-6">
                             <div>
-                                <h3 class="text-lg font-medium text-gray-900 mb-4">Product Information</h3>
+                                <h3 class="text-lg font-medium text-gray-900 mb-4">inventory Information</h3>
                                 <dl class="space-y-4">
                                     <div>
                                         <dt class="text-sm font-medium text-gray-500">Name</dt>
@@ -68,17 +67,13 @@ const breadcrumbs: BreadcrumbItemType[] = [
                                         <dd class="mt-1 text-sm text-gray-900">{{ product.inventoryItem.description }}</dd>
                                     </div>
                                     <div>
-                                        <dt class="text-sm font-medium text-gray-500">SKU</dt>
-                                        <dd class="mt-1 text-sm text-gray-900">{{ product.inventoryItem.sku }}</dd>
-                                    </div>
-                                    <div>
                                         <dt class="text-sm font-medium text-gray-500">Barcode</dt>
                                         <dd class="mt-1 text-sm text-gray-900">{{ product.inventoryItem.barcode }}</dd>
                                     </div>
                                 </dl>
                             </div>
                             <div>
-                                <h3 class="text-lg font-medium text-gray-900 mb-4">Business Information</h3>
+                                <h3 class="text-lg font-medium text-gray-900 mb-4">Branch Information</h3>
                                 <dl class="space-y-4">
                                     <div>
                                         <dt class="text-sm font-medium text-gray-500">Price</dt>
@@ -93,6 +88,10 @@ const breadcrumbs: BreadcrumbItemType[] = [
                                         <dd class="mt-1 text-sm text-gray-900">{{ product.stock }}</dd>
                                     </div>
                                     <div>
+                                        <dt class="text-sm font-medium text-gray-500">Minimum Stock Level</dt>
+                                        <dd class="mt-1 text-sm text-gray-900">{{ product.min_stock_level }}</dd>
+                                    </div>
+                                    <div>
                                         <dt class="text-sm font-medium text-gray-500">Branch</dt>
                                         <dd class="mt-1 text-sm text-gray-900">{{ product.branch?.name || 'No branch assigned' }}</dd>
                                     </div>
@@ -102,16 +101,16 @@ const breadcrumbs: BreadcrumbItemType[] = [
 
                         <div class="mt-6 flex space-x-4">
                             <Button
-                                :href="`/businesses/${business.id}/products/${product.id}/edit`"
+                                :href="`/branches/${branch.id}/products/${product.id}/edit`"
                                 variant="outline"
                             >
-                                Edit Product
+                                Edit inventory
                             </Button>
                             <Button
-                                :href="`/businesses/${business.id}/products`"
+                                :href="`/branches/${branch.id}/products`"
                                 variant="outline"
                             >
-                                Back to Products
+                                Back to inventory
                             </Button>
                         </div>
                     </div>

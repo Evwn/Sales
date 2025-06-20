@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -11,38 +12,22 @@ class BusinessAccess
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $business = $request->route('business');
-        $user = $request->user();
+        $user = Auth::user();
+        $businessId = $request->route('business')?->id;
 
-        // Admin can access all businesses
-        if ($user->role === 'admin') {
+        // If no business ID is provided, allow access
+        if (!$businessId) {
             return $next($request);
         }
 
-        // Owner can only access their own businesses
-        if ($user->role === 'owner' && $business->owner_id === $user->id) {
-            return $next($request);
-        }
-
-        // Seller can only access businesses they are assigned to
-        if ($user->role === 'seller') {
-            $hasAccess = $user->branches()
-                ->whereHas('business', function ($query) use ($business) {
-                    $query->where('id', $business->id);
-                })
-                ->exists();
-
-            if ($hasAccess) {
-                return $next($request);
+        // Check if user has access to the business
+        if (!$user->canAccessBusiness($businessId)) {
+            if ($request->inertia()) {
+                return Inertia::location(route('businesses.index'));
             }
+            return redirect()->route('businesses.index')->with('error', 'Unauthorized access to this business.');
         }
 
-        // For Inertia requests, return a redirect response
-        if ($request->inertia()) {
-            return redirect()->route('dashboard')->with('error', 'Unauthorized access to this business.');
-        }
-
-        // For regular requests, return a 403 response
-        return response()->json(['message' => 'Unauthorized access to this business.'], 403);
+        return $next($request);
     }
 } 

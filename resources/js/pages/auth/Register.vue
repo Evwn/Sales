@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
+import InputError from '@/components/InputError.vue';
+import InputLabel from '@/components/InputLabel.vue';
+import PrimaryButton from '@/components/PrimaryButton.vue';
+import TextInput from '@/components/TextInput.vue';
 
 defineProps<{
     quote: {
@@ -20,7 +20,7 @@ const form = useForm({
 });
 
 const submit = () => {
-    form.post('/register', {
+    form.post(route('register'), {
         onFinish: () => form.reset('password', 'password_confirmation'),
     });
 };
@@ -36,13 +36,13 @@ const submit = () => {
                 <div class="text-center">
                     <h1 class="text-3xl font-bold text-gray-900">Sales Management System</h1>
                     <p class="mt-2 text-sm text-gray-600">
-                        Create your business owner account to get started.
+                        Create your account to get started.
                     </p>
                 </div>
 
                 <form @submit.prevent="submit" class="mt-8 space-y-6">
                     <div>
-                        <InputLabel for="name" value="Business Owner Name" />
+                        <InputLabel for="name" value="Full Name" />
                         <TextInput
                             id="name"
                             type="text"
@@ -65,7 +65,7 @@ const submit = () => {
                             v-model="form.email"
                             required
                             autocomplete="username"
-                            placeholder="Enter your business email"
+                            placeholder="Enter your email"
                         />
                         <InputError class="mt-2" :message="form.errors.email" />
                     </div>
@@ -98,26 +98,19 @@ const submit = () => {
                         <InputError class="mt-2" :message="form.errors.password_confirmation" />
                     </div>
 
-                    <div>
-                        <PrimaryButton
-                            class="w-full flex justify-center"
-                            :class="{ 'opacity-25': form.processing }"
-                            :disabled="form.processing"
+                    <div class="flex items-center justify-end mt-4">
+                        <Link
+                            :href="route('login')"
+                            class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                         >
-                            Create Business Owner Account
+                            Already registered?
+                        </Link>
+
+                        <PrimaryButton class="ml-4" :disabled="form.processing">
+                            Register
                         </PrimaryButton>
                     </div>
                 </form>
-
-                <p class="mt-4 text-center text-sm text-gray-600">
-                    Already have an account?
-                    <Link
-                        href="/login"
-                        class="font-medium text-indigo-600 hover:text-indigo-500"
-                    >
-                        Log in
-                    </Link>
-                </p>
             </div>
         </div>
 

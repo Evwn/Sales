@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Services\ActivityLogger;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -31,6 +32,9 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
+
+        // Log the login activity
+        ActivityLogger::logUserLoggedIn(Auth::user());
 
         return redirect()->intended('/dashboard');
     }

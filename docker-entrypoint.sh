@@ -31,9 +31,15 @@ php artisan view:cache
 # Enable error reporting in PHP
 echo "display_errors = On" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 echo "error_reporting = E_ALL" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+echo "log_errors = On" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+echo "error_log = /var/log/php_errors.log" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+
+# Create PHP error log file
+touch /var/log/php_errors.log
+chown www-data:www-data /var/log/php_errors.log
 
 # Start Nginx
 service nginx start
 
-# Start PHP-FPM
-exec "$@" 
+# Start PHP-FPM as www-data
+exec php-fpm -F 

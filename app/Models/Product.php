@@ -4,27 +4,43 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Product extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'inventory_item_id',
-        'business_id',
+        'name',
+        'code',
+        'description',
+        'category_id',
+        'unit_id',
+        'purchase_price',
+        'min_stock',
+        'max_stock',
+        'current_stock',
+        'status',
         'branch_id',
+        'inventory_item_id',
         'price',
         'buying_price',
         'stock',
-        'status',
+        'min_stock_level'
     ];
 
     protected $casts = [
+        'purchase_price' => 'decimal:2',
+        'min_stock' => 'decimal:2',
+        'max_stock' => 'decimal:2',
+        'current_stock' => 'decimal:2',
         'price' => 'decimal:2',
         'buying_price' => 'decimal:2',
         'stock' => 'integer',
+        'min_stock_level' => 'integer'
     ];
 
     protected $with = ['inventoryItem']; // Always load the inventory item
@@ -32,11 +48,6 @@ class Product extends Model
     public function inventoryItem(): BelongsTo
     {
         return $this->belongsTo(InventoryItem::class);
-    }
-
-    public function business(): BelongsTo
-    {
-        return $this->belongsTo(Business::class);
     }
 
     public function branch(): BelongsTo
@@ -49,35 +60,43 @@ class Product extends Model
         return $this->belongsTo(Category::class);
     }
 
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class);
+    }
+
     public function sales(): BelongsToMany
     {
-        return $this->belongsToMany(Sale::class)
-            ->withPivot(['quantity', 'price'])
+        return $this->belongsToMany(Sale::class, 'sale_items')
+            ->withPivot(['quantity', 'unit_price', 'discount', 'tax'])
             ->withTimestamps();
     }
 
-    public function inventory()
+    public function purchases(): BelongsToMany
     {
-        return $this->hasMany(Inventory::class);
+        return $this->belongsToMany(Purchase::class, 'purchase_items')
+            ->withPivot(['quantity', 'unit_price', 'discount', 'tax'])
+            ->withTimestamps();
     }
 
-    public function branches()
+    public function stockMovements(): HasMany
     {
-        return $this->belongsToMany(Branch::class, 'inventory')
-            ->withPivot(['quantity', 'threshold']);
+        return $this->hasMany(StockMovement::class);
     }
 
-    public function discounts()
+    public function manufacturingItems(): HasMany
     {
-        return $this->hasMany(Discount::class);
+        return $this->hasMany(ManufacturingItem::class);
     }
 
-    public function getActiveDiscount()
+    public function isLowStock(): bool
     {
-        return $this->discounts()
-            ->where('starts_at', '<=', now())
-            ->where('ends_at', '>=', now())
-            ->first();
+        return $this->current_stock <= $this->min_stock;
+    }
+
+    public function isOverstocked(): bool
+    {
+        return $this->current_stock >= $this->max_stock;
     }
 
     // Helper method to get the display name
@@ -92,9 +111,23 @@ class Product extends Model
         return $value ?? $this->inventoryItem?->barcode;
     }
 
-    // Helper method to get SKU
-    public function getSkuAttribute($value): ?string
+    public function saleItems()
     {
-        return $value ?? $this->inventoryItem?->sku;
+        return $this->hasMany(SaleItem::class);
+    }
+
+    public function purchaseItems()
+    {
+        return $this->hasMany(PurchaseItem::class);
+    }
+
+    public function stockValuation()
+    {
+        return $this->hasOne(StockValuation::class);
+    }
+
+    public function business()
+    {
+        return $this->belongsTo(\App\Models\Business::class);
     }
 }

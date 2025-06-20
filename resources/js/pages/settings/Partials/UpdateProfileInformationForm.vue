@@ -62,13 +62,7 @@
                 </div>
 
                 <div class="flex items-center justify-end px-4 py-3 bg-gray-50 dark:bg-gray-700 text-right sm:px-6 shadow sm:rounded-bl-md sm:rounded-br-md">
-                    <Button
-                        type="button"
-                        @click="logout"
-                        class="mr-3 inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150"
-                    >
-                        Logout
-                    </Button>
+
                     <Button
                         type="submit"
                         :disabled="form.processing"
@@ -96,7 +90,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Swal from 'sweetalert2';
 import { ref, onMounted, watch } from 'vue';
-import axios from 'axios';
 
 const props = defineProps<{
     user: User;
@@ -106,18 +99,21 @@ const fileInput = ref<HTMLInputElement | null>(null);
 const previewUrl = ref<string | null>(null);
 
 const form = useForm({
-    name: props.user.name || '',
-    email: props.user.email || '',
-    logo_url: props.user.logo_url || '',
+    _method: 'PATCH',
+    name: props.user?.name || '',
+    email: props.user?.email || '',
+    logo_url: props.user?.logo_url || '',
     logo: null as File | null,
 });
 
 // Watch for changes in props to update form
 watch(() => props.user, (newUser) => {
-    form.name = newUser.name || '';
-    form.email = newUser.email || '';
-    form.logo_url = newUser.logo_url || '';
-}, { immediate: true });
+    if (newUser) {
+        form.name = newUser.name || '';
+        form.email = newUser.email || '';
+        form.logo_url = newUser.logo_url || '';
+    }
+}, { immediate: true, deep: true });
 
 onMounted(() => {
     // Initialize file input
@@ -146,80 +142,73 @@ const handleFileSelect = (event: Event) => {
             previewUrl.value = e.target?.result as string;
         };
         reader.readAsDataURL(file);
-
-        // Debug form data
-        console.log('Form data after file selection:', {
-            name: form.name,
-            email: form.email,
-            logo: form.logo,
-            logo_url: form.logo_url
-        });
     }
 };
 
 const updateProfileInformation = () => {
-    // Debug form data before submission
-    console.log('Form data before submission:', {
-        name: form.name,
-        email: form.email,
-        logo: form.logo,
-        logo_url: form.logo_url
-    });
 
     // Show loading state
-    Swal.fire({
+    const loadingSwal = Swal.fire({
         title: 'Updating Profile...',
         allowOutsideClick: false,
-        backdrop: 'rgba(0,0,0,0.4)',
-        timer: 2000,
+        allowEscapeKey: false,
         showConfirmButton: false,
         didOpen: () => {
             Swal.showLoading();
         }
     });
 
-    // Create FormData for file upload
-    const formData = new FormData();
-    formData.append('name', form.name || '');
-    formData.append('email', form.email || '');
-    if (form.logo) {
-        formData.append('logo', form.logo);
-    }
+    // Create form data without validation
+    const formData = {
+        _method: 'PATCH',
+        name: form.name,
+        email: form.email,
+        logo: form.logo,
+        logo_url: form.logo_url
+    };
 
-    // Use axios directly for multipart/form-data
-    axios.patch('/settings/profile', formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-            'X-Requested-With': 'XMLHttpRequest'
+    // Send directly to backend without form validation
+    router.post(route('settings.profile.update'), formData, {
+        preserveScroll: true,
+        forceFormData: true,
+        onSuccess: (response) => {
+            loadingSwal.close();
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: 'Profile updated successfully',
+                timer: 2000,
+                showConfirmButton: false,
+                backdrop: 'rgba(0,0,0,0.4)'
+            });
+            
+            // Update the form with new data from backend
+            if (response.props.flash && response.props.flash.user) {
+                form.logo_url = response.props.flash.user.logo_url;
+                form.name = response.props.flash.user.name;
+                form.email = response.props.flash.user.email;
+            }
+            
+            // Clear preview after successful upload
+            previewUrl.value = null;
+            form.logo = null;
+            
+            // Force a complete page reload to ensure image updates
+            router.visit(window.location.pathname, { 
+                only: ['user'],
+                preserveScroll: true 
+            });
+        },
+        onError: (errors) => {
+            loadingSwal.close();
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: Object.values(errors).join('\n'),
+                confirmButtonText: 'OK',
+                backdrop: 'rgba(0,0,0,0.4)'
+            });
         }
-    })
-    .then((response) => {
-        console.log('Upload successful:', response.data);
-        Swal.fire({
-            icon: 'success',
-            title: 'Success!',
-            text: 'Profile updated successfully',
-            timer: 2000,
-            showConfirmButton: false,
-            backdrop: 'rgba(0,0,0,0.4)'
-        });
-        // Update logo_url from response if available
-        if (response.data.logo_url) {
-            form.logo_url = response.data.logo_url;
-        }
-        // Clear preview after successful upload
-        previewUrl.value = null;
-    })
-    .catch((error) => {
-        console.log('Upload error:', error.response?.data);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error!',
-            text: error.response?.data?.message || 'Failed to update profile. Please try again.',
-            confirmButtonText: 'OK',
-            backdrop: 'rgba(0,0,0,0.4)'
-        });
     });
 };
 

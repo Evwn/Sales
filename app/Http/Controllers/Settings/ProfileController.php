@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
@@ -18,9 +19,27 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        $user = $request->user();
+        $business = $user->business;
+        $branch = $user->branch;
+
         return Inertia::render('settings/Profile', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
+            'user' => [
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'business' => $business ? [
+                    'id' => $business->id,
+                    'name' => $business->name,
+                    'description' => $business->description,
+                ] : null,
+                'branch' => $branch ? [
+                    'id' => $branch->id,
+                    'name' => $branch->name,
+                ] : null,
+            ],
         ]);
     }
 
@@ -29,15 +48,47 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $validated = $request->validated();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        // Handle logo upload
+        if ($request->hasFile('logo')) {
+            // Delete old logo if exists
+            if ($user->logo_url) {
+                $oldPath = str_replace('/storage/', '', $user->logo_url);
+                Storage::disk('public')->delete($oldPath);
+            }
+            
+            // Store new logo
+            $path = $request->file('logo')->store('logos', 'public');
+            $user->logo_url = Storage::url($path);
         }
 
-        $request->user()->save();
+        // Update user profile
+        $user->fill([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+        ]);
 
-        return to_route('profile.edit');
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
+        }
+
+        $user->save();
+
+        // If user is a business owner, update business details
+        if ($user->role === 'owner' && $user->business) {
+            $user->business->update([
+                'name' => $validated['business_name'] ?? $user->business->name,
+                'description' => $validated['business_description'] ?? $user->business->description,
+            ]);
+        }
+
+        return back()->with('status', 'Profile updated successfully.')->with('user', [
+            'name' => $user->name,
+            'email' => $user->email,
+            'logo_url' => $user->logo_url,
+        ]);
     }
 
     /**
@@ -50,6 +101,11 @@ class ProfileController extends Controller
         ]);
 
         $user = $request->user();
+
+        // If user is a business owner, handle business deletion
+        if ($user->role === 'owner' && $user->business) {
+            $user->business->delete();
+        }
 
         Auth::logout();
 

@@ -42,7 +42,6 @@ export interface Product {
     name: string;
     description: string | null;
     price: number;
-    business_id: number;
     created_at: string;
     updated_at: string;
 }

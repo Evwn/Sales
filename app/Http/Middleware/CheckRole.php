@@ -9,7 +9,7 @@ class CheckRole
 {
     public function handle(Request $request, Closure $next, string $role)
     {
-        if (!$request->user() || $request->user()->role !== $role) {
+        if (!$request->user() || $request->user()->role->name !== $role) {
             abort(403);
         }
 

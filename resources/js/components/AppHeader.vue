@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import { Link, usePage } from '@inertiajs/vue3';
-import { ChevronRight, Menu, Sun, Moon } from 'lucide-vue-next';
+import { ChevronRight, Menu, Sun, Moon, ChevronDown, Settings, LogOut } from 'lucide-vue-next';
 import type { BreadcrumbItemType, PageProps } from '@/types';
 import { computed, ref } from 'vue';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface Props {
     breadcrumbs?: BreadcrumbItemType[];
@@ -27,8 +28,8 @@ const navItems = [
     { href: '/businesses', label: 'Businesses' },
     { href: '/branches', label: 'Branches' },
     { href: '/sellers', label: 'Sellers' },
-    { href: '/products', label: 'Products' },
-    { href: '/inventory', label: 'Inventory' },
+    { href: '/products', label: 'Inventory' },
+    { href: '/inventory', label: 'Products' },
     { href: '/discounts', label: 'Discounts' },
     { href: '/sales', label: 'Sales' },
     { href: '/reports', label: 'Reports' },
@@ -83,11 +84,31 @@ defineOptions({
                     </Button>
                 </div>
                 <div class="relative">
-                    <Link href="/settings/profile" class="flex items-center gap-2 hover:opacity-80">
-                        <div class="flex items-center gap-2 text-sm">
-                            <span>{{ page.props.auth.user.name }}</span>
-                        </div>
-                    </Link>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger as-child>
+                            <Button variant="ghost" class="flex items-center gap-2 hover:opacity-80">
+                                <div class="flex items-center gap-2 text-sm">
+                                    <span>{{ page.props.auth.user.name }}</span>
+                                    <ChevronDown class="size-4" />
+                                </div>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" class="w-56">
+                            <DropdownMenuItem as-child>
+                                <Link href="/settings/profile" class="flex items-center gap-2">
+                                    <Settings class="size-4" />
+                                    <span>Settings</span>
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem as-child>
+                                <Link href="/logout" method="post" as="button" class="flex items-center gap-2 text-red-600">
+                                    <LogOut class="size-4" />
+                                    <span>Logout</span>
+                                </Link>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </div>
         </div>
