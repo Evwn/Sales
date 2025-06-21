@@ -38,6 +38,7 @@ class Kernel extends HttpKernel
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \Inertia\Middleware::class,
             \App\Http\Middleware\HandleAppearance::class,
+            // \App\Http\Middleware\RoleRouteAccess::class, // Removed to use alias only
         ],
 
         'api' => [
@@ -68,5 +69,8 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'business.access' => \App\Http\Middleware\BusinessAccess::class,
         'branch.access' => \App\Http\Middleware\CheckBranchAccess::class,
+        'role.access' => \App\Http\Middleware\RoleRouteAccess::class,
+        'role' => \Spatie\Permission\Middlewares\RoleMiddleware::class,
+        'permission' => \Spatie\Permission\Middlewares\PermissionMiddleware::class,
     ];
 } 

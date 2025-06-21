@@ -20,6 +20,14 @@ const props = defineProps({
   height: {
     type: Number,
     default: 200
+  },
+  backgroundColor: {
+    type: Array,
+    default: () => []
+  },
+  borderColor: {
+    type: Array,
+    default: () => []
   }
 });
 
@@ -32,6 +40,16 @@ const createChart = () => {
   }
 
   const ctx = chartRef.value.getContext('2d');
+  
+  // Use custom colors if provided, otherwise use default
+  const backgroundColor = props.backgroundColor.length > 0 
+    ? props.backgroundColor 
+    : 'rgba(59, 130, 246, 0.5)';
+  
+  const borderColor = props.borderColor.length > 0 
+    ? props.borderColor 
+    : 'rgb(59, 130, 246)';
+
   chart = new Chart(ctx, {
     type: 'bar',
     data: {
@@ -39,7 +57,9 @@ const createChart = () => {
       datasets: [{
         label: 'Sales',
         data: props.data,
-        backgroundColor: 'rgba(59, 130, 246, 0.5)'
+        backgroundColor: backgroundColor,
+        borderColor: borderColor,
+        borderWidth: 1
       }]
     },
     options: {
@@ -52,7 +72,12 @@ const createChart = () => {
       },
       scales: {
         y: {
-          beginAtZero: true
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return 'KES ' + value.toLocaleString();
+            }
+          }
         }
       }
     }
@@ -63,7 +88,7 @@ onMounted(() => {
   createChart();
 });
 
-watch(() => [props.data, props.labels], () => {
+watch(() => [props.data, props.labels, props.backgroundColor, props.borderColor], () => {
   createChart();
 }, { deep: true });
 </script> 

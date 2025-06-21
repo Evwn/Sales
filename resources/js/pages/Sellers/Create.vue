@@ -51,6 +51,9 @@
                   autocomplete="new-password"
                 />
                 <InputError :message="form.errors.password" class="mt-2" />
+                <ul v-if="passwordErrors.length" class="text-red-600 text-xs mt-1">
+                  <li v-for="err in passwordErrors" :key="err">{{ err }}</li>
+                </ul>
               </div>
 
               <div>
@@ -99,6 +102,7 @@ import TextInput from '@/components/TextInput.vue';
 import InputError from '@/components/InputError.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import Swal from 'sweetalert2';
+import { ref } from 'vue';
 
 const props = defineProps({
   business: {
@@ -118,7 +122,23 @@ const form = useForm({
   password_confirmation: ''
 });
 
+const passwordErrors = ref<string[]>([]);
+
+function validatePassword(password: string): string[] {
+  const errors: string[] = [];
+  if (password.length < 6) errors.push('Password must be at least 6 characters.');
+  if (!/[A-Z]/.test(password)) errors.push('Password must contain at least 1 uppercase letter.');
+  if (!/[a-z]/.test(password)) errors.push('Password must contain at least 1 lowercase letter.');
+  if (!/[0-9]/.test(password)) errors.push('Password must contain at least 1 number.');
+  if (!/[^A-Za-z0-9]/.test(password)) errors.push('Password must contain at least 1 symbol.');
+  return errors;
+}
+
 const handleSubmit = async () => {
+  passwordErrors.value = validatePassword(form.password);
+  if (passwordErrors.value.length > 0) {
+    return;
+  }
   try {
     // Show loading state
     Swal.fire({

@@ -17,13 +17,44 @@ class ProductController extends Controller
     public function all()
     {
         $user = Auth::user();
-        
-        // Get all products, filtered by user's branch if they are a seller
         $query = Product::query();
-        
+
+        // Debug logging
+        \Log::info('ProductController: User info', [
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'branch_id' => $user->branch_id,
+            'business_id' => $user->business_id,
+            'has_role_seller' => $user->hasRole('seller'),
+            'has_role_owner' => $user->hasRole('owner'),
+            'has_role_admin' => $user->hasRole('admin'),
+            'roles' => $user->getRoleNames()->toArray()
+        ]);
+
         // If user is a seller, only show products from their branch
-        if ($user->role === 'seller') {
+        if ($user->hasRole('seller')) {
             $query->where('branch_id', $user->branch_id);
+            \Log::info('ProductController: Filtering for seller', ['branch_id' => $user->branch_id]);
+        }
+        // If user is an owner, only show products from branches of their businesses
+        elseif ($user->hasRole('owner')) {
+            $query->whereHas('branch.business', function ($q) use ($user) {
+                $q->where('owner_id', $user->id)
+                  ->orWhereHas('admins', function ($q2) use ($user) {
+                      $q2->where('admin_id', $user->id);
+                  });
+            });
+            \Log::info('ProductController: Filtering for owner');
+        }
+        // If user is an admin, only show products from businesses they manage
+        elseif ($user->hasRole('admin')) {
+            $query->whereHas('branch.business', function ($q) use ($user) {
+                $q->where('owner_id', $user->id)
+                  ->orWhereHas('admins', function ($q2) use ($user) {
+                      $q2->where('admin_id', $user->id);
+                  });
+            });
+            \Log::info('ProductController: Filtering for admin');
         }
 
         $products = $query->with(['inventoryItem', 'branch.business'])
@@ -34,6 +65,7 @@ class ProductController extends Controller
                     'name' => $product->inventoryItem->name,
                     'description' => $product->inventoryItem->description,
                     'price' => $product->price,
+                    'buying_price' => $product->buying_price,
                     'barcode' => $product->inventoryItem->barcode,
                     'sku' => $product->inventoryItem->sku,
                     'stock' => $product->stock,
@@ -55,19 +87,21 @@ class ProductController extends Controller
                 ];
             });
 
+        \Log::info('ProductController: Products found', [
+            'count' => $products->count(),
+            'products' => $products->map(function($p) {
+                return [
+                    'id' => $p['id'],
+                    'name' => $p['name'],
+                    'branch_id' => $p['branch']['id'] ?? null
+                ];
+            })->toArray()
+        ]);
+
         // Get businesses for the current user
-        $businesses = Business::when($user->role === 'admin', function ($query) use ($user) {
-                return $query->where('owner_id', $user->id);
-            })
-            ->when($user->role === 'owner', function ($query) use ($user) {
-                return $query->where('owner_id', $user->id);
-            })
-            ->when($user->role === 'seller', function ($query) use ($user) {
-                return $query->whereHas('branches', function ($q) use ($user) {
-                    $q->whereHas('sellers', function ($q) use ($user) {
-                        $q->where('id', $user->id);
-                    });
-                });
+        $businesses = Business::where('owner_id', $user->id)
+            ->orWhereHas('admins', function ($q) use ($user) {
+                $q->where('admin_id', $user->id);
             })
             ->get(['id', 'name']);
 
@@ -207,7 +241,7 @@ class ProductController extends Controller
             ActivityLogger::logInventoryAdjusted($product, auth()->user(), $oldStock, $product->stock);
         }
 
-        return redirect()->route('products.index', $branch)
+        return redirect()->route('products.branch.index', $branch)
             ->with('success', 'Product updated successfully.');
     }
 

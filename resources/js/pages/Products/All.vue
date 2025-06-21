@@ -5,6 +5,7 @@ import Swal from 'sweetalert2';
 import type { SweetAlertOptions } from 'sweetalert2';
 import html2pdf from 'html2pdf.js';
 import html2canvas from 'html2canvas';
+import axios from 'axios';
 
 import AppLayout from '@/layouts';
 import Pagination from '@/components/Pagination.vue';
@@ -40,12 +41,11 @@ interface User {
     id: number;
     name: string;
     email: string;
-    role: {
+    roles: {
         id: number;
         name: string;
-        description: string;
         permissions: string[];
-    };
+    }[];
     branch_id: number | null;
     business_id: number | null;
 }
@@ -64,9 +64,11 @@ interface PageProps {
             name: string;
             description: string;
             price: number;
+            buying_price: number;
             barcode: string;
             sku: string;
             stock: number;
+            min_stock_level: number;
             business: {
                 id: number;
                 name: string;
@@ -125,6 +127,11 @@ const searchQuery = ref('');
 const isProcessing = ref(false);
 const barcodeInput = ref('');
 const showBarcodeInput = ref(false);
+const selectedSale = ref(null);
+const showPreviewModal = ref(false);
+const showEditModal = ref(false);
+const editingProduct = ref(null);
+const isUpdatingProduct = ref(false);
 
 const barcodeBuffer = ref('');
 const barcodeTimeout = ref<number | null>(null);
@@ -186,83 +193,112 @@ const handleSell = async (product: PageProps['products']['data'][0]) => {
             }
         });
 
-        const form = useForm({
-            customer_id: page.props.defaultCustomerId, // Use default customer if available
-            seller_id: page.props.auth.user.id,
-            business_id: product.business.id,
-            branch_id: product.branch?.id,
-            total_amount: product.price * parseInt(quantity),
-            payment_method: 'cash',
-            items: [{
+        try {
+            // Debug logging
+            console.log('DEBUG: Sale processing started', {
                 product: {
                     id: product.id,
                     name: product.name,
-                    price: product.price,
-                    barcode: product.barcode,
+                    business_id: product.business?.id,
+                    branch_id: product.branch?.id,
+                    business: product.business,
+                    branch: product.branch,
                     is_taxable: product.is_taxable,
                     tax_rate: product.tax_rate
                 },
-                quantity: parseInt(quantity)
-            }]
-        });
-
-        try {
-            const response = await form.post(product.branch?.id ? `/businesses/${product.business.id}/branches/${product.branch.id}/sales` : '/sales', {
-                preserveScroll: true,
-                onSuccess: (response) => {
-                    // Close loading Swal
-                    Swal.close();
-                    
-                    // Show success message
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Sale Successful!',
-                        text: `Sold ${quantity} ${product?.name || 'N/A'} for KES ${(product.price * parseInt(quantity)).toFixed(2)}`,
-                        showConfirmButton: true,
-                        confirmButtonText: 'View Receipt'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            // Show receipt preview
-                            selectedSale.value = response.data.sale;
-                            showPreviewModal.value = true;
-                        }
-                    });
-
-                    // Update the Inventory's stock locally
-                    product.stock -= parseInt(quantity);
-                    // Refresh the products list
-                    router.reload({ only: ['products'] });
-                },
-                onError: (errors) => {
-                    // Close loading Swal
-                    Swal.close();
-                    let errorMessage = 'Failed to process sale. Please try again.';
-                    
-                    if (errors.message) {
-                        errorMessage = errors.message;
-                    } else if (errors.business_id) {
-                        errorMessage = 'You do not have access to this business.';
-                    } else if (errors.branch_id) {
-                        errorMessage = 'You do not have access to this branch.';
-                    } else if (errors.customer_id) {
-                        errorMessage = 'Please select a customer.';
-                    }
-
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: errorMessage,
-                        confirmButtonText: 'OK'
-                    });
-                }
+                user: page.props.auth.user,
+                defaultCustomerId: page.props.defaultCustomerId,
+                isSeller: isSeller.value,
+                isOwner: isOwner.value,
+                isAdmin: isAdmin.value
             });
+
+            const saleUrl = (product.branch?.id && (isOwner.value || isAdmin.value)) 
+                ? `/businesses/${product.business.id}/branches/${product.branch.id}/sales` 
+                : '/sales';
+            console.log('DEBUG: Using sale URL:', saleUrl);
+
+            const saleData = {
+                customer_id: page.props.defaultCustomerId, // Use default customer if available
+                seller_id: page.props.auth.user.id,
+                business_id: product.business.id,
+                // Only include branch_id for owners/admins, sellers will have it auto-assigned
+                ...(isOwner.value || isAdmin.value ? { branch_id: product.branch?.id } : {}),
+                total_amount: product.price * parseInt(quantity),
+                payment_method: 'cash',
+                items: [{
+                    product: {
+                        id: product.id,
+                        name: product.name,
+                        price: product.price,
+                        barcode: product.barcode,
+                        is_taxable: product.is_taxable || false,
+                        tax_rate: product.tax_rate || 0
+                    },
+                    quantity: parseInt(quantity)
+                }]
+            };
+
+            console.log('DEBUG: Sale data being sent:', saleData);
+            console.log('DEBUG: About to make axios request to:', saleUrl);
+
+            const response = await axios.post(saleUrl, saleData);
+            console.log('DEBUG: Sale response received:', response);
+
+            // Close loading Swal
+            Swal.close();
+            
+            if (response.data.success) {
+                // Show success message
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Sale Successful!',
+                    text: `Sold ${quantity} ${product?.name || 'N/A'} for KES ${(product.price * parseInt(quantity)).toFixed(2)}`,
+                    showConfirmButton: true,
+                    confirmButtonText: 'View Receipt'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Show receipt preview
+                        selectedSale.value = response.data.sale;
+                        showPreviewModal.value = true;
+                    }
+                });
+
+                // Update the Inventory's stock locally
+                product.stock -= parseInt(quantity);
+                // Refresh the products list
+                router.reload({ only: ['products'] });
+            } else {
+                throw new Error(response.data.error || 'Failed to process sale');
+            }
         } catch (error) {
             // Close loading Swal
             Swal.close();
+            
+            // Debug error logging
+            console.error('DEBUG: Sale processing error:', {
+                error: error,
+                errorMessage: error.message,
+                errorResponse: error.response,
+                errorResponseData: error.response?.data,
+                errorResponseStatus: error.response?.status,
+                errorResponseHeaders: error.response?.headers
+            });
+
+            let errorMessage = 'Failed to process sale. Please try again.';
+            
+            if (error.response?.data?.error) {
+                errorMessage = error.response.data.error;
+            } else if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: 'An unexpected error occurred. Please try again.',
+                text: errorMessage,
                 confirmButtonText: 'OK'
             });
         } finally {
@@ -300,6 +336,68 @@ const removeProduct = (product: PageProps['products']['data'][0]) => {
                         'error'
                     );
                 }
+            });
+        }
+    });
+};
+
+const editProduct = (product: PageProps['products']['data'][0]) => {
+    if (!product.branch) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Cannot Edit',
+            text: 'This product is not assigned to a branch and cannot be edited.',
+            confirmButtonText: 'OK'
+        });
+        return;
+    }
+    editingProduct.value = { ...product };
+    showEditModal.value = true;
+};
+
+const updateProduct = () => {
+    if (!editingProduct.value) return;
+    
+    isUpdatingProduct.value = true;
+    
+    // Show loading Swal
+    const loadingSwal = Swal.fire({
+        title: 'Updating Product...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    router.put(`/branches/${editingProduct.value.branch.id}/products/${editingProduct.value.id}`, {
+        stock: editingProduct.value.stock,
+        min_stock_level: editingProduct.value.min_stock_level,
+        buying_price: editingProduct.value.buying_price,
+        price: editingProduct.value.price
+    }, {
+        onSuccess: () => {
+            // Close loading Swal
+            Swal.close();
+            showEditModal.value = false;
+            editingProduct.value = null;
+            isUpdatingProduct.value = false;
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: 'Product updated successfully',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        },
+        onError: (errors) => {
+            // Close loading Swal
+            Swal.close();
+            isUpdatingProduct.value = false;
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: errors.message || 'Failed to update product',
+                confirmButtonText: 'OK'
             });
         }
     });
@@ -374,8 +472,8 @@ const addToCart = (product: any) => {
             quantity: quantity,
             stock: product.stock,
             sku: product.sku,
-            is_taxable: false,
-            tax_rate: 0,
+            is_taxable: product.is_taxable || false,
+            tax_rate: product.tax_rate || 0,
             barcode: product.barcode,
             image_url: product.inventory_item?.image_url || product.image_url || null
         });
@@ -533,7 +631,11 @@ const processSale = async () => {
                 });
                 // Use axios to get JSON response for receipt
                 const axios = (await import('axios')).default;
-                const response = await axios.post('/sales', form.data(), {
+                // Use branch-specific route if available, otherwise fallback to generic route
+                const route = (page.props.auth.user.branch_id && (isOwner.value || isAdmin.value)) ? 
+                    `/businesses/${page.props.auth.user.business_id}/branches/${page.props.auth.user.branch_id}/sales` : 
+                    '/sales';
+                const response = await axios.post(route, form.data(), {
                     headers: { 'Accept': 'application/json' }
                 });
                 if (response.data && response.data.success) {
@@ -600,8 +702,8 @@ const addToCartWithQuantity = (product: any, quantity: number) => {
             quantity: quantity,
             stock: product.stock,
             sku: product.sku,
-            is_taxable: false,
-            tax_rate: 0,
+            is_taxable: product.is_taxable || false,
+            tax_rate: product.tax_rate || 0,
             barcode: product.barcode,
             image_url: product.inventory_item?.image_url || product.image_url || null
         });
@@ -935,6 +1037,11 @@ const printReceiptImage = async () => {
         console.error('html2canvas error:', err);
     });
 };
+
+const scanBarcode = () => {
+    // Implementation for barcode scanning
+    Swal.fire('Info', 'Barcode scanning feature coming soon!', 'info');
+};
 </script>
 
 <template>
@@ -1212,12 +1319,12 @@ const printReceiptImage = async () => {
                                                     >
                                                         View
                                                     </Link>
-                                                    <Link
-                                                        :href="`/products/${product.id}/edit`"
+                                                    <button
+                                                        @click="editProduct(product)"
                                                         class="text-blue-600 hover:text-blue-900"
                                                     >
                                                         Edit
-                                                    </Link>
+                                                    </button>
                                                     <button
                                                         @click="removeProduct(product)"
                                                         class="text-red-600 hover:text-red-900"
@@ -1378,6 +1485,110 @@ const printReceiptImage = async () => {
                 </div>
             </div>
         </div>
+
+        <!-- Receipt Preview Modal -->
+        <Modal :show="showPreviewModal" @close="showPreviewModal = false">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Sale Receipt</h3>
+                    <Button @click="showPreviewModal = false" variant="outline" size="sm">
+                        Close
+                    </Button>
+                </div>
+                <div v-if="selectedSale" class="space-y-4">
+                    <SalesReceipt :sale="selectedSale" />
+                </div>
+            </div>
+        </Modal>
+
+        <!-- Edit Product Modal -->
+        <Dialog v-model:open="showEditModal">
+            <DialogContent class="sm:max-w-[500px]">
+                <DialogHeader>
+                    <DialogTitle>Edit Product</DialogTitle>
+                </DialogHeader>
+                <div v-if="editingProduct" class="py-4 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Business</label>
+                        <input 
+                            type="text" 
+                            :value="editingProduct.business?.name" 
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-gray-100" 
+                            readonly
+                        />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Branch</label>
+                        <input 
+                            type="text" 
+                            :value="editingProduct.branch?.name || 'No branch assigned'" 
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-gray-100" 
+                            readonly
+                        />
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Stock</label>
+                            <input 
+                                type="number" 
+                                v-model="editingProduct.stock" 
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" 
+                                required 
+                                min="0"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Min Stock Level</label>
+                            <input 
+                                type="number" 
+                                v-model="editingProduct.min_stock_level" 
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" 
+                                required 
+                                min="0"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Buying Price</label>
+                            <input 
+                                type="number" 
+                                v-model="editingProduct.buying_price" 
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" 
+                                required 
+                                min="0" 
+                                step="0.01"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Selling Price</label>
+                            <input 
+                                type="number" 
+                                v-model="editingProduct.price" 
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" 
+                                required 
+                                min="0" 
+                                step="0.01"
+                            />
+                        </div>
+                    </div>
+                </div>
+                <DialogFooter class="flex space-x-2">
+                    <Button
+                        @click="showEditModal = false"
+                        variant="outline"
+                        :disabled="isUpdatingProduct"
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        @click="updateProduct"
+                        :disabled="isUpdatingProduct"
+                        class="bg-blue-600 hover:bg-blue-700"
+                    >
+                        {{ isUpdatingProduct ? 'Updating...' : 'Update Product' }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </AppLayout>
 </template>
 

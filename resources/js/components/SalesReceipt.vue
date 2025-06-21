@@ -3,8 +3,8 @@
     <!-- Front Side -->
     <div class="receipt-side front">
       <div class="receipt-header">
-        <div v-if="businessLogo && businessLogo !== '/products' && businessLogo !== ''" class="business-logo center-logo">
-          <img v-if="businessLogo && businessLogo !== '/products' && businessLogo !== ''" :src="businessLogo" :alt="businessDisplayName" crossorigin="anonymous" />
+        <div v-if="businessLogo" class="business-logo center-logo">
+          <img :src="businessLogo" :alt="businessDisplayName" crossorigin="anonymous" />
         </div>
         <h2 class="business-name">{{ businessDisplayName }}</h2>
         <p class="branch-name">{{ sale.branch?.name }}</p>
@@ -14,7 +14,7 @@
       <div class="receipt-info">
         <div class="info-row">
           <span>Receipt No:</span>
-          <span>{{ sale.reference }}</span>
+          <span>{{ sale.receipt_reference || sale.reference }}</span>
         </div>
         <div class="info-row">
           <span>Date:</span>
@@ -22,7 +22,7 @@
         </div>
         <div class="info-row">
           <span>Cashier:</span>
-          <span>{{ sale.seller?.name }}</span>
+          <span>{{ sale.seller?.name || sale.cashier?.name }}</span>
         </div>
         <div class="info-row" v-if="sale.customer">
           <span>Customer:</span>
@@ -34,21 +34,33 @@
         <div class="items-header">
           <span>Item</span>
           <span>Qty</span>
-          <span>Price</span>
-          <span>Total</span>
+          <span>Price (KES)</span>
+          <span>Total (KES)</span>
         </div>
         <div v-for="item in (sale.receipt_items || sale.items)" :key="item.id" class="item-row">
           <span>{{ item.product_name || item.product?.name || 'N/A' }}</span>
           <span>{{ item.quantity }}</span>
-          <span>{{ formatCurrency(item.unit_price) }}</span>
-          <span>{{ formatCurrency(item.total || item.total_price || item.subtotal) }}</span>
+          <span>{{ Number(item.unit_price || item.price).toFixed(2) }}</span>
+          <span>{{ Number(item.total || item.total_price || item.subtotal).toFixed(2) }}</span>
         </div>
       </div>
 
       <div class="receipt-totals">
         <div class="total-row">
           <span>Subtotal:</span>
-          <span>{{ formatCurrency(sale.receipt_total || sale.subtotal || sale.total_amount) }}</span>
+          <span>{{ formatCurrency(sale.subtotal || sale.receipt_total || sale.total_amount) }}</span>
+        </div>
+        <div v-if="sale.tax && sale.tax > 0" class="total-row">
+          <span>Tax:</span>
+          <span>{{ formatCurrency(sale.tax) }}</span>
+        </div>
+        <div v-if="sale.discount && sale.discount > 0" class="total-row">
+          <span>Discount:</span>
+          <span>{{ formatCurrency(sale.discount) }}</span>
+        </div>
+        <div class="total-row">
+          <span>Total:</span>
+          <span>{{ formatCurrency(sale.total || sale.total_amount) }}</span>
         </div>
         <div class="total-row">
           <span>Payment Method:</span>
@@ -57,7 +69,7 @@
       </div>
 
       <div class="receipt-barcode">
-        <BarcodeDisplay :value="sale.barcode" />
+        <BarcodeDisplay :value="sale.receipt_barcode || sale.barcode" />
       </div>
 
       <div class="receipt-qr" style="text-align:center;margin:10px 0;">
@@ -74,8 +86,8 @@
     <!-- Back Side (if enabled) -->
     <div v-if="showBackSide" class="receipt-side back">
       <div class="back-content">
-        <div v-if="businessLogo && businessLogo !== '/products' && businessLogo !== ''" class="business-logo watermark">
-          <img v-if="businessLogo && businessLogo !== '/products' && businessLogo !== ''" :src="businessLogo" :alt="businessName" crossorigin="anonymous" />
+        <div v-if="businessLogo" class="business-logo watermark">
+          <img :src="businessLogo" :alt="businessDisplayName" crossorigin="anonymous" />
         </div>
         <div class="terms">
           <h3>Terms & Conditions</h3>
@@ -112,7 +124,25 @@ const props = defineProps({
 const receiptRef = ref(null);
 
 const businessLogo = computed(() => {
-  return props.sale.branch?.business?.logo_url || props.sale.business?.logo_url || '';
+  const logoPath = props.sale.branch?.business?.logo_url || 
+                   props.sale.business?.logo_url || 
+                   props.sale.branch?.business?.logo_path || 
+                   props.sale.business?.logo_path || '';
+  
+  if (!logoPath) return '';
+  
+  // If it's already a full URL, return as is
+  if (logoPath.startsWith('http') || logoPath.startsWith('data:')) {
+    return logoPath;
+  }
+  
+  // If it starts with /storage, return as is
+  if (logoPath.startsWith('/storage/')) {
+    return logoPath;
+  }
+  
+  // Otherwise, construct the full path
+  return `/storage/${logoPath}`;
 });
 
 const businessDisplayName = computed(() => {
@@ -120,7 +150,8 @@ const businessDisplayName = computed(() => {
 });
 
 const receiptUrl = computed(() => {
-  return `${window.location.origin}/sales/receipt/${props.sale.reference}`;
+  const reference = props.sale.receipt_reference || props.sale.reference;
+  return `${window.location.origin}/sales/receipt/${reference}`;
 });
 
 const footerText = computed(() => {
@@ -146,7 +177,7 @@ const formatCurrency = (amount) => {
 
 <style scoped>
 .receipt {
-  width: 80mm;
+  width: 100mm;
   max-width: 100vw;
   margin: 0 auto;
   background: white;
@@ -292,7 +323,7 @@ const formatCurrency = (amount) => {
     background: white !important;
   }
   .receipt {
-    width: 80mm !important;
+    width: 100mm !important;
     max-width: 100vw !important;
     font-size: 13px !important;
     box-shadow: none !important;

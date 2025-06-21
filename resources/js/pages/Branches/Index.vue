@@ -75,22 +75,34 @@
                       {{ branch.phone }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {{ branch.business?.name }}
+                      {{ branch.business && branch.business.name ? branch.business.name : 'No business' }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div class="flex space-x-3">
-                        <Link
-                          :href="`/businesses/${branch.business.id}/branches/${branch.id}`"
-                          class="text-indigo-600 hover:text-indigo-900"
-                        >
-                          View
-                        </Link>
-                        <Link
-                          :href="`/businesses/${branch.business.id}/branches/${branch.id}/edit`"
-                          class="text-green-600 hover:text-green-900"
-                        >
-                          Edit
-                        </Link>
+                        <template v-if="isOwner && branch.business && branch.business.id">
+                          <Link
+                            :href="`/businesses/${branch.business.id}/branches/${branch.id}`"
+                            class="text-indigo-600 hover:text-indigo-900"
+                          >
+                            View
+                          </Link>
+                          <Link
+                            :href="`/businesses/${branch.business.id}/branches/${branch.id}/edit`"
+                            class="text-green-600 hover:text-green-900"
+                          >
+                            Edit
+                          </Link>
+                          <button
+                            @click="deleteBranch(branch)"
+                            class="text-red-600 hover:text-red-900"
+                            type="button"
+                          >
+                            Delete
+                          </button>
+                        </template>
+                        <template v-else>
+                          <span class="text-gray-400">No actions</span>
+                        </template>
                       </div>
                     </td>
                   </tr>
@@ -110,9 +122,10 @@
 </template>
 
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import Swal from 'sweetalert2';
 
 const props = defineProps({
   business: {
@@ -132,6 +145,11 @@ const props = defineProps({
   }
 });
 
+const page = usePage();
+const isOwner = computed(() => {
+  return page.props.auth?.user?.roles?.some(role => role.name === 'owner');
+});
+
 const selectedBusinessId = ref(props.business?.id || '');
 
 const handleBusinessChange = () => {
@@ -140,5 +158,21 @@ const handleBusinessChange = () => {
   } else {
     router.visit('/branches');
   }
+};
+
+const deleteBranch = (branch) => {
+  Swal.fire({
+    title: 'Are you sure?',
+    text: `Delete branch "${branch.name}"? This cannot be undone!`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Yes, delete it!'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      router.delete(`/businesses/${branch.business.id}/branches/${branch.id}`);
+    }
+  });
 };
 </script> 

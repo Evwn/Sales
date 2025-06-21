@@ -28,6 +28,7 @@ class SalesReceipt extends Model
         'total_quantity',
         'loyalty_points_earned',
         'payment_methods',
+        'payment_status',
         'notes',
     ];
 

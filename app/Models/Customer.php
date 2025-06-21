@@ -31,12 +31,12 @@ class Customer extends Model
 
     public function business(): BelongsTo
     {
-        return $this->belongsTo(Business::class);
+        return $this->belongsTo(Business::class)->withDefault();
     }
 
     public function branch(): BelongsTo
     {
-        return $this->belongsTo(Branch::class);
+        return $this->belongsTo(Branch::class)->withDefault();
     }
 
     public function sales(): HasMany

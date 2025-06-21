@@ -11,7 +11,7 @@ class DefaultCustomerSeeder extends Seeder
     {
         Customer::create([
             'name' => 'Walk-in Customer',
-            'email' => 'walkin@example.com',
+            'email' => 'walkin@default.com',
             'phone' => '0000000000',
             'address' => 'Walk-in Customer',
             'credit_limit' => 0,

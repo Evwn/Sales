@@ -80,7 +80,7 @@ class SaleController extends Controller
                                 'product_name' => $item->product->inventoryItem->name,
                                 'quantity' => $item->quantity,
                                 'price' => $item->unit_price,
-                                'total' => $item->total_price
+                                'total' => $item->total
                             ];
                         })
                     ];
@@ -102,6 +102,34 @@ class SaleController extends Controller
 
     public function store(Request $request)
     {
+        // Simple test to see if request reaches here
+        Log::info('DEBUG: SaleController store method reached!', [
+            'timestamp' => now(),
+            'user' => auth()->user()->name ?? 'unknown'
+        ]);
+
+        // Debug logging for request details
+        Log::info('DEBUG: SaleController store method called', [
+            'request_url' => $request->url(),
+            'request_method' => $request->method(),
+            'route_name' => $request->route()->getName(),
+            'business_id' => $request->input('business_id'),
+            'branch_id' => $request->input('branch_id'),
+            'user_id' => auth()->id(),
+            'user_roles' => auth()->user()->getRoleNames()->toArray(),
+            'user_branch_id' => auth()->user()->branch_id,
+            'request_data' => $request->all()
+        ]);
+
+        // Get the request data
+        $requestData = $request->all();
+
+        // For sellers, automatically use their assigned branch if not provided
+        if (auth()->user()->hasRole('seller') && !$request->input('branch_id')) {
+            $requestData['branch_id'] = auth()->user()->branch_id;
+            Log::info('DEBUG: Auto-assigned branch_id for seller', ['branch_id' => $requestData['branch_id']]);
+        }
+
         $validated = $request->validate([
             'customer_id' => 'nullable|exists:customers,id',
             'seller_id' => 'required|exists:users,id',
@@ -121,30 +149,94 @@ class SaleController extends Controller
             'discount' => 'nullable|numeric|min:0',
         ]);
 
+        // Use the modified request data for processing
+        $validated = array_merge($validated, $requestData);
+
+        // For sellers, ensure they can only sell products from their assigned branch
+        if (auth()->user()->hasRole('seller')) {
+            $userBranchId = auth()->user()->branch_id;
+            if ($validated['branch_id'] != $userBranchId) {
+                Log::error('DEBUG: Seller trying to sell from wrong branch', [
+                    'user_branch_id' => $userBranchId,
+                    'requested_branch_id' => $validated['branch_id']
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'error' => 'You can only sell products from your assigned branch.'
+                ], 403);
+            }
+        }
+
         try {
             $result = $this->saleService->processSale($validated);
             // Log the activity
             ActivityLogger::logSaleCreated($result['sale'], auth()->user());
 
-            // If the request expects JSON (e.g., AJAX/Inertia modal), return receipt data for printing
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => true,
-                    'receipt' => $result['receipt']->load('items'),
-                    'sale' => $result['sale'],
-                ]);
-            }
-
-            // Otherwise, redirect to sales index with success message
-            return redirect()->route('sales.index')->with('success', 'Sale processed successfully');
+            // Prepare receipt data
+            $receiptData = [
+                'id' => $result['sale']->id,
+                'reference' => $result['sale']->reference,
+                'receipt_reference' => $result['receipt']->reference,
+                'receipt_barcode' => $result['receipt']->barcode,
+                'created_at' => $result['sale']->created_at,
+                'total_amount' => $result['sale']->amount,
+                'payment_method' => $result['sale']->payment_method,
+                'status' => $result['sale']->status,
+                'seller' => [
+                    'id' => $result['sale']->seller->id,
+                    'name' => $result['sale']->seller->name
+                ],
+                'branch' => [
+                    'id' => $result['sale']->branch->id,
+                    'name' => $result['sale']->branch->name,
+                    'business' => [
+                        'id' => $result['sale']->branch->business->id,
+                        'name' => $result['sale']->branch->business->name,
+                        'logo_url' => $result['sale']->branch->business->logo_url,
+                        'receipt_footer' => $result['sale']->branch->business->receipt_footer,
+                        'terms_and_conditions' => $result['sale']->branch->business->terms_and_conditions,
+                        'contact_information' => $result['sale']->branch->business->contact_information,
+                    ]
+                ],
+                'customer' => $result['sale']->customer ? [
+                    'id' => $result['sale']->customer->id,
+                    'name' => $result['sale']->customer->name
+                ] : null,
+                'items' => $result['receipt']->items->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'product_name' => $item->product_name,
+                        'product_barcode' => $item->product_barcode,
+                        'quantity' => $item->quantity,
+                        'unit_price' => $item->unit_price,
+                        'subtotal' => $item->subtotal,
+                        'tax' => $item->tax,
+                        'total' => $item->total,
+                    ];
+                }),
+                'subtotal' => $result['receipt']->subtotal,
+                'tax' => $result['receipt']->tax,
+                'total' => $result['receipt']->total,
+            ];
+            
+            // Return JSON response for receipt data
+            return response()->json([
+                'success' => true,
+                'sale' => $result['sale'],
+                'receipt' => $receiptData
+            ]);
+            
         } catch (\Exception $e) {
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => false,
+            \Log::error('Sale processing error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'request_data' => $request->all(),
+                'user_id' => auth()->id(),
+            ]);
+        
+            return response()->json([
+                'success' => false,
                 'error' => 'Error processing sale: ' . $e->getMessage()
-                ], 500);
-            }
-            return redirect()->back()->with('error', 'Error processing sale: ' . $e->getMessage());
+            ], 500);
         }
     }
 
@@ -171,7 +263,7 @@ class SaleController extends Controller
                 'id' => $sale->id,
                 'reference' => $sale->reference,
                 'created_at' => $sale->created_at,
-                'total_amount' => $sale->total_amount,
+                'total_amount' => $sale->amount,
                 'payment_method' => $sale->payment_method,
                 'status' => $sale->status,
                 'seller' => [
@@ -196,7 +288,7 @@ class SaleController extends Controller
                         ],
                         'quantity' => $item->quantity,
                         'unit_price' => $item->unit_price,
-                        'total_price' => $item->total_price
+                        'total_price' => $item->total
                     ];
                 })
             ]
@@ -292,93 +384,15 @@ class SaleController extends Controller
 
     public function all()
     {
-        $user = auth()->user();
-        $query = Sale::with([
-            'seller',
-            'branch.business',
-            'customer',
-            'items.product.inventoryItem',
-            'sales_receipts.items'
-        ]);
-
-        // Use Spatie's hasRole for seller check
-        if ($user->hasRole('seller')) {
-            $query->where('seller_id', $user->id);
-        }
-
-        $sales = $query->latest('sale_date')->paginate(10);
-
+        $user = Auth::user();
+        $sales = Sale::whereHas('branch.business', function ($q) use ($user) {
+            $q->where('owner_id', $user->id)
+              ->orWhereHas('admins', function ($q2) use ($user) {
+                  $q2->where('admin_id', $user->id);
+              });
+        })->get();
         return Inertia::render('Sales/Index', [
-            'sales' => [
-                'data' => collect($sales->items())->map(function ($sale) {
-                    return [
-                        'id' => $sale->id,
-                        'reference' => $sale->reference,
-                        'created_at' => $sale->created_at,
-                        'sale_date' => $sale->sale_date,
-                        'amount' => $sale->amount,
-                        'discount' => $sale->discount,
-                        'tax' => $sale->tax,
-                        'status' => $sale->status,
-                        'payment_status' => $sale->payment_status,
-                        'payment_method' => $sale->payment_method,
-                        'seller' => $sale->seller ? [
-                            'id' => $sale->seller->id,
-                            'name' => $sale->seller->name
-                        ] : null,
-                        'customer' => $sale->customer ? [
-                            'id' => $sale->customer->id,
-                            'name' => $sale->customer->name
-                        ] : null,
-                        'branch' => $sale->branch ? [
-                            'id' => $sale->branch->id,
-                            'name' => $sale->branch->name,
-                            'business' => $sale->branch->business ? [
-                                'id' => $sale->branch->business->id,
-                                'name' => $sale->branch->business->name
-                            ] : null
-                        ] : null,
-                        'sales_receipts' => $sale->sales_receipts->map(function ($receipt) {
-                            return [
-                                'id' => $receipt->id,
-                                'reference' => $receipt->reference,
-                                'subtotal' => $receipt->subtotal,
-                                'discount' => $receipt->discount,
-                                'tax' => $receipt->tax,
-                                'total' => $receipt->total,
-                                'total_quantity' => $receipt->total_quantity,
-                                'payment_methods' => $receipt->payment_methods,
-                                'notes' => $receipt->notes,
-                                'items' => $receipt->items->map(function ($item) {
-                                    return [
-                                        'product_name' => $item->product_name,
-                                        'quantity' => $item->quantity,
-                                        'unit_price' => $item->unit_price,
-                                        'subtotal' => $item->subtotal,
-                                        'discount' => $item->discount,
-                                        'tax' => $item->tax,
-                                        'total' => $item->total
-                                    ];
-                                })
-                            ];
-                        }),
-                        'items' => $sale->items->map(function ($item) {
-                            return [
-                                'product_name' => $item->product->inventoryItem->name,
-                                'quantity' => $item->quantity,
-                                'unit_price' => $item->unit_price,
-                                'total_price' => $item->total_price
-                            ];
-                        })
-                    ];
-                }),
-                'meta' => [
-                    'current_page' => $sales->currentPage(),
-                    'last_page' => $sales->lastPage(),
-                    'per_page' => $sales->perPage(),
-                    'total' => $sales->total()
-                ]
-            ]
+            'sales' => $sales,
         ]);
     }
 
@@ -706,7 +720,7 @@ class SaleController extends Controller
                 'id' => $sale->id,
                 'reference' => $sale->reference,
                 'created_at' => $sale->created_at,
-                'total_amount' => $sale->total_amount,
+                'total_amount' => $sale->amount,
                 'payment_method' => $sale->payment_method,
                 'status' => $sale->status,
                 'seller' => $sale->seller ? [
@@ -735,7 +749,7 @@ class SaleController extends Controller
                         ],
                         'quantity' => $item->quantity,
                         'unit_price' => $item->unit_price,
-                        'total_price' => $item->total_price
+                        'total_price' => $item->total
                     ];
                 }),
                 'customer' => $sale->customer ? [
@@ -743,12 +757,51 @@ class SaleController extends Controller
                     'name' => $sale->customer->name
                 ] : null,
                 'barcode' => $sale->barcode,
-                'subtotal' => $sale->total_amount, // You can adjust this if you have a separate subtotal
+                'subtotal' => $sale->amount, // You can adjust this if you have a separate subtotal
                 // Add receipt-specific data if needed
                 'receipt_reference' => $receipt->reference,
                 'receipt_total' => $receipt->total,
                 'receipt_items' => $receipt->items,
             ]
         ]);
+    }
+
+    public function testLowStockNotification(Request $request)
+    {
+        try {
+            $lowStockService = new \App\Services\LowStockNotificationService();
+            
+            // Get the business from the request or use a default
+            $businessId = $request->input('business_id');
+            if ($businessId) {
+                $business = \App\Models\Business::with('owner')->find($businessId);
+                if (!$business) {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'Business not found'
+                    ], 404);
+                }
+                
+                $lowStockService->checkBusinessLowStock($business);
+            } else {
+                $lowStockService->checkAndNotifyLowStock();
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Low stock notification check completed'
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Test low stock notification failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to test low stock notification: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

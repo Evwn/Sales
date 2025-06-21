@@ -17,11 +17,22 @@ use App\Mail\SellerAccountUpdatedMail;
 
 class SellerController extends Controller
 {
+    public function __construct()
+    {
+        $user = auth()->user();
+        if ($user && in_array($user->role->name ?? $user->role, ['seller', 'customer', 'supplier'])) {
+            auth()->logout();
+            redirect('/login')->send();
+            exit;
+        }
+    }
+
     public function index(Business $business, Branch $branch)
     {
         $sellers = User::where('role_id', 3)
             ->where('business_id', $business->id)
             ->where('branch_id', $branch->id)
+            ->with(['branch.business'])
             ->get();
 
         return Inertia::render('Sellers/Index', [
@@ -84,7 +95,7 @@ class SellerController extends Controller
 
     public function edit(Business $business, Branch $branch, User $seller)
     {
-        if (!$seller->hasRole('seller') || $seller->business_id !== $business->id || $seller->branch_id !== $branch->id) {
+        if (!$seller->hasRole('seller')) {
             abort(404);
         }
 
@@ -107,7 +118,7 @@ class SellerController extends Controller
 
     public function update(Request $request, Business $business, Branch $branch, User $seller)
     {
-        if (!$seller->hasRole('seller') || $seller->business_id !== $business->id || $seller->branch_id !== $branch->id) {
+        if (!$seller->hasRole('seller')) {
             abort(404);
         }
 
@@ -186,50 +197,25 @@ class SellerController extends Controller
     public function all()
     {
         $user = Auth::user();
-        
-        // Get the user's business if they're not an admin
-        $business = null;
-        if (!$user->hasRole('super_admin')) {
-            $business = Business::where('owner_id', $user->id)->first();
-            
-            if (!$business) {
-                return redirect()->route('businesses.create')
-                    ->with('error', 'You need to create a business first.');
-            }
-        }
-        
         $sellers = User::role('seller')
+            ->whereHas('branch.business', function ($q) use ($user) {
+                $q->where('owner_id', $user->id)
+                  ->orWhereHas('admins', function ($q2) use ($user) {
+                      $q2->where('admin_id', $user->id);
+                  });
+            })
             ->with(['branch.business'])
-            ->when($user->hasRole('admin'), function ($query) use ($user) {
-                // Admin is treated as a business owner
-                return $query->whereHas('branch.business', function ($q) use ($user) {
-                    $q->where('owner_id', $user->id);
-                });
-            })
-            ->when($user->hasRole('owner'), function ($query) use ($user) {
-                // Owner can only see sellers in their businesses
-                return $query->whereHas('branch.business', function ($q) use ($user) {
-                    $q->where('owner_id', $user->id);
-                });
-            })
-            ->when($user->hasRole('seller'), function ($query) use ($user) {
-                // Seller can only see themselves
-                return $query->where('id', $user->id);
-            })
             ->get();
-
         // Get branches for the business if it exists
-        $branches = [];
-        if ($business) {
-            $branches = $business->branches;
-        }
-
+        $branches = Branch::whereHas('business', function ($q) use ($user) {
+            $q->where('owner_id', $user->id)
+              ->orWhereHas('admins', function ($q2) use ($user) {
+                  $q2->where('admin_id', $user->id);
+              });
+        })->get();
         return Inertia::render('Sellers/Index', [
-            'business' => $business,
-            'branch' => null,
             'sellers' => $sellers,
             'branches' => $branches,
-            'userRole' => $user->getRoleNames()->first()
         ]);
     }
 } 

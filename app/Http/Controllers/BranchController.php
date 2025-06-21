@@ -12,8 +12,8 @@ use Endroid\QrCode\QrCode as EndroidQrCode;
 use Endroid\QrCode\Writer\PngWriter;
 use Endroid\QrCode\Color\Color;
 use Endroid\QrCode\Encoding\Encoding;
-use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelHigh;
-use Endroid\QrCode\RoundBlockSizeMode\RoundBlockSizeModeMargin;
+use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevel;
+use Endroid\QrCode\RoundBlockSizeMode\RoundBlockSizeMode;
 use Endroid\QrCode\Label\Label;
 
 class BranchController extends Controller
@@ -21,13 +21,11 @@ class BranchController extends Controller
     public function all()
     {
         $user = Auth::user();
-        
-        // Get all businesses for the current user
-        $businesses = Business::when($user->role === 'admin', function ($query) use ($user) {
-                return $query->where('owner_id', $user->id);
-            })
-            ->when($user->role === 'owner', function ($query) use ($user) {
-                return $query->where('owner_id', $user->id);
+
+        // Only show businesses owned or managed by the user
+        $businesses = Business::where('owner_id', $user->id)
+            ->orWhereHas('admins', function ($q) use ($user) {
+                $q->where('admin_id', $user->id);
             })
             ->get(['id', 'name']);
 
@@ -36,9 +34,12 @@ class BranchController extends Controller
         }
 
         // Get branches for all businesses
-        $branches = Branch::whereIn('business_id', $businesses->pluck('id'))
-            ->with('business')
-            ->get();
+        $branches = Branch::whereHas('business', function ($q) use ($user) {
+            $q->where('owner_id', $user->id)
+              ->orWhereHas('admins', function ($q2) use ($user) {
+                  $q2->where('admin_id', $user->id);
+              });
+        })->with('business')->get();
 
         return Inertia::render('Branches/Index', [
             'business' => null,
@@ -168,14 +169,17 @@ class BranchController extends Controller
             return response()->json(['error' => 'No barcode found'], 404);
         }
 
-        $qrCode = EndroidQrCode::create($branch->barcode_path)
-            ->setEncoding(new Encoding('UTF-8'))
-            ->setErrorCorrectionLevel(new ErrorCorrectionLevelHigh())
-            ->setSize(300)
-            ->setMargin(10)
-            ->setRoundBlockSizeMode(new RoundBlockSizeModeMargin())
-            ->setForegroundColor(new Color(0, 0, 0))
-            ->setBackgroundColor(new Color(255, 255, 255));
+        // v6.0.8 syntax: set all options in the constructor
+        $qrCode = new EndroidQrCode(
+            $branch->barcode_path,
+            new Encoding('UTF-8'),
+            ErrorCorrectionLevel::High,
+            300, // size
+            10, // margin
+            RoundBlockSizeMode::Margin,
+            new Color(0, 0, 0), // foreground
+            new Color(255, 255, 255) // background
+        );
 
         $writer = new PngWriter();
         $result = $writer->write($qrCode);
@@ -191,14 +195,17 @@ class BranchController extends Controller
             return response()->json(['error' => 'No barcode found'], 404);
         }
 
-        $qrCode = EndroidQrCode::create($branch->barcode_path)
-            ->setEncoding(new Encoding('UTF-8'))
-            ->setErrorCorrectionLevel(new ErrorCorrectionLevelHigh())
-            ->setSize(300)
-            ->setMargin(10)
-            ->setRoundBlockSizeMode(new RoundBlockSizeModeMargin())
-            ->setForegroundColor(new Color(0, 0, 0))
-            ->setBackgroundColor(new Color(255, 255, 255));
+        // v6.0.8 syntax: set all options in the constructor
+        $qrCode = new EndroidQrCode(
+            $branch->barcode_path,
+            new Encoding('UTF-8'),
+            ErrorCorrectionLevel::High,
+            300, // size
+            10, // margin
+            RoundBlockSizeMode::Margin,
+            new Color(0, 0, 0), // foreground
+            new Color(255, 255, 255) // background
+        );
 
         $writer = new PngWriter();
         $result = $writer->write($qrCode);

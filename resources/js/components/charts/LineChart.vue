@@ -32,29 +32,56 @@ const createChart = () => {
   }
 
   const ctx = chartRef.value.getContext('2d');
+  
+  // Check if data is an array of datasets (multi-line) or single dataset
+  const datasets = Array.isArray(props.data) && props.data.length > 0 && props.data[0].data 
+    ? props.data // Multi-line chart with datasets
+    : [{ // Single line chart
+        label: 'Sales',
+        data: props.data,
+        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgb(59, 130, 246)20',
+        tension: 0.1,
+        fill: false
+      }];
+
   chart = new Chart(ctx, {
     type: 'line',
     data: {
       labels: props.labels,
-      datasets: [{
-        label: 'Sales',
-        data: props.data,
-        borderColor: 'rgb(59, 130, 246)',
-        tension: 0.1,
-        fill: false
-      }]
+      datasets: datasets
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          display: false
+          display: datasets.length > 1, // Show legend only for multi-line charts
+          position: 'top',
+          labels: {
+            usePointStyle: true,
+            padding: 20
+          }
         }
       },
       scales: {
         y: {
-          beginAtZero: true
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return 'KES ' + value.toLocaleString();
+            }
+          }
+        }
+      },
+      interaction: {
+        intersect: false,
+        mode: 'index'
+      },
+      elements: {
+        point: {
+          radius: 4,
+          hoverRadius: 6
         }
       }
     }

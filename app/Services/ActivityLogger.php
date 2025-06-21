@@ -28,9 +28,9 @@ class ActivityLogger
     {
         return self::log('sale_created', [
             'amount' => $sale->amount,
-            'seller_name' => $sale->seller->name,
-            'branch_name' => $sale->branch->name,
-            'items_count' => $sale->items->count(),
+            'seller_name' => $sale->seller->name ?? 'Unknown Seller',
+            'branch_name' => $sale->branch->name ?? 'Unknown Branch',
+            'items_count' => $sale->items ? $sale->items->count() : 0,
         ], $sale, $user);
     }
 

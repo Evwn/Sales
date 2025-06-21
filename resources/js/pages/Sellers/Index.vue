@@ -8,9 +8,9 @@
           Sellers
         </h2>
         <div class="flex items-center space-x-4">
-          <!-- Branch selection for admin -->
+          <!-- Always show branch selection if branches are available -->
           <select
-            v-if="business && !branch"
+            v-if="branches && branches.length > 0"
             v-model="selectedBranch"
             class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
             @change="onBranchSelect"
@@ -20,11 +20,12 @@
               {{ branch.name }}
             </option>
           </select>
-          
           <!-- Add Seller button -->
           <Link
-            v-if="business && (branch || userRole === 'super_admin')"
-            :href="branch ? `/businesses/${business.id}/branches/${branch.id}/sellers/create` : `/businesses/${business.id}/branches/${selectedBranch}/sellers/create`"
+            v-if="(selectedBranch && getBusinessIdForBranch(selectedBranch)) || (business && branch)"
+            :href="branch
+              ? `/businesses/${business.id}/branches/${branch.id}/sellers/create`
+              : `/businesses/${getBusinessIdForBranch(selectedBranch)}/branches/${selectedBranch}/sellers/create`"
             class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
           >
             Add Seller
@@ -37,7 +38,7 @@
       <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
           <div class="p-6 lg:p-8">
-            <div v-if="!business" class="text-center py-4">
+            <div v-if="!branches || branches.length === 0" class="text-center py-4">
               <p class="text-gray-600">You need to create a business first.</p>
               <Link
                 href="/businesses/create"
@@ -159,9 +160,18 @@ const selectedBranch = ref('');
 
 const onBranchSelect = () => {
   if (selectedBranch.value) {
-    router.visit(`/businesses/${props.business.id}/branches/${selectedBranch.value}/sellers`);
+    // Find the business for the selected branch
+    const branch = props.branches.find(b => b.id == selectedBranch.value);
+    if (branch && branch.business_id) {
+      router.visit(`/businesses/${branch.business_id}/branches/${branch.id}/sellers`);
+    }
   }
 };
+
+function getBusinessIdForBranch(branchId) {
+  const branch = props.branches.find(b => b.id == branchId);
+  return branch ? branch.business_id : '';
+}
 
 const deleteSeller = (seller) => {
   if (confirm('Are you sure you want to delete this seller?')) {

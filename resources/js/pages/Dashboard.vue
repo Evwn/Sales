@@ -413,6 +413,7 @@ const filter = ref('all'); // Default to 'all'
 const showCustomDatePicker = ref(false);
 const startDate = ref('');
 const endDate = ref('');
+const selectedBusiness = ref('all'); // Add business filter
 
 const today = new Date();
 today.setHours(0, 0, 0, 0);
@@ -439,14 +440,22 @@ const filteredSales = computed(() => {
     // Get all sales data from props
     const sales = props.stats?.sales || [];
 
-    if (filter.value === 'all') return sales;
+    // First filter by business if selected
+    let businessFilteredSales = sales;
+    if (selectedBusiness.value !== 'all') {
+        businessFilteredSales = sales.filter(sale => {
+            return sale.branch?.business?.id === Number(selectedBusiness.value);
+        });
+    }
+
+    if (filter.value === 'all') return businessFilteredSales;
 
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    return sales.filter(sale => {
+    return businessFilteredSales.filter(sale => {
         const saleDate = new Date(sale.created_at);
         switch (filter.value) {
             case 'today':
@@ -508,6 +517,26 @@ const averageFilteredOrderValue = computed(() => {
     return totalFilteredSales.value / filteredSales.value.length;
 });
 
+// Get unique businesses from sales data
+const availableBusinesses = computed(() => {
+    const sales = props.stats?.sales || [];
+    const businesses = new Map();
+    
+    sales.forEach(sale => {
+        if (sale.branch?.business) {
+            const business = sale.branch.business;
+            if (!businesses.has(business.id)) {
+                businesses.set(business.id, {
+                    id: business.id,
+                    name: business.name
+                });
+            }
+        }
+    });
+    
+    return Array.from(businesses.values()).sort((a, b) => a.name.localeCompare(b.name));
+});
+
 // Add watch for selectedPeriod changes
 const getYesterdayRange = () => {
     const todayForComparison = new Date(today);
@@ -526,30 +555,82 @@ const filteredSalesTrend = computed(() => {
     const sales = filteredSales.value;
     console.log('Filtered Sales for Trend:', sales);
 
-    // Group sales by date
+    // Group sales by date and branch
     const groupedSales = sales.reduce((acc, sale) => {
-        const date = new Date(sale.created_at).toLocaleDateString();
-        if (!acc[date]) {
-            acc[date] = 0;
+        const date = new Date(sale.created_at);
+        const dateKey = date.toISOString().split('T')[0]; // Use YYYY-MM-DD format for consistency
+        const branchName = sale.branch?.name || 'Unknown Branch';
+        
+        if (!acc[dateKey]) {
+            acc[dateKey] = {};
         }
-        acc[date] += Number(sale.amount) || 0;
+        if (!acc[dateKey][branchName]) {
+            acc[dateKey][branchName] = 0;
+        }
+        acc[dateKey][branchName] += Number(sale.amount) || 0;
         return acc;
     }, {});
 
-    console.log('Grouped Sales:', groupedSales);
+    console.log('Grouped Sales by Branch:', groupedSales);
 
-    // Sort dates chronologically
-    const sortedDates = Object.keys(groupedSales).sort((a, b) => new Date(a) - new Date(b));
-    const data = sortedDates.map(date => groupedSales[date]);
+    // Get all unique branch names
+    const allBranches = new Set();
+    Object.values(groupedSales).forEach(dateData => {
+        Object.keys(dateData).forEach(branch => allBranches.add(branch));
+    });
+    const branchNames = Array.from(allBranches);
+
+    // Sort dates chronologically (oldest to newest)
+    const sortedDates = Object.keys(groupedSales).sort((a, b) => {
+        return a.localeCompare(b); // Since we're using YYYY-MM-DD format, string comparison works
+    });
+
+    // Format dates for display (convert back to readable format)
+    const formattedLabels = sortedDates.map(date => {
+        const dateObj = new Date(date);
+        return dateObj.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric' 
+        });
+    });
+
+    // Create datasets for each branch
+    const branchColors = [
+        'rgb(59, 130, 246)',   // Blue
+        'rgb(16, 185, 129)',   // Green
+        'rgb(245, 158, 11)',   // Yellow
+        'rgb(239, 68, 68)',    // Red
+        'rgb(139, 92, 246)',   // Purple
+        'rgb(236, 72, 153)',   // Pink
+        'rgb(14, 165, 233)',   // Sky Blue
+        'rgb(34, 197, 94)',    // Emerald
+        'rgb(251, 146, 60)',   // Orange
+        'rgb(168, 85, 247)'    // Violet
+    ];
+
+    const datasets = branchNames.map((branchName, index) => {
+        const data = sortedDates.map(date => {
+            return groupedSales[date][branchName] || 0;
+        });
+
+        return {
+            label: branchName,
+            data: data,
+            borderColor: branchColors[index % branchColors.length],
+            backgroundColor: branchColors[index % branchColors.length] + '20', // Add transparency
+            tension: 0.1,
+            fill: false
+        };
+    });
 
     console.log('Sales Trend Data:', {
-        labels: sortedDates,
-        data: data
+        labels: formattedLabels,
+        datasets: datasets
     });
 
     return {
-        labels: sortedDates,
-        data: data
+        labels: formattedLabels,
+        datasets: datasets
     };
 });
 
@@ -574,14 +655,40 @@ const filteredBranchPerformance = computed(() => {
     const labels = Object.keys(branchSales);
     const data = Object.values(branchSales);
 
+    // Use the same colors as Sales Trend chart
+    const branchColors = [
+        'rgb(59, 130, 246)',   // Blue
+        'rgb(16, 185, 129)',   // Green
+        'rgb(245, 158, 11)',   // Yellow
+        'rgb(239, 68, 68)',    // Red
+        'rgb(139, 92, 246)',   // Purple
+        'rgb(236, 72, 153)',   // Pink
+        'rgb(14, 165, 233)',   // Sky Blue
+        'rgb(34, 197, 94)',    // Emerald
+        'rgb(251, 146, 60)',   // Orange
+        'rgb(168, 85, 247)'    // Violet
+    ];
+
+    const backgroundColor = labels.map((_, index) => 
+        branchColors[index % branchColors.length]
+    );
+
+    const borderColor = labels.map((_, index) => 
+        branchColors[index % branchColors.length]
+    );
+
     console.log('Branch Performance Data:', {
         labels: labels,
-        data: data
+        data: data,
+        backgroundColor: backgroundColor,
+        borderColor: borderColor
     });
 
     return {
         labels: labels,
-        data: data
+        data: data,
+        backgroundColor: backgroundColor,
+        borderColor: borderColor
     };
 });
 
@@ -845,27 +952,51 @@ if (props.user.business) {
                     </div>
                 </div>
 
+                <!-- Business Filter for Charts -->
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                    <div class="p-6">
+                        <div class="flex flex-wrap gap-4 items-center">
+                            <label class="text-sm font-medium text-gray-700">Business Filter:</label>
+                            <select
+                                v-model="selectedBusiness"
+                                class="rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                            >
+                                <option value="all">All Businesses</option>
+                                <option 
+                                    v-for="business in availableBusinesses" 
+                                    :key="business.id" 
+                                    :value="business.id"
+                                >
+                                    {{ business.name }}
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Charts Section -->
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                            <!-- Sales Trend -->
-                            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                                <div class="p-6">
-                        <h3 class="text-lg font-medium text-gray-900 mb-4">Sales Trend</h3>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <!-- Sales Trend -->
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="p-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Sales Trend</h3>
                             <LineChart
-                                        :data="filteredSalesTrend.data"
+                                        :data="filteredSalesTrend.datasets"
                                         :labels="filteredSalesTrend.labels"
                                         :height="300"
                             />
                         </div>
                     </div>
 
-                            <!-- Branch Performance -->
-                            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                                <div class="p-6">
-                        <h3 class="text-lg font-medium text-gray-900 mb-4">Branch Performance</h3>
+                    <!-- Branch Performance -->
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="p-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Branch Performance</h3>
                             <BarChart
                                         :data="filteredBranchPerformance.data"
                                         :labels="filteredBranchPerformance.labels"
+                                        :backgroundColor="filteredBranchPerformance.backgroundColor"
+                                        :borderColor="filteredBranchPerformance.borderColor"
                                         :height="300"
                             />
                         </div>

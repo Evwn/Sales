@@ -192,6 +192,7 @@
                       v-model="form.industry"
                       type="text"
                       class="mt-1 block w-full"
+                      :required="false"
                     />
                     <InputError :message="form.errors.industry" class="mt-2" />
                   </div>
@@ -203,6 +204,7 @@
                       v-model="form.website"
                       type="url"
                       class="mt-1 block w-full"
+                      :required="false"
                     />
                     <InputError :message="form.errors.website" class="mt-2" />
                   </div>
@@ -214,6 +216,7 @@
                       v-model="form.tax_number"
                       type="text"
                       class="mt-1 block w-full"
+                      :required="false"
                     />
                     <InputError :message="form.errors.tax_number" class="mt-2" />
                   </div>
@@ -223,12 +226,19 @@
               <!-- Step 5: Documents -->
               <div v-show="currentStep === 4">
                 <div class="space-y-6">
+                  <!-- Logo -->
                   <div>
                     <InputLabel for="logo" value="Business Logo" />
                     <div class="mt-1 flex items-center">
                       <img
-                        v-if="form.logo"
+                        v-if="form.logo && form.logo instanceof File"
                         :src="URL.createObjectURL(form.logo)"
+                        class="h-20 w-20 object-cover rounded-lg mr-4"
+                        alt="Business logo"
+                      />
+                      <img
+                        v-else-if="form.logo && typeof form.logo === 'string'"
+                        :src="form.logo"
                         class="h-20 w-20 object-cover rounded-lg mr-4"
                         alt="Business logo"
                       />
@@ -243,17 +253,24 @@
                         for="logo"
                         class="cursor-pointer inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150"
                       >
-                        Upload Logo
+                        {{ form.logo && form.logo instanceof File ? 'Change Logo' : 'Upload Logo' }}
                       </label>
+                      <span v-if="form.logo && form.logo instanceof File" class="ml-2 text-sm text-primary-600 dark:text-primary-400">
+                        {{ form.logo.name }}
+                      </span>
                     </div>
                     <InputError :message="form.errors.logo" class="mt-2" />
                   </div>
 
+                  <!-- Tax Document -->
                   <div>
                     <InputLabel for="tax_document" value="Tax Document" />
                     <div class="mt-1 flex items-center">
                       <div class="flex-1">
-                        <span v-if="form.tax_document" class="text-sm text-primary-600 dark:text-primary-400">
+                        <span v-if="form.tax_document && typeof form.tax_document === 'string'" class="text-sm text-gray-500 dark:text-gray-400 mr-4">
+                          Current: {{ form.tax_document.split('/').pop() }}
+                        </span>
+                        <span v-if="form.tax_document && form.tax_document instanceof File" class="text-sm text-primary-600 dark:text-primary-400">
                           Selected: {{ form.tax_document.name }}
                         </span>
                       </div>
@@ -268,17 +285,21 @@
                         for="tax_document"
                         class="cursor-pointer inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150"
                       >
-                        Upload Document
+                        {{ form.tax_document && form.tax_document instanceof File ? 'Change Document' : 'Upload Document' }}
                       </label>
                     </div>
                     <InputError :message="form.errors.tax_document" class="mt-2" />
                   </div>
 
+                  <!-- Registration Document -->
                   <div>
                     <InputLabel for="registration_document" value="Business Registration Document" />
                     <div class="mt-1 flex items-center">
                       <div class="flex-1">
-                        <span v-if="form.registration_document" class="text-sm text-primary-600 dark:text-primary-400">
+                        <span v-if="form.registration_document && typeof form.registration_document === 'string'" class="text-sm text-gray-500 dark:text-gray-400 mr-4">
+                          Current: {{ form.registration_document.split('/').pop() }}
+                        </span>
+                        <span v-if="form.registration_document && form.registration_document instanceof File" class="text-sm text-primary-600 dark:text-primary-400">
                           Selected: {{ form.registration_document.name }}
                         </span>
                       </div>
@@ -293,10 +314,39 @@
                         for="registration_document"
                         class="cursor-pointer inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150"
                       >
-                        Upload Document
+                        {{ form.registration_document && form.registration_document instanceof File ? 'Change Document' : 'Upload Document' }}
                       </label>
                     </div>
                     <InputError :message="form.errors.registration_document" class="mt-2" />
+                  </div>
+
+                  <!-- Terms and Conditions Document -->
+                  <div>
+                    <InputLabel for="terms_and_conditions" value="Terms and Conditions (Document)" />
+                    <div class="mt-1 flex items-center">
+                      <div class="flex-1">
+                        <span v-if="form.terms_and_conditions && typeof form.terms_and_conditions === 'string'" class="text-sm text-gray-500 dark:text-gray-400 mr-4">
+                          Current: {{ form.terms_and_conditions.split('/').pop() }}
+                        </span>
+                        <span v-if="form.terms_and_conditions && form.terms_and_conditions instanceof File" class="text-sm text-primary-600 dark:text-primary-400">
+                          Selected: {{ form.terms_and_conditions.name }}
+                        </span>
+                      </div>
+                      <input
+                        type="file"
+                        id="terms_and_conditions"
+                        @change="handleTermsChange"
+                        accept=".pdf,.doc,.docx"
+                        class="hidden"
+                      />
+                      <label
+                        for="terms_and_conditions"
+                        class="cursor-pointer inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150"
+                      >
+                        {{ form.terms_and_conditions && form.terms_and_conditions instanceof File ? 'Change Document' : 'Upload Document' }}
+                      </label>
+                    </div>
+                    <InputError :message="form.errors.terms_and_conditions" class="mt-2" />
                   </div>
                 </div>
               </div>
@@ -373,14 +423,14 @@ const form = useForm({
   tax_number: '',
   logo: null as File | null,
   tax_document: null as File | null,
-  registration_document: null as File | null
+  registration_document: null as File | null,
+  terms_and_conditions: null as File | null
 });
 
 const handleLogoChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files[0]) {
     form.logo = target.files[0];
-    form.logo = Object.assign({}, form.logo);
   }
 };
 
@@ -388,7 +438,6 @@ const handleTaxDocumentChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files[0]) {
     form.tax_document = target.files[0];
-    form.tax_document = Object.assign({}, form.tax_document);
   }
 };
 
@@ -396,7 +445,13 @@ const handleRegistrationDocumentChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files[0]) {
     form.registration_document = target.files[0];
-    form.registration_document = Object.assign({}, form.registration_document);
+  }
+};
+
+const handleTermsChange = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (target.files && target.files[0]) {
+    form.terms_and_conditions = target.files[0];
   }
 };
 
@@ -444,10 +499,10 @@ const validateStep = (step: number): boolean => {
       }
       break;
     case 3: // Business Details
-      // Optional fields, no validation needed
+      // All fields optional in this step
       break;
     case 4: // Documents
-      // Optional fields, no validation needed
+      // All fields optional in this step
       break;
   }
   return true;
@@ -487,6 +542,8 @@ const handleSubmit = async () => {
 
     // Submit the form
     await form.post(route('businesses.store'), {
+      forceFormData: true,
+      preserveScroll: true,
       onSuccess: () => {
         Swal.fire({
           icon: 'success',

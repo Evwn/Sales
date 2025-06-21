@@ -31,7 +31,7 @@ Route::get('/', function () {
     ]);
 });
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::class])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -46,6 +46,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
     Route::get('/discounts', [DiscountController::class, 'index'])->name('discounts.index');
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
     
     // Products - redirect to first business or show message if no businesses
     Route::get('/products', [ProductController::class, 'all'])->name('products.all');
@@ -55,7 +56,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('inventory-items', InventoryItemController::class)->except(['destroy']);
 
     // Business routes
-    Route::prefix('businesses')->group(function () {
+    Route::prefix('businesses')->middleware([\App\Http\Middleware\RoleRouteAccess::class])->group(function () {
         Route::get('/', [BusinessController::class, 'index'])->name('businesses.index');
         Route::get('/create', [BusinessController::class, 'create'])->name('businesses.create');
         Route::post('/', [BusinessController::class, 'store'])->name('businesses.store');
@@ -151,9 +152,10 @@ Route::middleware(['auth'])->group(function () {
 
 // Products
 Route::middleware(['auth'])->group(function () {
-    Route::get('/branches/{branch}/products', [ProductController::class, 'index'])->name('products.index');
-    Route::post('/branches/{branch}/products', [ProductController::class, 'store'])->name('products.store');
-    Route::delete('/branches/{branch}/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+    Route::get('/branches/{branch}/products', [ProductController::class, 'index'])->name('products.branch.index');
+    Route::post('/branches/{branch}/products', [ProductController::class, 'store'])->name('products.branch.store');
+    Route::put('/branches/{branch}/products/{product}', [ProductController::class, 'update'])->name('products.branch.update');
+    Route::delete('/branches/{branch}/products/{product}', [ProductController::class, 'destroy'])->name('products.branch.destroy');
 });
 
 // Public receipt route (no auth required)
@@ -161,6 +163,10 @@ Route::get('/sales/receipt/{reference}', [App\Http\Controllers\SaleController::c
 
 Route::get('/sales/verify-barcode', [SaleController::class, 'verifyBarcode'])->name('sales.verify-barcode');
 Route::get('/sales/{sale}/print-receipt', [SaleController::class, 'printReceipt'])->name('sales.print-receipt');
+
+// Test low stock notification
+Route::post('/test-low-stock-notification', [App\Http\Controllers\SaleController::class, 'testLowStockNotification'])
+    ->name('test.low.stock.notification');
 
 require __DIR__.'/auth.php';
 require __DIR__.'/settings.php';

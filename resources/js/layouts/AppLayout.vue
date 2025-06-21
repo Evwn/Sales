@@ -79,10 +79,24 @@ const isCurrentRoute = (route: string) => {
 const dropdownAlign = computed(() => {
     return window.innerWidth < 640 ? 'start' : 'end';
 });
+
+const isOffline = ref(!navigator.onLine);
+
+window.addEventListener('online', () => { isOffline.value = false; });
+window.addEventListener('offline', () => { isOffline.value = true; });
 </script>
 
 <template>
     <div>
+        <div class="fixed bottom-4 right-4 z-50 flex items-center space-x-2 w-auto">
+            <span :class="[
+                'inline-block h-3 w-3 rounded-full',
+                isOffline ? 'bg-red-500' : 'bg-green-500'
+            ]"></span>
+            <span class="text-sm text-gray-800 dark:text-gray-100">
+                {{ isOffline ? 'Offline' : 'Online' }}
+            </span>
+        </div>
         <div class="min-h-screen bg-gray-100 dark:bg-neutral-900">
             <nav class="bg-white dark:bg-neutral-800 border-b border-gray-100 dark:border-neutral-700">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -134,6 +148,9 @@ const dropdownAlign = computed(() => {
                                 <NavLink href="/sellers" :active="isCurrentRoute('/sellers')">Sellers</NavLink>
                                 <NavLink href="/products" :active="isCurrentRoute('/products')" class="text-gray-900 dark:text-neutral-100 hover:text-gray-700 dark:hover:text-neutral-300">
                                     Inventory
+                                </NavLink>
+                                <NavLink href="/inventory-items" :active="isCurrentRoute('/inventory-items')" class="text-gray-900 dark:text-neutral-100 hover:text-gray-700 dark:hover:text-neutral-300">
+                                    Products
                                 </NavLink>
                                 <NavLink v-if="isOwner || canAccessDiscounts" href="/discounts" :active="isCurrentRoute('/discounts')" class="text-gray-900 dark:text-neutral-100 hover:text-gray-700 dark:hover:text-neutral-300">
                                     Discounts
