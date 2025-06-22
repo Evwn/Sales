@@ -133,7 +133,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::cla
         ->middleware('role:owner');
 
     // PDF Export Routes (Owner Only)
-    Route::middleware(['role:owner'])->group(function () {
+    Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/sales/{sale}/receipt/pdf', [SaleController::class, 'exportReceiptPDF'])->name('sales.receipt.pdf');
         Route::get('/sales/report/pdf', [SaleController::class, 'exportSalesReportPDF'])->name('sales.report.pdf');
         Route::get('/sales/daily-report/pdf', [SaleController::class, 'exportDailyReportPDF'])->name('sales.daily-report.pdf');

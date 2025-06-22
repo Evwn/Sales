@@ -130,12 +130,6 @@ window.addEventListener('offline', () => { isOffline.value = true; });
                                 <NavLink href="/products" :active="isCurrentRoute('/products')" class="text-gray-900 dark:text-neutral-100 hover:text-gray-700 dark:hover:text-neutral-300">
                                     Inventory
                                 </NavLink>
-                                <NavLink href="/inventory-items" :active="isCurrentRoute('/inventory-items')" class="text-gray-900 dark:text-neutral-100 hover:text-gray-700 dark:hover:text-neutral-300">
-                                    Products
-                                </NavLink>
-                                <NavLink href="/sales" :active="isCurrentRoute('/sales')" class="text-gray-900 dark:text-neutral-100 hover:text-gray-700 dark:hover:text-neutral-300">
-                                    Sales
-                                </NavLink>
                             </template>
                             <!-- Owner Navigation -->
                             <template v-else-if="isOwner">
@@ -151,9 +145,6 @@ window.addEventListener('offline', () => { isOffline.value = true; });
                                 </NavLink>
                                 <NavLink href="/inventory-items" :active="isCurrentRoute('/inventory-items')" class="text-gray-900 dark:text-neutral-100 hover:text-gray-700 dark:hover:text-neutral-300">
                                     Products
-                                </NavLink>
-                                <NavLink v-if="isOwner || canAccessDiscounts" href="/discounts" :active="isCurrentRoute('/discounts')" class="text-gray-900 dark:text-neutral-100 hover:text-gray-700 dark:hover:text-neutral-300">
-                                    Discounts
                                 </NavLink>
                                 <NavLink v-if="isOwner || canAccessReports" href="/reports" :active="isCurrentRoute('/reports')" class="text-gray-900 dark:text-neutral-100 hover:text-gray-700 dark:hover:text-neutral-300">
                                     Reports
@@ -227,24 +218,18 @@ window.addEventListener('offline', () => { isOffline.value = true; });
 
                             <div class="flex-1 overflow-y-auto p-4">
                                 <nav class="flex flex-col space-y-3">
-                                    <NavLink href="/dashboard" :active="isCurrentRoute('/dashboard')" class="w-full block px-4 py-3 text-gray-900 dark:text-neutral-100 hover:text-gray-700 dark:hover:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-700/50 rounded-lg">
-                                        Dashboard
-                                    </NavLink>
                                     
                                     <!-- Seller Navigation -->
                                     <template v-if="isSeller">
                                         <NavLink href="/dashboard" :active="isCurrentRoute('/dashboard')">Dashboard</NavLink>
-                                        <NavLink href="/inventory-items" :active="isCurrentRoute('/inventory-items')">Inventory</NavLink>
-                                        <NavLink href="/products" :active="isCurrentRoute('/products')">Products</NavLink>
-                                        <NavLink href="/sales" :active="isCurrentRoute('/sales')">Sales</NavLink>
+                                        <NavLink href="/products" :active="isCurrentRoute('/products')">Inventory</NavLink>
                                     </template>
 
                                     <!-- Owner Navigation -->
                                     <template v-else-if="isOwner">
                                         <NavLink href="/dashboard" :active="isCurrentRoute('/dashboard')">Dashboard</NavLink>
-                                        <NavLink href="/products" :active="isCurrentRoute('/products')">Products</NavLink>
-                                        <NavLink href="/inventory-items" :active="isCurrentRoute('/inventory-items')">Inventory</NavLink>
-                                        <NavLink href="/discounts" :active="isCurrentRoute('/discounts')">Discounts</NavLink>
+                                        <NavLink href="/products" :active="isCurrentRoute('/products')">Inventory</NavLink>
+                                        <NavLink href="/inventory-items" :active="isCurrentRoute('/inventory-items')">Products</NavLink>
                                         <NavLink href="/sales" :active="isCurrentRoute('/sales')">Sales</NavLink>
                                         <NavLink href="/businesses" :active="isCurrentRoute('/businesses')">Businesses</NavLink>
                                         <NavLink href="/branches" :active="isCurrentRoute('/branches')">Branches</NavLink>
@@ -258,22 +243,6 @@ window.addEventListener('offline', () => { isOffline.value = true; });
                                             Users
                                         </NavLink>
                                     </template>
-
-                                    <!-- Common Navigation -->
-                                    <NavLink v-if="isOwner || canAccessInventory" href="/products" :active="isCurrentRoute('/products')" class="w-full block px-4 py-3 text-gray-900 dark:text-neutral-100 hover:text-gray-700 dark:hover:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-700/50 rounded-lg">
-                                        Inventory
-                                    </NavLink>
-                                    <NavLink v-if="isOwner || canAccessInventory" href="/inventory-items" :active="isCurrentRoute('/inventory-items')" class="w-full block px-4 py-3 text-gray-900 dark:text-neutral-100 hover:text-gray-700 dark:hover:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-700/50 rounded-lg">
-                                        Products
-                                    </NavLink>
-                                    <NavLink v-if="isOwner || canAccessDiscounts" href="/discounts" :active="isCurrentRoute('/discounts')" class="w-full block px-4 py-3 text-gray-900 dark:text-neutral-100 hover:text-gray-700 dark:hover:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-700/50 rounded-lg">
-                                        Discounts
-                                    </NavLink>
-
-                                    <!-- Reports -->
-                                    <NavLink v-if="isOwner || canAccessReports" href="/reports" :active="isCurrentRoute('/reports')" class="w-full block px-4 py-3 text-gray-900 dark:text-neutral-100 hover:text-gray-700 dark:hover:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-700/50 rounded-lg">
-                                        Reports
-                                    </NavLink>
                                 </nav>
                             </div>
 

@@ -116,7 +116,7 @@
                     <span>{{ $item->product->name }}</span>
                     <span>{{ $item->quantity }}</span>
                     <span>{{ number_format($item->unit_price, 2) }}</span>
-                    <span>{{ number_format($item->total_price, 2) }}</span>
+                    <span>{{ number_format($item->total, 2) }}</span>
                 </div>
             @endforeach
         </div>
@@ -124,7 +124,7 @@
         <div class="totals">
             <div class="total-row">
                 <span>Subtotal:</span>
-                <span>{{ number_format($sale->total_amount, 2) }}</span>
+                <span>{{ number_format($sale->amount, 2) }}</span>
             </div>
             <div class="total-row">
                 <span>Payment Method:</span>
@@ -133,8 +133,12 @@
         </div>
 
         <div class="barcode">
-            <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(100)->generate($sale->barcode)) }}" alt="Barcode">
-            <div>{{ $sale->barcode }}</div>
+            <div style="font-family: monospace; font-size: 12px; text-align: center; margin: 10px 0;">
+                <div style="border: 1px solid #000; padding: 10px; display: inline-block;">
+                    {{ $sale->barcode }}
+                </div>
+            </div>
+            <div style="text-align: center; font-size: 10px; color: #666;">Barcode: {{ $sale->barcode }}</div>
         </div>
 
         <div class="footer">

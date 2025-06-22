@@ -15,45 +15,133 @@ class ReportController extends Controller
 {
     public function index(Request $request)
     {
-        // Debug: Check if there are any sale items in the database
-        $saleItemsCount = SaleItem::count();
-        \Log::info("Total sale items in database: " . $saleItemsCount);
+        $user = auth()->user();
         
-        // Load ALL sales data initially
+        // Get businesses the user owns or manages
+        $userBusinesses = Business::where('owner_id', $user->id)
+            ->orWhereHas('admins', function ($q) use ($user) {
+                $q->where('admin_id', $user->id);
+            })
+            ->pluck('id');
+        
+        // Debug: Log user's businesses
+        \Log::info("User ID: " . $user->id . ", User businesses: " . $userBusinesses->implode(', '));
+        
+        // Load sales data only for user's businesses
         $query = Sale::query()
-            ->with(['business', 'branch', 'seller', 'items.product']);
+            ->whereIn('business_id', $userBusinesses)
+            ->with(['business', 'branch', 'seller', 'items.product.inventoryItem']);
 
-        $sales = $query->latest()->get(); // Get all sales, not paginated
+        $sales = $query->latest()->get();
         
         // Debug: Check what's being loaded
+        \Log::info("Total sales for user: " . $sales->count());
         foreach ($sales->take(3) as $sale) {
-            \Log::info("Sale ID: " . $sale->id . ", Items count: " . ($sale->items ? $sale->items->count() : 'null'));
+            \Log::info("Sale ID: " . $sale->id . ", Business: " . ($sale->business->name ?? 'null') . ", Items count: " . ($sale->items ? $sale->items->count() : 'null'));
+            
+            // Debug product relationships
+            if ($sale->items) {
+                foreach ($sale->items->take(2) as $item) {
+                    \Log::info("Item ID: " . $item->id . ", Product ID: " . $item->product_id);
+                    \Log::info("Product name: " . ($item->product->name ?? 'null'));
+                    \Log::info("Product inventory_item_id: " . ($item->product->inventory_item_id ?? 'null'));
+                    \Log::info("InventoryItem name: " . ($item->product->inventoryItem->name ?? 'null'));
+                }
+            }
         }
 
-        // Summary calculations
+        // Summary calculations for user's businesses only
         $totalSales = $sales->count();
         $totalRevenue = $sales->sum('amount');
         
-        // Top products calculation
-        $topProductsQuery = SaleItem::select('product_id', \DB::raw('SUM(quantity) as qty'))
-            ->groupBy('product_id')->orderByDesc('qty')->limit(5)->with('product')->get();
-        $topSellersQuery = Sale::select('seller_id', \DB::raw('COUNT(*) as sales_count'))
-            ->groupBy('seller_id')->orderByDesc('sales_count')->limit(5)->with('seller')->get();
-        $salesByBusiness = Sale::select('business_id', \DB::raw('SUM(amount) as revenue'))
-            ->groupBy('business_id')->with('business')->get();
+        // Top products calculation for user's businesses - group by inventory_item_id to avoid duplicates
+        $topProductsQuery = \DB::table('sale_items')
+            ->join('products', 'sale_items.product_id', '=', 'products.id')
+            ->join('inventory_items', 'products.inventory_item_id', '=', 'inventory_items.id')
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->whereIn('sales.business_id', $userBusinesses)
+            ->select('inventory_items.id', 'inventory_items.name', \DB::raw('SUM(sale_items.quantity) as qty'))
+            ->groupBy('inventory_items.id', 'inventory_items.name')
+            ->orderByDesc('qty')
+            ->limit(5)
+            ->get();
+        
+        // Top sellers calculation for user's businesses
+        $topSellersQuery = Sale::whereIn('business_id', $userBusinesses)
+            ->select('seller_id', \DB::raw('COUNT(*) as sales_count'))
+            ->groupBy('seller_id')
+            ->orderByDesc('sales_count')
+            ->limit(5)
+            ->with('seller')
+            ->get();
+            
+        // Sales by business for user's businesses
+        $salesByBusiness = Sale::whereIn('business_id', $userBusinesses)
+            ->select('business_id', \DB::raw('SUM(amount) as revenue'))
+            ->groupBy('business_id')
+            ->with('business')
+            ->get();
 
         // Format data for summary cards
-        $topProducts = $topProductsQuery->map(fn($item) => $item->product->name . ' (' . $item->qty . ' sold)');
-        $topSellers = $topSellersQuery->map(fn($item) => $item->seller->name . ' (' . $item->sales_count . ' sales)');
+        $topProducts = $topProductsQuery->map(function($item) {
+            return ($item->name ?? 'Unknown Product') . ' (' . $item->qty . ' sold)';
+        });
+        $topSellers = $topSellersQuery->map(function($item) {
+            return ($item->seller->name ?? 'Unknown Seller') . ' (' . $item->sales_count . ' sales)';
+        });
 
-        // Load ALL data for filters
-        $businesses = Business::all(['id', 'name']);
-        $branches = \App\Models\Branch::all(['id', 'name', 'business_id']);
-        $sellers = User::role('seller')->with(['business', 'branch'])->get(['id', 'name', 'business_id', 'branch_id']);
-        $products = Product::with(['business', 'branch'])->get(['id', 'name', 'business_id', 'branch_id']);
+        // Load data for filters - only user's businesses
+        $businesses = Business::whereIn('id', $userBusinesses)->get(['id', 'name']);
+        $branches = \App\Models\Branch::whereIn('business_id', $userBusinesses)->get(['id', 'name', 'business_id']);
+        $sellers = User::role('seller')->whereIn('business_id', $userBusinesses)->with(['business', 'branch'])->get(['id', 'name', 'business_id', 'branch_id']);
+        $products = Product::whereIn('business_id', $userBusinesses)->with(['business', 'branch'])->get(['id', 'name', 'business_id', 'branch_id']);
 
         return Inertia::render('Reports/Index', [
-            'sales' => $sales,
+            'sales' => $sales->map(function ($sale) {
+                return [
+                    'id' => $sale->id,
+                    'business_id' => $sale->business_id,
+                    'branch_id' => $sale->branch_id,
+                    'reference' => $sale->reference,
+                    'created_at' => $sale->created_at,
+                    'amount' => $sale->amount,
+                    'seller' => $sale->seller ? [
+                        'id' => $sale->seller->id,
+                        'name' => $sale->seller->name
+                    ] : null,
+                    'branch' => $sale->branch ? [
+                        'id' => $sale->branch->id,
+                        'name' => $sale->branch->name
+                    ] : null,
+                    'business' => $sale->business ? [
+                        'id' => $sale->business->id,
+                        'name' => $sale->business->name
+                    ] : null,
+                    'payment_method' => $sale->payment_method,
+                    'status' => $sale->status,
+                    'items' => $sale->items->map(function ($item) {
+                        return [
+                            'id' => $item->id,
+                            'quantity' => $item->quantity,
+                            'unit_price' => $item->unit_price,
+                            'total' => $item->total,
+                            'product' => [
+                                'id' => $item->product->id,
+                                'name' => $item->product->name,
+                                'display_name' => $item->product->display_name,
+                                'buying_price' => $item->product->buying_price,
+                                'selling_price' => $item->product->selling_price,
+                                'barcode' => $item->product->barcode,
+                                'inventoryItem' => $item->product->inventoryItem ? [
+                                    'id' => $item->product->inventoryItem->id,
+                                    'name' => $item->product->inventoryItem->name,
+                                    'description' => $item->product->inventoryItem->description
+                                ] : null
+                            ]
+                        ];
+                    })
+                ];
+            }),
             'summary' => [
                 'totalSales' => $totalSales,
                 'totalRevenue' => $totalRevenue,
@@ -72,8 +160,18 @@ class ReportController extends Controller
 
     public function export(Request $request)
     {
+        $user = auth()->user();
+        
+        // Get businesses the user owns or manages
+        $userBusinesses = Business::where('owner_id', $user->id)
+            ->orWhereHas('admins', function ($q) use ($user) {
+                $q->where('admin_id', $user->id);
+            })
+            ->pluck('id');
+        
         $query = Sale::query()
-            ->with(['business', 'branch', 'seller', 'items.product'])
+            ->whereIn('business_id', $userBusinesses)
+            ->with(['business', 'branch', 'seller', 'items.product.inventoryItem'])
             ->when($request->business_id, fn($q) => $q->where('business_id', $request->business_id))
             ->when($request->branch_id, fn($q) => $q->where('branch_id', $request->branch_id))
             ->when($request->seller_id, fn($q) => $q->where('seller_id', $request->seller_id))
@@ -81,13 +179,34 @@ class ReportController extends Controller
                 $q->whereHas('items', fn($q2) => $q2->where('product_id', $request->product_id));
             })
             ->when($request->status, fn($q) => $q->where('status', $request->status))
-            ->when($request->date_from, fn($q) => $q->whereDate('sale_date', '>=', $request->date_from))
-            ->when($request->date_to, fn($q) => $q->whereDate('sale_date', '<=', $request->date_to));
+            ->when($request->date_from, fn($q) => $q->whereDate('created_at', '>=', $request->date_from))
+            ->when($request->date_to, fn($q) => $q->whereDate('created_at', '<=', $request->date_to));
 
         $sales = $query->latest()->get();
 
         if ($request->format === 'pdf') {
-            $pdf = Pdf::loadView('reports.export', ['sales' => $sales]);
+            // Get business info (assuming first sale's business)
+            $business = $sales->first() ? $sales->first()->business : null;
+            
+            // Calculate summary statistics
+            $summary = [
+                'total_sales' => $sales->count(),
+                'total_amount' => $sales->sum('amount'),
+                'average_amount' => $sales->avg('amount'),
+                'payment_methods' => $sales->groupBy('payment_method')
+                    ->map(fn($group) => [
+                        'count' => $group->count(),
+                        'amount' => $group->sum('amount')
+                    ])
+            ];
+            
+            $pdf = Pdf::loadView('pdfs.sales-report', [
+                'sales' => $sales,
+                'business' => $business,
+                'summary' => $summary,
+                'startDate' => $request->date_from,
+                'endDate' => $request->date_to
+            ]);
             return $pdf->download('sales-report.pdf');
         }
 
@@ -103,16 +222,23 @@ class ReportController extends Controller
             ]);
             foreach ($sales as $sale) {
                 $products = $sale->items->map(function ($item) {
-                    return $item->product->name . ' (' . $item->quantity . ' x $' . $item->unit_price . ')';
+                    // Get product name from inventory_item, not from product table
+                    $productName = $item->product->inventoryItem->name ?? 'Unknown Product';
+                    $buyingPrice = $item->product->buying_price ?? 0;
+                    $sellingPrice = $item->unit_price ?? 0;
+                    $profit = $sellingPrice - $buyingPrice;
+                    $totalProfit = $profit * $item->quantity;
+                    return $productName . ' (' . $item->quantity . ' x KES ' . $sellingPrice . ', Buy: KES ' . $buyingPrice . ', Profit: KES ' . number_format($totalProfit, 2) . ')';
                 })->join(', ');
+                
                 fputcsv($file, [
                     $sale->created_at->format('Y-m-d H:i:s'),
-                    $sale->business->name ?? '',
-                    $sale->branch->name ?? '',
+                    $sale->business->name ?? 'Unknown Business',
+                    $sale->branch->name ?? 'Unknown Branch',
                     $products,
                     $sale->amount,
                     $sale->payment_method,
-                    $sale->seller->name ?? '',
+                    $sale->seller->name ?? 'Unknown Seller',
                 ]);
             }
             fclose($file);

@@ -150,7 +150,7 @@
                     <tr>
                         <td>{{ $sale->reference }}</td>
                         <td>{{ $sale->created_at->format('Y-m-d H:i:s') }}</td>
-                        <td>{{ number_format($sale->total_amount, 2) }}</td>
+                        <td>{{ number_format($sale->amount, 2) }}</td>
                         <td>{{ $sale->payment_method }}</td>
                         <td>{{ $sale->seller->name }}</td>
                         <td>{{ $sale->branch->name }}</td>

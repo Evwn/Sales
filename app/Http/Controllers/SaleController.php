@@ -23,11 +23,13 @@ class SaleController extends Controller
 {
     protected $saleService;
     protected $whatsappService;
+    protected $pdfService;
 
-    public function __construct(SaleService $saleService, WhatsAppService $whatsappService)
+    public function __construct(SaleService $saleService, WhatsAppService $whatsappService, PDFService $pdfService)
     {
         $this->saleService = $saleService;
         $this->whatsappService = $whatsappService;
+        $this->pdfService = $pdfService;
     }
 
     public function index(Business $business, Branch $branch)
@@ -77,10 +79,23 @@ class SaleController extends Controller
                         'status' => $sale->status,
                         'items' => $sale->items->map(function ($item) {
                             return [
-                                'product_name' => $item->product->inventoryItem->name,
+                                'id' => $item->id,
                                 'quantity' => $item->quantity,
-                                'price' => $item->unit_price,
-                                'total' => $item->total
+                                'unit_price' => $item->unit_price,
+                                'total' => $item->total,
+                                'product' => [
+                                    'id' => $item->product->id,
+                                    'name' => $item->product->name,
+                                    'display_name' => $item->product->display_name,
+                                    'buying_price' => $item->product->buying_price,
+                                    'selling_price' => $item->product->selling_price,
+                                    'barcode' => $item->product->barcode,
+                                    'inventoryItem' => $item->product->inventoryItem ? [
+                                        'id' => $item->product->inventoryItem->id,
+                                        'name' => $item->product->inventoryItem->name,
+                                        'description' => $item->product->inventoryItem->description
+                                    ] : null
+                                ]
                             ];
                         })
                     ];
@@ -390,9 +405,55 @@ class SaleController extends Controller
               ->orWhereHas('admins', function ($q2) use ($user) {
                   $q2->where('admin_id', $user->id);
               });
-        })->get();
+        })
+        ->with(['seller', 'branch.business', 'items.product.inventoryItem'])
+        ->get();
+
         return Inertia::render('Sales/Index', [
-            'sales' => $sales,
+            'sales' => [
+                'data' => $sales->map(function ($sale) {
+                    return [
+                        'id' => $sale->id,
+                        'business_id' => $sale->business_id,
+                        'branch_id' => $sale->branch_id,
+                        'reference' => $sale->reference,
+                        'date' => $sale->sale_date->format('d/m/Y'),
+                        'amount' => $sale->amount,
+                        'seller' => $sale->seller->name,
+                        'branch' => $sale->branch->name,
+                        'business' => $sale->branch->business->name,
+                        'payment_method' => $sale->payment_method,
+                        'status' => $sale->status,
+                        'items' => $sale->items->map(function ($item) {
+                            return [
+                                'id' => $item->id,
+                                'quantity' => $item->quantity,
+                                'unit_price' => $item->unit_price,
+                                'total' => $item->total,
+                                'product' => [
+                                    'id' => $item->product->id,
+                                    'name' => $item->product->name,
+                                    'display_name' => $item->product->display_name,
+                                    'buying_price' => $item->product->buying_price,
+                                    'selling_price' => $item->product->selling_price,
+                                    'barcode' => $item->product->barcode,
+                                    'inventoryItem' => $item->product->inventoryItem ? [
+                                        'id' => $item->product->inventoryItem->id,
+                                        'name' => $item->product->inventoryItem->name,
+                                        'description' => $item->product->inventoryItem->description
+                                    ] : null
+                                ]
+                            ];
+                        })
+                    ];
+                }),
+                'meta' => [
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => 10,
+                    'total' => $sales->count()
+                ]
+            ]
         ]);
     }
 
