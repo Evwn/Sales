@@ -16,7 +16,7 @@ class BusinessController extends Controller
         $user = Auth::user();
         $businesses = Business::where('owner_id', $user->id)
             ->orWhereHas('admins', function ($q) use ($user) {
-                $q->where('admin_id', $user->id);
+                $q->where('user_id', $user->id);
             })
             ->get();
         return Inertia::render('Businesses/Index', [
@@ -272,15 +272,17 @@ class BusinessController extends Controller
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => bcrypt($validated['password']),
-                'role_id' => 1, // Using role_id 1 for admin role
                 'business_id' => $business->id,
             ]);
+            $user->assignRole('admin');
         } else {
-            // Update existing user's role and business
+            // Update existing user's business
             $user->update([
-                'role_id' => 1, // Using role_id 1 for admin role
                 'business_id' => $business->id,
             ]);
+            if (!$user->hasRole('admin')) {
+                $user->assignRole('admin');
+            }
         }
 
         // Attach as admin if not already
@@ -304,9 +306,9 @@ class BusinessController extends Controller
         // Update user's role and business if they're not an admin of any other business
         if (!$user->managedBusinesses()->exists()) {
             $user->update([
-                'role_id' => 3, // Using role_id 3 for seller role as default
                 'business_id' => null
             ]);
+            $user->syncRoles('seller');
         }
 
         return redirect()->route('businesses.show', $business)

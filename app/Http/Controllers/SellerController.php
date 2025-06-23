@@ -29,7 +29,9 @@ class SellerController extends Controller
 
     public function index(Business $business, Branch $branch)
     {
-        $sellers = User::where('role_id', 3)
+        $sellers = User::whereHas('roles', function ($q) {
+                $q->where('name', 'seller');
+            })
             ->where('business_id', $business->id)
             ->where('branch_id', $branch->id)
             ->with(['branch.business'])
@@ -104,7 +106,7 @@ class SellerController extends Controller
         $businesses = Business::with('branches')
             ->where('owner_id', $user->id)
             ->orWhereHas('admins', function ($q) use ($user) {
-                $q->where('admin_id', $user->id);
+                $q->where('user_id', $user->id);
             })
             ->get();
 
@@ -209,7 +211,7 @@ class SellerController extends Controller
             ->whereHas('branch.business', function ($q) use ($user) {
                 $q->where('owner_id', $user->id)
                   ->orWhereHas('admins', function ($q2) use ($user) {
-                      $q2->where('admin_id', $user->id);
+                      $q2->where('user_id', $user->id);
                   });
             })
             ->with(['branch.business'])
@@ -218,7 +220,7 @@ class SellerController extends Controller
         $branches = Branch::whereHas('business', function ($q) use ($user) {
             $q->where('owner_id', $user->id)
               ->orWhereHas('admins', function ($q2) use ($user) {
-                  $q2->where('admin_id', $user->id);
+                  $q2->where('user_id', $user->id);
               });
         })->get();
         return Inertia::render('Sellers/Index', [

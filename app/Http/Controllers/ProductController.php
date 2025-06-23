@@ -41,7 +41,7 @@ class ProductController extends Controller
             $query->whereHas('branch.business', function ($q) use ($user) {
                 $q->where('owner_id', $user->id)
                   ->orWhereHas('admins', function ($q2) use ($user) {
-                      $q2->where('admin_id', $user->id);
+                      $q2->where('user_id', $user->id);
                   });
             });
             \Log::info('ProductController: Filtering for owner');
@@ -51,7 +51,7 @@ class ProductController extends Controller
             $query->whereHas('branch.business', function ($q) use ($user) {
                 $q->where('owner_id', $user->id)
                   ->orWhereHas('admins', function ($q2) use ($user) {
-                      $q2->where('admin_id', $user->id);
+                      $q2->where('user_id', $user->id);
                   });
             });
             \Log::info('ProductController: Filtering for admin');
@@ -101,7 +101,7 @@ class ProductController extends Controller
         // Get businesses for the current user
         $businesses = Business::where('owner_id', $user->id)
             ->orWhereHas('admins', function ($q) use ($user) {
-                $q->where('admin_id', $user->id);
+                $q->where('user_id', $user->id);
             })
             ->get(['id', 'name']);
 

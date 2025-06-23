@@ -305,6 +305,7 @@ import SecondaryButton from '@/components/SecondaryButton.vue';
 import TextInput from '@/components/TextInput.vue';
 import TextArea from '@/components/TextArea.vue';
 import Swal from 'sweetalert2';
+import { router } from '@inertiajs/vue3';
 
 const props = defineProps({
     business: {
@@ -391,7 +392,7 @@ const submit = () => {
     // Log form data before submission
     console.log('Submitting form data:', form.data());
 
-    form.post(route('businesses.store'), {
+    form.post('/businesses', {
         preserveScroll: true,
         onSuccess: (response) => {
             console.log('Success response:', response);
@@ -405,7 +406,7 @@ const submit = () => {
             }).then((result) => {
                 if (result.isConfirmed) {
                     // Redirect to businesses index page
-                    window.location.href = route('businesses.index');
+                    router.visit('/businesses');
                 }
             });
             form.reset();

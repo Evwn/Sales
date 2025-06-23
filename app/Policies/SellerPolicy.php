@@ -21,7 +21,7 @@ class SellerPolicy
         }
 
         return $seller->sellerProfile->branch->business->owner_id === $user->id ||
-            $seller->sellerProfile->branch->business->admins()->where('admin_id', $user->id)->exists();
+            $seller->sellerProfile->branch->business->admins()->where('user_id', $user->id)->exists();
     }
 
     public function create(User $user): bool
@@ -36,7 +36,7 @@ class SellerPolicy
         }
 
         return $seller->sellerProfile->branch->business->owner_id === $user->id ||
-            $seller->sellerProfile->branch->business->admins()->where('admin_id', $user->id)->exists();
+            $seller->sellerProfile->branch->business->admins()->where('user_id', $user->id)->exists();
     }
 
     public function delete(User $user, User $seller): bool
@@ -46,6 +46,6 @@ class SellerPolicy
         }
 
         return $seller->sellerProfile->branch->business->owner_id === $user->id ||
-            $seller->sellerProfile->branch->business->admins()->where('admin_id', $user->id)->exists();
+            $seller->sellerProfile->branch->business->admins()->where('user_id', $user->id)->exists();
     }
 } 

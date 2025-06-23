@@ -109,7 +109,7 @@
                       Preview
                     </button>
                     <a
-                      :href="route('sales.receipt.pdf', sale.id)"
+                      :href="`/sales/receipt/${sale.id}.pdf`"
                       target="_blank"
                       class="text-green-600 hover:text-green-900"
                     >
@@ -408,7 +408,7 @@ const exportReceipt = async (sale) => {
       didOpen: () => {
         document.getElementById('download').addEventListener('click', () => {
           Swal.close();
-          window.location.href = route('sales.receipt.pdf', sale.id);
+          router.visit(`/sales/receipt/${sale.id}.pdf`);
         });
         document.getElementById('whatsapp').addEventListener('click', async () => {
           const { value: phoneNumber } = await Swal.fire({
@@ -429,7 +429,7 @@ const exportReceipt = async (sale) => {
           
           if (phoneNumber) {
             try {
-              const response = await axios.get(route('sales.receipt.pdf', sale.id), {
+              const response = await axios.get(`/sales/receipt/${sale.id}.pdf`, {
                 params: {
                   whatsapp: true,
                   whatsapp_number: phoneNumber
@@ -473,7 +473,7 @@ const exportBatchReceipts = async () => {
       didOpen: () => {
         document.getElementById('download').addEventListener('click', async () => {
           try {
-            const response = await axios.post(route('sales.batch-receipts.pdf'), {
+            const response = await axios.post('/sales/batch-receipts.pdf', {
               sale_ids: selectedSales.value
             }, {
               responseType: 'blob'
@@ -512,7 +512,7 @@ const exportBatchReceipts = async () => {
           
           if (phoneNumber) {
             try {
-              const response = await axios.post(route('sales.batch-receipts.pdf'), {
+              const response = await axios.post('/sales/batch-receipts.pdf', {
                 sale_ids: selectedSales.value,
                 whatsapp: true,
                 whatsapp_number: phoneNumber
@@ -561,7 +561,7 @@ const exportDailyReport = async () => {
 
     if (whatsappNumber) {
       try {
-        const response = await axios.get(route('sales.daily-report.pdf'), {
+        const response = await axios.get('/sales/daily-report.pdf', {
           params: {
             date: exportDate.value,
             branch_id: selectedBranch.value,
@@ -574,7 +574,7 @@ const exportDailyReport = async () => {
       }
     }
   } else if (deliveryMethod === 'confirm') {
-    window.location.href = route('sales.daily-report.pdf', {
+    router.visit('/sales/daily-report.pdf', {
       date: exportDate.value,
       branch_id: selectedBranch.value
     });
@@ -612,7 +612,7 @@ const exportWeeklyReport = async () => {
 
     if (whatsappNumber) {
       try {
-        const response = await axios.get(route('sales.weekly-report.pdf'), {
+        const response = await axios.get('/sales/weekly-report.pdf', {
           params: {
             week: exportWeek.value,
             year: exportWeekYear.value,
@@ -626,7 +626,7 @@ const exportWeeklyReport = async () => {
       }
     }
   } else if (deliveryMethod === 'confirm') {
-    window.location.href = route('sales.weekly-report.pdf', {
+    router.visit('/sales/weekly-report.pdf', {
       week: exportWeek.value,
       year: exportWeekYear.value,
       branch_id: selectedBranch.value
@@ -665,7 +665,7 @@ const exportMonthlyReport = async () => {
 
     if (whatsappNumber) {
       try {
-        const response = await axios.get(route('sales.monthly-report.pdf'), {
+        const response = await axios.get('/sales/monthly-report.pdf', {
           params: {
             month: exportMonth.value,
             year: exportMonthYear.value,
@@ -679,7 +679,7 @@ const exportMonthlyReport = async () => {
       }
     }
   } else if (deliveryMethod === 'confirm') {
-    window.location.href = route('sales.monthly-report.pdf', {
+    router.visit('/sales/monthly-report.pdf', {
       month: exportMonth.value,
       year: exportMonthYear.value,
       branch_id: selectedBranch.value
@@ -688,7 +688,7 @@ const exportMonthlyReport = async () => {
 };
 
 const exportQuarterlyReport = () => {
-  window.location.href = route('sales.quarterly-report.pdf', {
+  router.visit('/sales/quarterly-report.pdf', {
     year: exportQuarterYear.value,
     quarter: exportQuarter.value,
     branch_id: selectedBranch.value
@@ -696,7 +696,7 @@ const exportQuarterlyReport = () => {
 };
 
 const exportYearlyReport = () => {
-  window.location.href = route('sales.yearly-report.pdf', {
+  router.visit('/sales/yearly-report.pdf', {
     year: exportYear.value,
     branch_id: selectedBranch.value
   });
@@ -704,7 +704,7 @@ const exportYearlyReport = () => {
 
 watch([search, selectedBranch], () => {
   router.get(
-    route('sales.receipt-history'),
+    '/sales/receipt-history',
     {
       search: search.value,
       branch_id: selectedBranch.value

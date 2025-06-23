@@ -83,10 +83,7 @@
                             <button @click="window.print()" class="btn btn-primary">
                                 Print Receipt
                             </button>
-                            <Link :href="route('sales.index', { 
-                                business: sale.branch.business.id, 
-                                branch: sale.branch.id 
-                            })" class="btn btn-secondary">
+                            <Link href="/sales" class="btn btn-secondary">
                                 Back to Sales
                             </Link>
                         </div>

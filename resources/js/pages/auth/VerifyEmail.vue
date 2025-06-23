@@ -14,11 +14,11 @@ const props = defineProps<{
 const form = useForm({});
 
 const submit = () => {
-    form.post(route('verification.send'));
+    form.post('/verification/send');
 };
 
 const logout = () => {
-    form.post(route('logout'));
+    form.post('/logout');
 };
 </script>
 

@@ -25,7 +25,7 @@ class BranchController extends Controller
         // Only show businesses owned or managed by the user
         $businesses = Business::where('owner_id', $user->id)
             ->orWhereHas('admins', function ($q) use ($user) {
-                $q->where('admin_id', $user->id);
+                $q->where('user_id', $user->id);
             })
             ->get(['id', 'name']);
 
@@ -37,7 +37,7 @@ class BranchController extends Controller
         $branches = Branch::whereHas('business', function ($q) use ($user) {
             $q->where('owner_id', $user->id)
               ->orWhereHas('admins', function ($q2) use ($user) {
-                  $q2->where('admin_id', $user->id);
+                  $q2->where('user_id', $user->id);
               });
         })->with('business')->get();
 

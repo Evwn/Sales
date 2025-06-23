@@ -67,8 +67,10 @@ class Business extends Model
     public function admins()
     {
         return $this->belongsToMany(User::class, 'business_admin')
-            ->where('role_id', 1)
-            ->withTimestamps();
+            ->withTimestamps()
+            ->whereHas('roles', function ($q) {
+                $q->where('name', 'admin');
+            });
     }
 
     public function products(): HasMany

@@ -6,7 +6,7 @@
           Businesses
         </h2>
         <Link
-          :href="route('businesses.create')"
+          href="/businesses/create"
           class="inline-flex items-center px-4 py-2 bg-gray-800 dark:bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-white dark:text-gray-800 uppercase tracking-widest hover:bg-gray-700 dark:hover:bg-white focus:bg-gray-700 dark:focus:bg-white active:bg-gray-900 dark:active:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150"
           >
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -29,7 +29,7 @@
               <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new business.</p>
               <div class="mt-6">
                 <Link
-                  :href="route('businesses.create')"
+                  href="/businesses/create"
                   class="inline-flex items-center px-4 py-2 bg-primary-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-primary-700 focus:bg-primary-700 active:bg-primary-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition ease-in-out duration-150"
                 >
                   Create Business
@@ -85,13 +85,13 @@
 
                   <div class="mt-6 flex justify-end space-x-3">
                     <Link
-                      :href="route('businesses.edit', business)"
+                      :href="`/businesses/${business.id}/edit`"
                       class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                     >
                       Edit
                     </Link>
                     <Link
-                      :href="route('businesses.show', business)"
+                      :href="`/businesses/${business.id}`"
                       class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                     >
                       View Details

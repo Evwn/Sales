@@ -47,14 +47,14 @@ class InventoryController extends Controller
         $products = Product::whereHas('business', function ($query) {
             $query->where('owner_id', auth()->id())
                 ->orWhereHas('admins', function ($q) {
-                    $q->where('admin_id', auth()->id());
+                    $q->where('user_id', auth()->id());
                 });
         })->get();
 
         $branches = Branch::whereHas('business', function ($query) {
             $query->where('owner_id', auth()->id())
                 ->orWhereHas('admins', function ($q) {
-                    $q->where('admin_id', auth()->id());
+                    $q->where('user_id', auth()->id());
                 });
         })->get();
 
@@ -100,14 +100,14 @@ class InventoryController extends Controller
         $products = Product::whereHas('business', function ($query) {
             $query->where('owner_id', auth()->id())
                 ->orWhereHas('admins', function ($q) {
-                    $q->where('admin_id', auth()->id());
+                    $q->where('user_id', auth()->id());
                 });
         })->get();
 
         $branches = Branch::whereHas('business', function ($query) {
             $query->where('owner_id', auth()->id())
                 ->orWhereHas('admins', function ($q) {
-                    $q->where('admin_id', auth()->id());
+                    $q->where('user_id', auth()->id());
                 });
         })->get();
 

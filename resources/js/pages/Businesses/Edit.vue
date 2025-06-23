@@ -6,7 +6,7 @@
           Edit Business
         </h2>
         <Link
-          :href="route('businesses.index')"
+          href="/businesses"
           class="inline-flex items-center px-4 py-2 bg-gray-800 dark:bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-white dark:text-gray-800 uppercase tracking-widest hover:bg-gray-700 dark:hover:bg-white focus:bg-gray-700 dark:focus:bg-white active:bg-gray-900 dark:active:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150"
         >
           Back to Businesses
@@ -664,7 +664,7 @@ const handleSubmit = () => {
   }
 
   // Use Inertia router to send the FormData
-  router.post(route('businesses.update', props.business.id), formData, {
+  router.post(`/businesses/${props.business.id}`, formData, {
     preserveScroll: true,
     onProgress: (progress) => {
       console.log('Upload progress:', progress);
@@ -684,7 +684,7 @@ const handleSubmit = () => {
         confirmButtonText: 'OK'
       }).then(() => {
         // Use Inertia navigation instead of page reload
-        router.visit(route('businesses.index'));
+        router.visit('/businesses');
       });
     },
     onError: (errors) => {

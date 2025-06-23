@@ -168,7 +168,7 @@ const updateProfileInformation = () => {
     };
 
     // Send directly to backend without form validation
-    router.post(route('settings.profile.update'), formData, {
+    router.post('/settings/profile/update', formData, {
         preserveScroll: true,
         forceFormData: true,
         onSuccess: (response) => {

@@ -126,20 +126,12 @@ const filteredProducts = computed(() => {
 
 function exportPDF() {
   // Export filtered data
-  window.open(route('reports.export', { 
-    ...filters.value, 
-    format: 'pdf',
-    sales: filteredSales.value.map(s => s.id)
-  }), '_blank');
+  window.open(`/reports/export?...`);
 }
 
 function exportCSV() {
   // Export filtered data
-  window.open(route('reports.export', { 
-    ...filters.value, 
-    format: 'csv',
-    sales: filteredSales.value.map(s => s.id)
-  }), '_blank');
+  window.open(`/reports/export?...`);
 }
 
 function expandSale(saleId) {

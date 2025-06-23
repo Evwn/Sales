@@ -108,7 +108,7 @@ class User extends Authenticatable implements MustVerifyEmail
             return Business::where(function ($query) {
                 $query->where('owner_id', $this->id)
                     ->orWhereHas('admins', function ($q) {
-                        $q->where('admin_id', $this->id);
+                        $q->where('user_id', $this->id);
                     });
             });
         }
@@ -116,7 +116,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return Business::where(function ($query) {
             $query->where('owner_id', $this->id)
                 ->orWhereHas('admins', function ($q) {
-                    $q->where('admin_id', $this->id);
+                    $q->where('user_id', $this->id);
                 })
                 ->orWhere('id', $this->business_id);
         });

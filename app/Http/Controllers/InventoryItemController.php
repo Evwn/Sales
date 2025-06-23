@@ -37,7 +37,7 @@ class InventoryItemController extends Controller
         // Get businesses for the current user
         $businesses = \App\Models\Business::where('owner_id', Auth::id())
             ->orWhereHas('admins', function ($query) {
-                $query->where('admin_id', Auth::id());
+                $query->where('user_id', Auth::id());
             })
             ->with('branches')
             ->get()
@@ -64,7 +64,7 @@ class InventoryItemController extends Controller
         $managedBranches = \App\Models\Branch::whereHas('business', function ($query) use ($user) {
             $query->where('owner_id', $user->id)
                 ->orWhereHas('admins', function ($q) use ($user) {
-                    $q->where('admin_id', $user->id);
+                    $q->where('user_id', $user->id);
                 });
         })->with('business')->get();
 

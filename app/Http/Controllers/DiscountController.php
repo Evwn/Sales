@@ -21,14 +21,14 @@ class DiscountController extends Controller
     {
         $businesses = Business::where('owner_id', auth()->id())
             ->orWhereHas('admins', function ($query) {
-                $query->where('admin_id', auth()->id());
+                $query->where('user_id', auth()->id());
             })
             ->get();
 
         $products = Product::whereHas('business', function ($query) {
             $query->where('owner_id', auth()->id())
                 ->orWhereHas('admins', function ($q) {
-                    $q->where('admin_id', auth()->id());
+                    $q->where('user_id', auth()->id());
                 });
         })->get();
 
@@ -82,14 +82,14 @@ class DiscountController extends Controller
 
         $businesses = Business::where('owner_id', auth()->id())
             ->orWhereHas('admins', function ($query) {
-                $query->where('admin_id', auth()->id());
+                $query->where('user_id', auth()->id());
             })
             ->get();
 
         $products = Product::whereHas('business', function ($query) {
             $query->where('owner_id', auth()->id())
                 ->orWhereHas('admins', function ($q) {
-                    $q->where('admin_id', auth()->id());
+                    $q->where('user_id', auth()->id());
                 });
         })->get();
 

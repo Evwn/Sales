@@ -403,7 +403,7 @@ class SaleController extends Controller
         $sales = Sale::whereHas('branch.business', function ($q) use ($user) {
             $q->where('owner_id', $user->id)
               ->orWhereHas('admins', function ($q2) use ($user) {
-                  $q2->where('admin_id', $user->id);
+                  $q2->where('user_id', $user->id);
               });
         })
         ->with(['seller', 'branch.business', 'items.product.inventoryItem'])

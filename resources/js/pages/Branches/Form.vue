@@ -91,7 +91,7 @@
     <div class="flex items-center justify-end gap-4">
       <SecondaryButton
         type="button"
-        @click="$inertia.visit(route('branches.index'))"
+        @click="$inertia.visit('/branches')"
       >
         Cancel
       </SecondaryButton>
@@ -220,7 +220,7 @@ const generateBarcode = async () => {
   isGeneratingBarcode.value = true;
   try {
     const response = await axios.post(
-      route('branches.generate-barcode', [props.business, props.branch])
+      `/branches/${props.business.id}/${props.branch.id}/generate-barcode`
     );
     props.branch.barcode_path = response.data.barcode;
   } catch (error) {
@@ -236,7 +236,7 @@ const downloadBarcode = async () => {
   isDownloadingBarcode.value = true;
   try {
     const response = await axios.get(
-      route('branches.download-barcode', [props.business, props.branch]),
+      `/branches/${props.business.id}/${props.branch.id}/download-barcode`,
       { responseType: 'blob' }
     );
     
@@ -260,7 +260,7 @@ const printBarcode = async () => {
   isPrintingBarcode.value = true;
   try {
     const response = await axios.get(
-      route('branches.print-barcode', [props.business, props.branch]),
+      `/branches/${props.business.id}/${props.branch.id}/print-barcode`,
       { responseType: 'blob' }
     );
     

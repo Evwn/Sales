@@ -20,7 +20,7 @@ class ReportController extends Controller
         // Get businesses the user owns or manages
         $userBusinesses = Business::where('owner_id', $user->id)
             ->orWhereHas('admins', function ($q) use ($user) {
-                $q->where('admin_id', $user->id);
+                $q->where('user_id', $user->id);
             })
             ->pluck('id');
         
@@ -94,7 +94,7 @@ class ReportController extends Controller
         $businesses = Business::whereIn('id', $userBusinesses)->get(['id', 'name']);
         $branches = \App\Models\Branch::whereIn('business_id', $userBusinesses)->get(['id', 'name', 'business_id']);
         $sellers = User::role('seller')->whereIn('business_id', $userBusinesses)->with(['business', 'branch'])->get(['id', 'name', 'business_id', 'branch_id']);
-        $products = Product::whereIn('business_id', $userBusinesses)->with(['business', 'branch'])->get(['id', 'name', 'business_id', 'branch_id']);
+        $products = Product::with(['branch.business'])->get(['id', 'name', 'branch_id']);
 
         return Inertia::render('Reports/Index', [
             'sales' => $sales->map(function ($sale) {
@@ -165,7 +165,7 @@ class ReportController extends Controller
         // Get businesses the user owns or manages
         $userBusinesses = Business::where('owner_id', $user->id)
             ->orWhereHas('admins', function ($q) use ($user) {
-                $q->where('admin_id', $user->id);
+                $q->where('user_id', $user->id);
             })
             ->pluck('id');
         
