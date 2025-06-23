@@ -12,7 +12,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import Pagination from '@/Components/Pagination.vue';
+import Pagination from '@/components/Pagination.vue';
 
 interface User {
     role: 'admin' | 'owner' | 'seller';

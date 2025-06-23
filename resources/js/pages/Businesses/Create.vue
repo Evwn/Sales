@@ -391,10 +391,10 @@
 import { ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import TextInput from '@/Components/TextInput.vue';
-import TextArea from '@/Components/TextArea.vue';
-import InputError from '@/Components/InputError.vue';
+import InputLabel from '@/components/InputLabel.vue';
+import TextInput from '@/components/TextInput.vue';
+import TextArea from '@/components/TextArea.vue';
+import InputError from '@/components/InputError.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import Swal from 'sweetalert2';
 

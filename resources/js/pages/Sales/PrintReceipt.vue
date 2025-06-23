@@ -62,7 +62,7 @@
 <script setup>
 import { ref } from 'vue';
 import { Link } from '@inertiajs/vue3';
-import SalesReceipt from '@/Components/SalesReceipt.vue';
+import SalesReceipt from '@/components/SalesReceipt.vue';
 
 const props = defineProps({
   sale: {

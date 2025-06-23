@@ -4,16 +4,16 @@ import { ref, computed } from 'vue';
 
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Button } from '@/components/ui/button';
-import DateRangePicker from '@/Components/DateRangePicker.vue';
-import SelectBusiness from '@/Components/SelectBusiness.vue';
-import SelectBranch from '@/Components/SelectBranch.vue';
-import SelectProduct from '@/Components/SelectProduct.vue';
-import SelectSeller from '@/Components/SelectSeller.vue';
-import SelectStatus from '@/Components/SelectStatus.vue';
-import SummaryCard from '@/Components/SummaryCard.vue';
-import SalesOverTimeChart from '@/Components/SalesOverTimeChart.vue';
-import SalesByBusinessChart from '@/Components/SalesByBusinessChart.vue';
-import SalesTable from '@/Components/SalesTable.vue';
+import DateRangePicker from '@/components/DateRangePicker.vue';
+import SelectBusiness from '@/components/SelectBusiness.vue';
+import SelectBranch from '@/components/SelectBranch.vue';
+import SelectProduct from '@/components/SelectProduct.vue';
+import SelectSeller from '@/components/SelectSeller.vue';
+import SelectStatus from '@/components/SelectStatus.vue';
+import SummaryCard from '@/components/SummaryCard.vue';
+import SalesOverTimeChart from '@/components/SalesOverTimeChart.vue';
+import SalesByBusinessChart from '@/components/SalesByBusinessChart.vue';
+import SalesTable from '@/components/SalesTable.vue';
 
 const props = defineProps({
     summary: Object,

@@ -333,7 +333,7 @@ import { Head, router } from '@inertiajs/vue3';
 import AppLayout from '@/layouts';
 import Modal from '@/components/Modal.vue';
 import Pagination from '@/components/Pagination.vue';
-import SalesReceipt from '@/Components/SalesReceipt.vue';
+import SalesReceipt from '@/components/SalesReceipt.vue';
 import Swal from 'sweetalert2';
 import axios from 'axios';
 
