@@ -302,8 +302,8 @@ import InputError from '@/components/InputError.vue';
 import InputLabel from '@/components/InputLabel.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import SecondaryButton from '@/components/SecondaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
-import TextArea from '@/Components/TextArea.vue';
+import TextInput from '@/components/TextInput.vue';
+import TextArea from '@/components/TextArea.vue';
 import Swal from 'sweetalert2';
 
 const props = defineProps({
