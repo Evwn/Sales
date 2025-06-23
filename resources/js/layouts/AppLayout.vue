@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { ChevronDown, User as UserIcon, LogOut } from 'lucide-vue-next';
 import NavLink from "@/components/NavLink.vue";
 import ApplicationLogo from "@/components/ApplicationLogo.vue";
-import Dropdown from '@/components/Dropdown.vue';
-import DropdownLink from '@/components/DropdownLink.vue';
+import Dropdown from '@/components/Dropdown/Dropdown.vue';
+import DropdownLink from '@/components/Dropdown/DropdownLink.vue';
 import ResponsiveNavLink from '@/components/ResponsiveNavLink.vue';
 
 interface User {
