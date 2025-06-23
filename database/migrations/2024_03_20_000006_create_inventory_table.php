@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('inventory', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->foreignId('branch_id')->constrained()->onDelete('cascade');
+            $table->unsignedBigInteger('product_id');
+            $table->unsignedBigInteger('branch_id');
             $table->integer('quantity')->default(0);
             $table->integer('threshold')->default(10);
             $table->timestamps();

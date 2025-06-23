@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('discounts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('business_id')->constrained();
-            $table->foreignId('product_id')->nullable()->constrained();
+            $table->unsignedBigInteger('product_id')->nullable();
             $table->enum('type', ['percentage', 'flat']);
             $table->decimal('value', 10, 2);
             $table->timestamp('starts_at');

@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('type');
             $table->json('data');
-            $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
+            $table->unsignedBigInteger('user_id')->nullable();
             $table->morphs('subject');
             $table->morphs('causer');
             $table->timestamps();

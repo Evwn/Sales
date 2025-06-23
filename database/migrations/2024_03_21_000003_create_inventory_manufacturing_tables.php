@@ -74,7 +74,7 @@ return new class extends Migration
             Schema::create('manufacturing_items', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('manufacturing_order_id')->constrained();
-                $table->foreignId('product_id')->constrained();
+                $table->unsignedBigInteger('product_id');
                 $table->decimal('quantity', 15, 2);
                 $table->timestamps();
             });

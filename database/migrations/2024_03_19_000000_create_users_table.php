@@ -15,8 +15,8 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->string('role')->default('seller');
-            $table->foreignId('business_id')->nullable()->constrained()->onDelete('cascade');
-            $table->foreignId('branch_id')->nullable()->constrained()->onDelete('cascade');
+            $table->unsignedBigInteger('business_id')->nullable();
+            $table->unsignedBigInteger('branch_id')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

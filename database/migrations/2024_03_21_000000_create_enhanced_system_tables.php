@@ -69,7 +69,7 @@ return new class extends Migration
         Schema::create('manufacturing_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('manufacturing_order_id')->constrained();
-            $table->foreignId('product_id')->constrained();
+            $table->unsignedBigInteger('product_id');
             $table->decimal('quantity', 15, 2);
             $table->timestamps();
         });
@@ -78,7 +78,7 @@ return new class extends Migration
         Schema::create('sales_commission', function (Blueprint $table) {
             $table->id();
             $table->foreignId('seller_id')->constrained('users');
-            $table->foreignId('sale_id')->constrained('sales');
+            $table->unsignedBigInteger('sale_id');
             $table->decimal('amount', 15, 2);
             $table->enum('status', ['pending', 'paid'])->default('pending');
             $table->timestamps();
@@ -89,7 +89,7 @@ return new class extends Migration
         Schema::create('quotations', function (Blueprint $table) {
             $table->id();
             $table->string('reference')->unique();
-            $table->foreignId('customer_id')->constrained();
+            $table->unsignedBigInteger('customer_id');
             $table->decimal('total_amount', 15, 2);
             $table->enum('status', ['draft', 'sent', 'accepted', 'rejected', 'expired'])->default('draft');
             $table->dateTime('valid_until');
@@ -100,7 +100,7 @@ return new class extends Migration
         Schema::create('delivery_notes', function (Blueprint $table) {
             $table->id();
             $table->string('reference')->unique();
-            $table->foreignId('sale_id')->constrained();
+            $table->unsignedBigInteger('sale_id');
             $table->enum('status', ['draft', 'sent', 'delivered'])->default('draft');
             $table->timestamps();
             $table->softDeletes();
@@ -142,7 +142,7 @@ return new class extends Migration
         // Analytics
         Schema::create('product_movement_analysis', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_id')->constrained();
+            $table->unsignedBigInteger('product_id');
             $table->string('period');
             $table->decimal('quantity_sold', 15, 2)->default(0);
             $table->decimal('quantity_purchased', 15, 2)->default(0);
@@ -151,7 +151,7 @@ return new class extends Migration
 
         Schema::create('stock_valuation', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_id')->constrained();
+            $table->unsignedBigInteger('product_id');
             $table->decimal('quantity', 15, 2);
             $table->decimal('value', 15, 2);
             $table->timestamps();

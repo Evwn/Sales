@@ -5,11 +5,26 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Hash;
+use App\Models\User;
+use Spatie\Permission\Models\Role;
 
 class InventoryItemsTableSeeder extends Seeder
 {
     public function run()
     {
+        // Create an admin user with Spatie role
+        $admin = User::firstOrCreate(
+            ['id' => 1],
+            [
+                'name' => 'Admin User',
+                'email' => 'salesmanagement424@gmail.com',
+                'password' => Hash::make('S@les@2025'),
+            ]
+        );
+        if (!$admin->hasRole('admin')) {
+            $admin->assignRole('admin');
+        }
         $now = Carbon::now();
         $items = [
             [
@@ -121,7 +136,7 @@ class InventoryItemsTableSeeder extends Seeder
         ];
 
         // Add more items to reach 100+ (auto-generate for demo)
-        $brands = ['Brookside', 'KCC', 'Mumias', 'EXE', 'Jogoo', 'Ajab', 'Menengai', 'Kimbo', 'Blue Band', 'Royco', 'Kabras', 'Tuzo', 'Supaloaf', 'Festive', 'Kabras', 'Keringet', 'Dasani', 'CocaCola', 'Fanta', 'Sprite', 'Delmonte', 'SunGold', 'Fresh Fri', 'Golden Fry', 'Rina', 'Soko', 'Ndovu', 'Unga', 'Kabras', 'Kensalt', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh'];
+        $brands = ['Brookside', 'KCC', 'Mumias', 'EXE', 'Jogoo', 'Ajab', 'Menengai', 'Kimbo', 'Blue Band', 'Royco', 'Kabras', 'Tuzo', 'Supaloaf', 'Festive', 'Kabras', 'Keringet', 'Dasani', 'CocaCola', 'Fanta', 'Sprite', 'Delmonte', 'SunGold', 'Fresh Fri', 'Golden Fry', 'Rina', 'Soko', 'Ndovu', 'Unga', 'Kabras', 'Kensalt', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh', 'Kensh'];
         $categories = ['Milk', 'Sugar', 'Salt', 'Rice', 'Tea Leaves', 'Coffee', 'Margarine', 'Eggs', 'Beef', 'Chicken', 'Fish', 'Sukuma Wiki', 'Tomatoes', 'Onions', 'Potatoes', 'Carrots', 'Cabbage', 'Bananas', 'Apples', 'Oranges', 'Watermelon', 'Soda', 'Juice', 'Water', 'Biscuits', 'Sweets', 'Chocolate', 'Soap', 'Detergent', 'Toothpaste', 'Tissue Paper', 'Sanitary Pads', 'Diapers', 'Matches', 'Candles', 'Batteries', 'Light Bulbs', 'Razor Blades', 'Shoe Polish', 'Pens', 'Exercise Books', 'Envelopes', 'Glue', 'Rulers', 'Erasers', 'Shaving Cream', 'Lotion', 'Shampoo', 'Toothbrush'];
         $unit_types = ['pcs', 'kg', 'ltr', 'pack', 'bottle', 'box', 'dozen'];
         $base_barcode = 6164000000104;

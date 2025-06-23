@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('address');
+            $table->string('location')->nullable();
             $table->string('phone');
             $table->foreignId('business_id')->constrained()->onDelete('cascade');
             $table->timestamps();
