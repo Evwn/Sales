@@ -71,7 +71,7 @@ import { ref, computed } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
+import PrimaryButton from '@/components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 
 const currentPasswordInput = ref(null);
