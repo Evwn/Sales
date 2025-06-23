@@ -4,6 +4,7 @@ import InputError from '@/components/InputError.vue';
 import InputLabel from '@/components/InputLabel.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import TextInput from '@/components/TextInput.vue';
+import { ref, computed } from 'vue';
 
 defineProps<{
     quote: {
@@ -17,6 +18,19 @@ const form = useForm({
     email: '',
     password: '',
     password_confirmation: '',
+});
+
+const passwordRequirements = ref('');
+
+const isPasswordValid = computed(() => {
+  // At least 1 lowercase, 1 uppercase, 1 number, 1 symbol, min 8 chars
+  const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,}$/;
+  if (!regex.test(form.password)) {
+    passwordRequirements.value = 'Password must be at least 8 characters and contain at least one uppercase letter, one lowercase letter, one number, and one symbol.';
+    return false;
+  }
+  passwordRequirements.value = '';
+  return true;
 });
 
 const submit = () => {
@@ -84,6 +98,10 @@ const submit = () => {
                         <InputError class="mt-2" :message="form.errors.password" />
                     </div>
 
+                    <div v-if="!isPasswordValid && form.password" class="text-red-600 text-sm mt-1">
+                        {{ passwordRequirements }}
+                    </div>
+
                     <div>
                         <InputLabel for="password_confirmation" value="Confirm Password" />
                         <TextInput
@@ -106,7 +124,7 @@ const submit = () => {
                             Already registered?
                         </Link>
 
-                        <PrimaryButton class="ml-4" :disabled="form.processing">
+                        <PrimaryButton class="ml-4" :disabled="form.processing || !isPasswordValid">
                             Register
                         </PrimaryButton>
                     </div>

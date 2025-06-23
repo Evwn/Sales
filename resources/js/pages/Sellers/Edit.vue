@@ -36,6 +36,9 @@
               <label class="block text-sm font-medium text-gray-700">Confirm Password</label>
               <input v-model="form.password_confirmation" type="password" autocomplete="new-password" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" />
             </div>
+            <div v-if="!isPasswordValid && form.password" class="text-red-600 text-sm mt-1">
+              {{ passwordRequirements }}
+            </div>
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700">Business</label>
               <select v-model="selectedBusiness" @change="onBusinessChange" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
@@ -54,7 +57,9 @@
                 </option>
               </select>
             </div>
-            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Update Seller</button>
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded" :disabled="form.processing || !isPasswordValid">
+              Update Seller
+            </button>
           </form>
         </div>
       </div>
@@ -109,6 +114,20 @@ const branchesForSelectedBusiness = computed(() => {
   if (!allBusinesses.value.length) return [];
   const biz = allBusinesses.value.find(b => b.id == selectedBusiness.value);
   return biz ? biz.branches : [];
+});
+
+const passwordRequirements = ref('');
+
+const isPasswordValid = computed(() => {
+  if (!form.password) return true; // Allow blank (means no change)
+  // At least 1 lowercase, 1 uppercase, 1 number, 1 symbol, min 8 chars
+  const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,}$/;
+  if (!regex.test(form.password)) {
+    passwordRequirements.value = 'Password must be at least 8 characters and contain at least one uppercase letter, one lowercase letter, one number, and one symbol.';
+    return false;
+  }
+  passwordRequirements.value = '';
+  return true;
 });
 
 onMounted(() => {

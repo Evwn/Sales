@@ -46,8 +46,12 @@
                 <InputError :message="form.errors.password_confirmation" class="mt-2" />
             </div>
 
+            <div v-if="!isPasswordValid && form.password" class="text-red-600 text-sm mt-1">
+                {{ passwordRequirements }}
+            </div>
+
             <div class="flex items-center gap-4">
-                <PrimaryButton :disabled="form.processing">Save</PrimaryButton>
+                <PrimaryButton :disabled="form.processing || !isPasswordValid">Save</PrimaryButton>
 
                 <Transition
                     enter-active-class="transition ease-in-out"
@@ -63,7 +67,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -77,6 +81,19 @@ const form = useForm({
     current_password: '',
     password: '',
     password_confirmation: '',
+});
+
+const passwordRequirements = ref('');
+
+const isPasswordValid = computed(() => {
+    // At least 1 lowercase, 1 uppercase, 1 number, 1 symbol, min 8 chars
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,}$/;
+    if (!regex.test(form.password)) {
+        passwordRequirements.value = 'Password must be at least 8 characters and contain at least one uppercase letter, one lowercase letter, one number, and one symbol.';
+        return false;
+    }
+    passwordRequirements.value = '';
+    return true;
 });
 
 const updatePassword = () => {
