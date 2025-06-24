@@ -21,6 +21,7 @@ class Branch extends Model
         'phone',
         'email',
         'barcode_path',
+        'status',
     ];
 
     protected $casts = [

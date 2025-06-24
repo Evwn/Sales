@@ -1,16 +1,7 @@
 <template>
   <div class="barcode-display">
     <div class="barcode-container">
-      <img v-if="barcodeUrl && barcodeUrl !== '/products' && barcodeUrl !== ''" :src="barcodeUrl" :alt="barcode" class="barcode-image" />
-    </div>
-    <div class="barcode-text">{{ barcode }}</div>
-    <div class="barcode-actions">
-      <button @click="copyBarcode" class="btn btn-secondary">
-        Copy Barcode
-      </button>
-      <button @click="downloadBarcode" class="btn btn-primary">
-        Download
-      </button>
+      <img v-if="barcodeUrl && barcodeUrl !== '/products' && barcodeUrl !== ''" :src="barcodeUrl" :alt="value" class="barcode-image" />
     </div>
   </div>
 </template>

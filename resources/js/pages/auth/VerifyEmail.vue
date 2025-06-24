@@ -14,7 +14,7 @@ const props = defineProps<{
 const form = useForm({});
 
 const submit = () => {
-    form.post('/verification/send');
+    form.post('/email/verification-notification');
 };
 
 const logout = () => {

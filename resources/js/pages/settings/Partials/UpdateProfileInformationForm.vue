@@ -158,17 +158,14 @@ const updateProfileInformation = () => {
         }
     });
 
-    // Create form data without validation
-    const formData = {
-        _method: 'PATCH',
-        name: form.name,
-        email: form.email,
-        logo: form.logo,
-        logo_url: form.logo_url
-    };
+    const formData = new FormData();
+    formData.append('_method', 'PATCH');
+    formData.append('name', form.name);
+    formData.append('email', form.email);
+    if (form.logo) formData.append('logo', form.logo);
+    if (form.logo_url) formData.append('logo_url', form.logo_url);
 
-    // Send directly to backend without form validation
-    router.post('/settings/profile/update', formData, {
+    router.post('/profile', formData, {
         preserveScroll: true,
         forceFormData: true,
         onSuccess: (response) => {
@@ -194,9 +191,8 @@ const updateProfileInformation = () => {
             form.logo = null;
             
             // Force a complete page reload to ensure image updates
-            router.visit(window.location.pathname, { 
-                only: ['user'],
-                preserveScroll: true 
+            router.visit('/settings/profile', {
+                preserveScroll: true
             });
         },
         onError: (errors) => {

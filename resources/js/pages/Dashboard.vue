@@ -376,7 +376,7 @@ const recentActivity = computed(() => {
                 icon = 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2';
                 break;
             case 'user_logged_in':
-                message = `${activity.data.user_name} logged in at ${activity.data.branch_name}`;
+                message = `${activity.data.user_name} logged in`;
                 icon = 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z';
                 break;
             case 'payment_received':
@@ -553,7 +553,6 @@ const getYesterdayRange = () => {
 // Update the filteredSalesTrend computed property
 const filteredSalesTrend = computed(() => {
     const sales = filteredSales.value;
-    console.log('Filtered Sales for Trend:', sales);
 
     // Group sales by date and branch
     const groupedSales = sales.reduce((acc, sale) => {
@@ -570,8 +569,6 @@ const filteredSalesTrend = computed(() => {
         acc[dateKey][branchName] += Number(sale.amount) || 0;
         return acc;
     }, {});
-
-    console.log('Grouped Sales by Branch:', groupedSales);
 
     // Get all unique branch names
     const allBranches = new Set();
@@ -623,11 +620,6 @@ const filteredSalesTrend = computed(() => {
         };
     });
 
-    console.log('Sales Trend Data:', {
-        labels: formattedLabels,
-        datasets: datasets
-    });
-
     return {
         labels: formattedLabels,
         datasets: datasets
@@ -637,7 +629,6 @@ const filteredSalesTrend = computed(() => {
 // Update the filteredBranchPerformance computed property
 const filteredBranchPerformance = computed(() => {
     const sales = filteredSales.value;
-    console.log('Filtered Sales for Branch Performance:', sales);
 
     // Group sales by branch
     const branchSales = sales.reduce((acc, sale) => {
@@ -648,8 +639,6 @@ const filteredBranchPerformance = computed(() => {
         acc[branchName] += Number(sale.amount) || 0;
         return acc;
     }, {});
-
-    console.log('Branch Sales:', branchSales);
 
     // Convert to arrays for the chart
     const labels = Object.keys(branchSales);
@@ -676,13 +665,6 @@ const filteredBranchPerformance = computed(() => {
     const borderColor = labels.map((_, index) => 
         branchColors[index % branchColors.length]
     );
-
-    console.log('Branch Performance Data:', {
-        labels: labels,
-        data: data,
-        backgroundColor: backgroundColor,
-        borderColor: borderColor
-    });
 
     return {
         labels: labels,
@@ -753,14 +735,6 @@ const getActivityIcon = (type) => {
 const isSeller = computed(() => {
     return props.auth?.user?.roles?.some(role => role.name === 'seller');
 });
-
-if (props.user.business) {
-  // Log business and owner info for debugging
-  // eslint-disable-next-line no-console
-  console.log('Business info:', props.user.business);
-  // eslint-disable-next-line no-console
-  console.log('Business owner info:', props.user.business.owner);
-}
 </script>
 
 <template>

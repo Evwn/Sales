@@ -19,22 +19,9 @@ class ProductController extends Controller
         $user = Auth::user();
         $query = Product::query();
 
-        // Debug logging
-        \Log::info('ProductController: User info', [
-            'user_id' => $user->id,
-            'user_name' => $user->name,
-            'branch_id' => $user->branch_id,
-            'business_id' => $user->business_id,
-            'has_role_seller' => $user->hasRole('seller'),
-            'has_role_owner' => $user->hasRole('owner'),
-            'has_role_admin' => $user->hasRole('admin'),
-            'roles' => $user->getRoleNames()->toArray()
-        ]);
-
         // If user is a seller, only show products from their branch
         if ($user->hasRole('seller')) {
             $query->where('branch_id', $user->branch_id);
-            \Log::info('ProductController: Filtering for seller', ['branch_id' => $user->branch_id]);
         }
         // If user is an owner, only show products from branches of their businesses
         elseif ($user->hasRole('owner')) {
@@ -44,7 +31,6 @@ class ProductController extends Controller
                       $q2->where('user_id', $user->id);
                   });
             });
-            \Log::info('ProductController: Filtering for owner');
         }
         // If user is an admin, only show products from businesses they manage
         elseif ($user->hasRole('admin')) {
@@ -54,7 +40,6 @@ class ProductController extends Controller
                       $q2->where('user_id', $user->id);
                   });
             });
-            \Log::info('ProductController: Filtering for admin');
         }
 
         $products = $query->with(['inventoryItem', 'branch.business'])
@@ -86,17 +71,6 @@ class ProductController extends Controller
                     'image_url' => $product->inventoryItem->image_url ?? null
                 ];
             });
-
-        \Log::info('ProductController: Products found', [
-            'count' => $products->count(),
-            'products' => $products->map(function($p) {
-                return [
-                    'id' => $p['id'],
-                    'name' => $p['name'],
-                    'branch_id' => $p['branch']['id'] ?? null
-                ];
-            })->toArray()
-        ]);
 
         // Get businesses for the current user
         $businesses = Business::where('owner_id', $user->id)
@@ -180,7 +154,7 @@ class ProductController extends Controller
             'stock' => $validated['stock'],
             'min_stock_level' => $validated['min_stock_level'],
             'branch_id' => $branch->id,
-            'status' => 'active'
+            'status' => 1
         ]);
 
         return back()->with('success', 'Product added successfully.');

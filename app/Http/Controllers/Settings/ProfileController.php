@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\Storage;
+use App\Notifications\ProfileChangedNotification;
 
 class ProfileController extends Controller
 {
@@ -51,6 +52,10 @@ class ProfileController extends Controller
         $user = $request->user();
         $validated = $request->validated();
 
+        $oldEmail = $user->email;
+        $oldName = $user->name;
+        $oldLogo = $user->logo_url;
+
         // Handle logo upload
         if ($request->hasFile('logo')) {
             // Delete old logo if exists
@@ -70,8 +75,16 @@ class ProfileController extends Controller
             'email' => $validated['email'],
         ]);
 
+        $changes = [];
         if ($user->isDirty('email')) {
             $user->email_verified_at = null;
+            $changes['email'] = ['old' => $oldEmail, 'new' => $user->email];
+        }
+        if ($user->isDirty('name')) {
+            $changes['name'] = ['old' => $oldName, 'new' => $user->name];
+        }
+        if ($user->isDirty('logo_url')) {
+            $changes['logo_url'] = ['old' => $oldLogo, 'new' => $user->logo_url];
         }
 
         $user->save();
@@ -82,6 +95,11 @@ class ProfileController extends Controller
                 'name' => $validated['business_name'] ?? $user->business->name,
                 'description' => $validated['business_description'] ?? $user->business->description,
             ]);
+        }
+
+        // Send notification if there are changes
+        if (!empty($changes)) {
+            $user->notify(new ProfileChangedNotification($changes));
         }
 
         return back()->with('status', 'Profile updated successfully.')->with('user', [

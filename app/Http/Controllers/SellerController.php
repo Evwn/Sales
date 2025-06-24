@@ -226,6 +226,7 @@ class SellerController extends Controller
         return Inertia::render('Sellers/Index', [
             'sellers' => $sellers,
             'branches' => $branches,
+            'userRole' => $user->getRoleNames()->first(),
         ]);
     }
 } 

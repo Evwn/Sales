@@ -129,25 +129,27 @@
                     </div>
 
                     <div>
-                        <InputLabel for="city" value="City" />
+                        <InputLabel for="city" value="County" />
                         <TextInput
                             id="city"
                             v-model="form.city"
                             type="text"
                             class="mt-1 block w-full"
                             required
+                            placeholder="e.g. Nairobi, Kisumu, Mombasa"
                         />
                         <InputError :message="form.errors.city" class="mt-2" />
                     </div>
 
                     <div>
-                        <InputLabel for="state" value="State" />
+                        <InputLabel for="state" value="Village/Ward/Constituency" />
                         <TextInput
                             id="state"
                             v-model="form.state"
                             type="text"
                             class="mt-1 block w-full"
                             required
+                            placeholder="e.g. Kilimani, Westlands, Kibra"
                         />
                         <InputError :message="form.errors.state" class="mt-2" />
                     </div>
@@ -160,6 +162,7 @@
                             type="text"
                             class="mt-1 block w-full"
                             required
+                            placeholder="e.g. Kenya"
                         />
                         <InputError :message="form.errors.country" class="mt-2" />
                     </div>

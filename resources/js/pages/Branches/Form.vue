@@ -20,6 +20,18 @@
         @update:modelValue="updateLocation"
       />
       <InputError :message="form.errors.location" class="mt-2" />
+      <!-- Allow manual address entry if GPS is not available -->
+      <div class="mt-2">
+        <InputLabel for="address" value="Or type address manually" />
+        <TextInput
+          id="address"
+          type="text"
+          class="mt-1 block w-full"
+          v-model="form.address"
+          placeholder="Enter address manually if GPS fails"
+        />
+        <InputError :message="form.errors.address" class="mt-2" />
+      </div>
     </div>
 
     <div>
@@ -140,12 +152,16 @@ const form = useForm({
 });
 
 const updateLocation = (location) => {
-  form.address = location.location;
+  form.address = location.location || form.address;
   form.gps_latitude = location.latitude;
   form.gps_longitude = location.longitude;
 };
 
 const submit = async () => {
+  // If address is empty but form.location has a value, use it as address
+  if (!form.address && form.location && typeof form.location === 'string') {
+    form.address = form.location;
+  }
   try {
     // Show loading state
     Swal.fire({

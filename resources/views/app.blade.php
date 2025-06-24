@@ -16,12 +16,8 @@
     @inertiaHead
 
     <script>
-        // Check for saved theme preference or use system preference
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark')
-        } else {
-            document.documentElement.classList.remove('dark')
-        }
+        // Always force light mode
+        document.documentElement.classList.remove('dark');
     </script>
   </head>
   <body class="min-h-screen bg-background font-sans antialiased text-foreground transition-colors duration-200">

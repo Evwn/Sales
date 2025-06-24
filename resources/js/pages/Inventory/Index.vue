@@ -77,43 +77,24 @@ const error = ref(null);
 
 // Fetch all inventory items on mount
 onMounted(() => {
-    console.log('Component mounted, fetching inventory items...');
     loading.value = true;
     router.get('/api/inventory/search', { query: '' }, {
         headers: { 'Accept': 'application/json' },
         onSuccess: (response) => {
-            console.log('Raw API Response:', response);
-            console.log('Response data type:', typeof response.data);
-            console.log('Is array?', Array.isArray(response.data));
-            
             if (response.data && Array.isArray(response.data)) {
-                console.log('Number of items before filtering:', response.data.length);
-                // Remove duplicates by name
-                const seen = new Set();
                 inventoryItems.value = response.data.filter(item => {
-                    console.log('Processing item:', item);
                     if (seen.has(item.name)) {
-                        console.log('Duplicate found:', item.name);
                         return false;
                     }
                     seen.add(item.name);
                     return true;
                 });
-                console.log('Number of items after filtering:', inventoryItems.value.length);
-                console.log('Final filtered items:', inventoryItems.value);
             } else {
-                console.error('Invalid response format:', response);
                 error.value = 'Invalid response format';
             }
             loading.value = false;
         },
         onError: (errors) => {
-            console.error('API Error:', errors);
-            console.error('Error details:', {
-                message: errors.message,
-                status: errors.status,
-                response: errors.response
-            });
             error.value = 'Failed to load inventory items';
             loading.value = false;
         }

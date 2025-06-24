@@ -66,7 +66,15 @@
       <p>Longitude: {{ coordinates.longitude }}</p>
     </div>
 
-    <div v-if="error && !coordinates" class="mt-2 text-sm text-red-600 dark:text-red-400">
+    <div v-if="error && bestLocation" class="mt-2 text-sm text-yellow-600 dark:text-yellow-400">
+      {{ error }}
+      <div class="mt-2">
+        <button type="button" class="btn btn-primary" @click="acceptBestLocation">
+          Use this location (accuracy: {{ Math.round(bestAccuracy) }}m)
+        </button>
+      </div>
+    </div>
+    <div v-else-if="error && !coordinates" class="mt-2 text-sm text-red-600 dark:text-red-400">
       {{ error }}
     </div>
   </div>
@@ -99,6 +107,8 @@ const coordinates = ref(
 );
 const isLoading = ref(false);
 const error = ref('');
+const bestLocation = ref(null);
+const bestAccuracy = ref(null);
 
 // Watch for changes in the modelValue prop
 watch(() => props.modelValue, (newValue) => {
@@ -122,9 +132,17 @@ const getCurrentLocation = () => {
 
   navigator.geolocation.getCurrentPosition(
     async (position) => {
-      const { latitude, longitude } = position.coords;
+      const { latitude, longitude, accuracy } = position.coords;
+      if (typeof accuracy === 'number' && accuracy > 1) {
+        bestLocation.value = { latitude, longitude };
+        bestAccuracy.value = accuracy;
+        error.value = `Location accuracy is ${Math.round(accuracy)}m. You can accept this location or try again for better accuracy (Required: ≤1m).`;
+        isLoading.value = false;
+        return;
+      }
       coordinates.value = { latitude, longitude };
-
+      bestLocation.value = null;
+      bestAccuracy.value = null;
       try {
         // Reverse geocoding to get the address
         const response = await fetch(
@@ -132,14 +150,11 @@ const getCurrentLocation = () => {
         );
         const data = await response.json();
         location.value = data.display_name;
-
         emit('update:modelValue', {
           latitude,
           longitude,
           location: data.display_name,
         });
-        
-        // Clear any previous errors since we successfully got the location
         error.value = '';
       } catch (err) {
         error.value = 'Failed to get address from coordinates';
@@ -160,7 +175,7 @@ const getCurrentLocation = () => {
           error.value = 'Location request timed out. Please try again.';
           break;
         default:
-          error.value = 'An error occurred while retrieving your location.';
+          error.value = '';
       }
       isLoading.value = false;
     },
@@ -171,4 +186,35 @@ const getCurrentLocation = () => {
     }
   );
 };
-</script> 
+
+function acceptBestLocation() {
+  if (!bestLocation.value) return;
+  coordinates.value = bestLocation.value;
+  // Reverse geocode for address
+  fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${bestLocation.value.latitude}&lon=${bestLocation.value.longitude}`)
+    .then(res => res.json())
+    .then(data => {
+      location.value = data.display_name;
+      emit('update:modelValue', {
+        latitude: bestLocation.value.latitude,
+        longitude: bestLocation.value.longitude,
+        location: data.display_name,
+      });
+      error.value = '';
+      bestLocation.value = null;
+      bestAccuracy.value = null;
+    })
+    .catch(() => {
+      error.value = 'Failed to get address from coordinates';
+    });
+}
+</script>
+
+<style scoped>
+.btn {
+  @apply px-4 py-2 rounded font-semibold shadow transition-colors duration-150;
+}
+.btn-primary {
+  @apply bg-blue-600 text-white hover:bg-blue-700;
+}
+</style> 

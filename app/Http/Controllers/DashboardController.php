@@ -13,7 +13,6 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use App\Models\SalesReceiptItem;
 use App\Models\SalesReceipt;
-use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
@@ -21,16 +20,6 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
         
-        // Debug information
-        Log::info('User data:', [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'roles' => $user->getRoleNames(),
-            'business_id' => $user->business_id,
-            'branch_id' => $user->branch_id
-        ]);
-
         // Get business based on user role
         $business = null;
         if ($user->hasRole('owner')) {
@@ -40,15 +29,6 @@ class DashboardController extends Controller
         } else {
             $business = $user->business;
         }
-
-        // Debug business data
-        Log::info('Business data:', [
-            'business' => $business ? [
-                'id' => $business->id,
-                'name' => $business->name,
-                'owner_id' => $business->owner_id
-            ] : null
-        ]);
 
         // Initialize empty collections for sales and activities
         $sales = collect();
@@ -63,12 +43,6 @@ class DashboardController extends Controller
                 })
                 ->latest()
             ->get();
-
-            // Debug sales data
-            Log::info('Sales data:', [
-                'count' => $sales->count(),
-                'total_amount' => $sales->sum('amount')
-            ]);
 
             // Get recent activities
             $recentActivity = Activity::with(['user', 'subject', 'causer'])
@@ -86,11 +60,6 @@ class DashboardController extends Controller
                         'time' => $activity->created_at->diffForHumans(),
                     ];
                 });
-
-            // Debug activity data
-            Log::info('Activity data:', [
-                'count' => $recentActivity->count()
-            ]);
         }
 
         // Calculate stats with null checks
@@ -106,9 +75,6 @@ class DashboardController extends Controller
             'total_branches' => $business ? Branch::where('business_id', $business->id)->count() : 0,
             'recent_activity' => $recentActivity,
         ];
-
-        // Debug stats
-        Log::info('Stats data:', $stats);
 
         $businessArray = null;
         if ($business) {

@@ -116,6 +116,7 @@
               <!-- Step 3: Location -->
               <div v-show="currentStep === 2">
                 <div class="space-y-6">
+                  <!-- Address full width -->
                   <div>
                     <InputLabel for="address" value="Address" />
                     <TextInput
@@ -127,46 +128,96 @@
                     />
                     <InputError :message="form.errors.address" class="mt-2" />
                   </div>
-
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <InputLabel for="city" value="City" />
-                      <TextInput
-                        id="city"
-                        v-model="form.city"
-                        type="text"
-                        class="mt-1 block w-full"
-                        required
-                      />
-                      <InputError :message="form.errors.city" class="mt-2" />
-                    </div>
-
-                    <div>
-                      <InputLabel for="state" value="State/Province" />
-                      <TextInput
-                        id="state"
-                        v-model="form.state"
-                        type="text"
-                        class="mt-1 block w-full"
-                        required
-                      />
-                      <InputError :message="form.errors.state" class="mt-2" />
-                    </div>
-                  </div>
-
+                  <!-- Two-column grid for country, county, ward, postal code -->
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <InputLabel for="country" value="Country" />
-                      <TextInput
+                      <Multiselect
                         id="country"
-                        v-model="form.country"
-                        type="text"
-                        class="mt-1 block w-full"
-                        required
+                        v-model="selectedCountry"
+                        :options="countryOptions"
+                        placeholder="Select country"
+                        :allow-empty="true"
+                        :searchable="true"
+                        :clear-on-select="false"
+                        :close-on-select="true"
+                        :show-labels="false"
+                        @input="val => { form.country = val === 'Other (type manually)' ? '' : val; }"
+                        label=""
+                        track-by=""
                       />
+                      <div v-if="selectedCountry === 'Other (type manually)'" class="mt-2">
+                        <TextInput
+                          id="manual-country"
+                          v-model="manualCountry"
+                          type="text"
+                          class="mt-1 block w-full"
+                          placeholder="Type country manually"
+                          @input="form.country = manualCountry"
+                          required
+                        />
+                      </div>
                       <InputError :message="form.errors.country" class="mt-2" />
                     </div>
-
+                    <div>
+                      <InputLabel for="city" value="County" />
+                      <Multiselect
+                        id="city"
+                        v-model="selectedCounty"
+                        :options="countiesWithManual"
+                        placeholder="Select or search county"
+                        :allow-empty="true"
+                        :searchable="true"
+                        :clear-on-select="false"
+                        :close-on-select="true"
+                        :show-labels="false"
+                        @input="val => { form.city = val === MANUAL_ENTRY_OPTION ? '' : val; if (!val || val === MANUAL_ENTRY_OPTION) { selectedWard = ''; } }"
+                        label=""
+                        track-by=""
+                      />
+                      <div v-if="selectedCounty === MANUAL_ENTRY_OPTION" class="mt-2">
+                        <TextInput
+                          id="manual-county"
+                          v-model="manualCounty"
+                          type="text"
+                          class="mt-1 block w-full"
+                          placeholder="Type county manually"
+                          @input="form.city = manualCounty"
+                          required
+                        />
+                      </div>
+                      <InputError :message="form.errors.city" class="mt-2" />
+                    </div>
+                    <div>
+                      <InputLabel for="state" value="Village/Ward/Constituency" />
+                      <Multiselect
+                        id="state"
+                        v-model="selectedWard"
+                        :options="wardsWithManual"
+                        placeholder="Select or search ward/constituency/village"
+                        :allow-empty="true"
+                        :searchable="true"
+                        :clear-on-select="false"
+                        :close-on-select="true"
+                        :show-labels="false"
+                        :disabled="!selectedCounty"
+                        @input="val => form.state = val === MANUAL_ENTRY_OPTION ? '' : val"
+                        label=""
+                        track-by=""
+                      />
+                      <div v-if="selectedWard === MANUAL_ENTRY_OPTION" class="mt-2">
+                        <TextInput
+                          id="manual-ward"
+                          v-model="manualWard"
+                          type="text"
+                          class="mt-1 block w-full"
+                          placeholder="Type ward/constituency/village manually"
+                          @input="form.state = manualWard"
+                          required
+                        />
+                      </div>
+                      <InputError :message="form.errors.state" class="mt-2" />
+                    </div>
                     <div>
                       <InputLabel for="postal_code" value="Postal Code" />
                       <TextInput
@@ -174,7 +225,7 @@
                         v-model="form.postal_code"
                         type="text"
                         class="mt-1 block w-full"
-                        required
+                        placeholder="Postal Code (optional)"
                       />
                       <InputError :message="form.errors.postal_code" class="mt-2" />
                     </div>
@@ -388,7 +439,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import InputLabel from '@/components/InputLabel.vue';
@@ -397,6 +448,9 @@ import TextArea from '@/components/TextArea.vue';
 import InputError from '@/components/InputError.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import Swal from 'sweetalert2';
+import Multiselect from 'vue-multiselect';
+import 'vue-multiselect/dist/vue-multiselect.min.css';
+import countiesData from '@/data/counties_wards.json';
 
 const steps = [
   'Basic Information',
@@ -425,6 +479,32 @@ const form = useForm({
   tax_document: null as File | null,
   registration_document: null as File | null,
   terms_and_conditions: null as File | null
+});
+
+const counties = countiesData.map(c => c.name);
+const selectedCounty = ref('');
+const wards = computed(() => {
+  const county = countiesData.find(c => c.name === selectedCounty.value);
+  return county ? county.wards : [];
+});
+const selectedWard = ref('');
+
+const MANUAL_ENTRY_OPTION = 'Other (type manually)';
+const countiesWithManual = [...counties, MANUAL_ENTRY_OPTION];
+const wardsWithManual = computed(() => selectedCounty.value && selectedCounty.value !== MANUAL_ENTRY_OPTION ? [...wards.value, MANUAL_ENTRY_OPTION] : [MANUAL_ENTRY_OPTION]);
+const manualCounty = ref('');
+const manualWard = ref('');
+
+const countryOptions = ['Kenya', 'Other (type manually)'];
+const selectedCountry = ref('Kenya');
+const manualCountry = ref('');
+
+onMounted(() => {
+  if (form.city) selectedCounty.value = form.city;
+  if (form.state) selectedWard.value = form.state;
+  if (!form.country) {
+    form.country = selectedCountry.value || 'Kenya';
+  }
 });
 
 const handleLogoChange = (event: Event) => {
@@ -493,10 +573,6 @@ const validateStep = (step: number): boolean => {
         form.errors.country = 'The country field is required.';
         return false;
       }
-      if (!form.postal_code) {
-        form.errors.postal_code = 'The postal code field is required.';
-        return false;
-      }
       break;
     case 3: // Business Details
       // All fields optional in this step
@@ -519,6 +595,11 @@ const previousStep = () => {
 };
 
 const handleSubmit = async () => {
+  // Ensure postal_code is set to 'N/A' if empty
+  if (!form.postal_code || form.postal_code.trim() === '') {
+    form.postal_code = 'N/A';
+  }
+
   try {
     // Only validate required fields before submitting
     if (!validateStep(0) || !validateStep(1) || !validateStep(2)) {
@@ -571,4 +652,48 @@ const handleSubmit = async () => {
     });
   }
 };
-</script> 
+
+watch(selectedCounty, (val) => {
+  if (val === MANUAL_ENTRY_OPTION) {
+    form.city = manualCounty;
+  } else {
+    form.city = val;
+  }
+});
+
+watch(manualCounty, (val) => {
+  if (selectedCounty === MANUAL_ENTRY_OPTION) {
+    form.city = val;
+  }
+});
+
+watch(selectedWard, (val) => {
+  if (val === MANUAL_ENTRY_OPTION) {
+    form.state = manualWard;
+  } else {
+    form.state = val;
+  }
+});
+
+watch(manualWard, (val) => {
+  if (selectedWard === MANUAL_ENTRY_OPTION) {
+    form.state = val;
+  }
+});
+
+watch(selectedCountry, (val) => {
+  if (val === 'Other (type manually)') {
+    form.country = manualCountry;
+  } else {
+    form.country = val;
+  }
+});
+
+watch(manualCountry, (val) => {
+  if (selectedCountry === 'Other (type manually)') {
+    form.country = val;
+  }
+});
+</script>
+
+<style src="vue-multiselect/dist/vue-multiselect.min.css"></style> 

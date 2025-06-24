@@ -17,6 +17,8 @@ use App\Http\Middleware\CheckBranchAccess;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -168,5 +170,21 @@ Route::get('/sales/{sale}/print-receipt', [SaleController::class, 'printReceipt'
 Route::post('/test-low-stock-notification', [App\Http\Controllers\SaleController::class, 'testLowStockNotification'])
     ->name('test.low.stock.notification');
 
+Route::post('/logout', function (Request $request) {
+    Auth::logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+    return redirect('/');
+})->name('logout');
+
+Route::get('/settings/profile', function() {
+    return redirect('/profile');
+});
 require __DIR__.'/auth.php';
 require __DIR__.'/settings.php';
+
+// Catch-all route for unmatched URLs to trigger custom error UI
+Route::any('{any}', function () {
+    abort(404);
+})->where('any', '.*');
+

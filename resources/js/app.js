@@ -2,7 +2,7 @@ import './bootstrap';
 import '../css/app.css';
 
 import { createApp, h } from 'vue';
-import { createInertiaApp } from '@inertiajs/vue3';
+import { createInertiaApp, router } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Sales Management System';
@@ -18,4 +18,15 @@ createInertiaApp({
     progress: {
         color: '#4B5563',
     },
+});
+
+// Global error handler for unverified users
+router.on('error', (errors) => {
+    if (errors.status === 409 || errors.status === 403) {
+        window.location.href = '/verify-email';
+    }
+    // Reload the page fully if a 419 (Page Expired) error occurs
+    if (errors.status === 419) {
+        window.location.reload();
+    }
 }); 

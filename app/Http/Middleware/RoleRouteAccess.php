@@ -24,13 +24,22 @@ class RoleRouteAccess
                 'dashboard*',
                 'products*',
                 'sales*',
+                'profile*',
+                'settings*',
+                'logout',
             ],
             'customer' => [
                 'dashboard*',
+                'profile*',
+                'settings*',
+                'logout',
             ],
             'supplier' => [
                 'dashboard*',
                 'inventory*',
+                'profile*',
+                'settings*',
+                'logout',
             ],
             'owner' => [
                 'dashboard*',
@@ -42,6 +51,9 @@ class RoleRouteAccess
                 'products*',
                 'discounts*',
                 'reports*',
+                'profile*',
+                'settings*',
+                'logout',
             ],
             'admin' => ['*'], // admin can access everything
         ];

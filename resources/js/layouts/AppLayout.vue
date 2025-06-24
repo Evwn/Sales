@@ -93,12 +93,12 @@ window.addEventListener('offline', () => { isOffline.value = true; });
                 'inline-block h-3 w-3 rounded-full',
                 isOffline ? 'bg-red-500' : 'bg-green-500'
             ]"></span>
-            <span class="text-sm text-gray-800 dark:text-gray-100">
+            <span class="text-sm text-gray-800">
                 {{ isOffline ? 'Offline' : 'Online' }}
             </span>
         </div>
-        <div class="min-h-screen bg-gray-100 dark:bg-neutral-900">
-            <nav class="bg-white dark:bg-neutral-800 border-b border-gray-100 dark:border-neutral-700">
+        <div class="min-h-screen bg-gray-100">
+            <nav class="bg-white border-b border-gray-100">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="flex justify-between h-16">
                         <div class="flex items-center">
@@ -116,7 +116,7 @@ window.addEventListener('offline', () => { isOffline.value = true; });
                                         <img :src="page.props.auth.user.logo_url" alt="User Logo" class="block h-9 w-9 rounded-full object-cover" />
                                     </template>
                                     <template v-else>
-                                        <ApplicationLogo class="block h-9 w-auto fill-current text-gray-800 dark:text-neutral-100" />
+                                        <ApplicationLogo class="block h-9 w-auto fill-current text-gray-800" />
                                     </template>
                                 </Link>
                             </div>
@@ -124,38 +124,38 @@ window.addEventListener('offline', () => { isOffline.value = true; });
                             <div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex sm:items-center">
                             <!-- Seller Navigation: Only show Dashboard, Inventory, Sales -->
                             <template v-if="isSeller">
-                                <NavLink href="/dashboard" :active="isCurrentRoute('/dashboard')" class="text-gray-900 dark:text-neutral-100 hover:text-gray-700 dark:hover:text-neutral-300">
+                                <NavLink href="/dashboard" :active="isCurrentRoute('/dashboard')" class="text-gray-900 hover:text-gray-700">
                                     Dashboard
                                 </NavLink>
-                                <NavLink href="/products" :active="isCurrentRoute('/products')" class="text-gray-900 dark:text-neutral-100 hover:text-gray-700 dark:hover:text-neutral-300">
+                                <NavLink href="/products" :active="isCurrentRoute('/products')" class="text-gray-900 hover:text-gray-700">
                                     Inventory
                                 </NavLink>
                             </template>
                             <!-- Owner Navigation -->
                             <template v-else-if="isOwner">
-                                <NavLink href="/dashboard" :active="isCurrentRoute('/dashboard')" class="text-gray-900 dark:text-neutral-100 hover:text-gray-700 dark:hover:text-neutral-300">
+                                <NavLink href="/dashboard" :active="isCurrentRoute('/dashboard')" class="text-gray-900 hover:text-gray-700">
                                     Dashboard
                                 </NavLink>
                                 <NavLink href="/sales" :active="isCurrentRoute('/sales')">Sales</NavLink>
                                 <NavLink href="/businesses" :active="isCurrentRoute('/businesses')">Businesses</NavLink>
                                 <NavLink href="/branches" :active="isCurrentRoute('/branches')">Branches</NavLink>
                                 <NavLink href="/sellers" :active="isCurrentRoute('/sellers')">Sellers</NavLink>
-                                <NavLink href="/products" :active="isCurrentRoute('/products')" class="text-gray-900 dark:text-neutral-100 hover:text-gray-700 dark:hover:text-neutral-300">
+                                <NavLink href="/products" :active="isCurrentRoute('/products')" class="text-gray-900 hover:text-gray-700">
                                     Inventory
                                 </NavLink>
-                                <NavLink href="/inventory-items" :active="isCurrentRoute('/inventory-items')" class="text-gray-900 dark:text-neutral-100 hover:text-gray-700 dark:hover:text-neutral-300">
+                                <NavLink href="/inventory-items" :active="isCurrentRoute('/inventory-items')" class="text-gray-900 hover:text-gray-700">
                                     Products
                                 </NavLink>
-                                <NavLink v-if="isOwner || canAccessReports" href="/reports" :active="isCurrentRoute('/reports')" class="text-gray-900 dark:text-neutral-100 hover:text-gray-700 dark:hover:text-neutral-300">
+                                <NavLink v-if="isOwner || canAccessReports" href="/reports" :active="isCurrentRoute('/reports')" class="text-gray-900 hover:text-gray-700">
                                     Reports
                                 </NavLink>
                             </template>
                             <!-- Admin Navigation -->
                             <template v-else-if="isAdmin">
-                                <NavLink v-if="hasPermission('manage_users')" href="/users" :active="isCurrentRoute('/users')" class="text-gray-900 dark:text-neutral-100 hover:text-gray-700 dark:hover:text-neutral-300">
+                                <NavLink v-if="hasPermission('manage_users')" href="/users" :active="isCurrentRoute('/users')" class="text-gray-900 hover:text-gray-700">
                                     Users
                                 </NavLink>
-                                <NavLink href="/products" :active="isCurrentRoute('/products')" class="text-gray-900 dark:text-neutral-100 hover:text-gray-700 dark:hover:text-neutral-300">
+                                <NavLink href="/products" :active="isCurrentRoute('/products')" class="text-gray-900 hover:text-gray-700">
                                     Inventory
                                 </NavLink>
                             </template>
@@ -203,10 +203,10 @@ window.addEventListener('offline', () => { isOffline.value = true; });
                     <div class="fixed inset-0 bg-black/50" @click="showingNavigationDropdown = false"></div>
                     
                     <!-- Menu Content -->
-                    <div class="fixed inset-y-0 left-0 w-3/4 max-w-sm bg-white dark:bg-neutral-800 shadow-lg">
+                    <div class="fixed inset-y-0 left-0 w-3/4 max-w-sm bg-white shadow-lg">
                         <div class="flex flex-col h-full">
-                            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-neutral-700">
-                                <div class="font-medium text-base text-gray-800 dark:text-neutral-100">
+                            <div class="flex items-center justify-between p-4 border-b border-gray-200">
+                                <div class="font-medium text-base text-gray-800">
                                     {{ page.props.auth?.user?.name }}
                                 </div>
                                 <button @click="showingNavigationDropdown = false" class="text-gray-400 hover:text-gray-500">
@@ -239,19 +239,19 @@ window.addEventListener('offline', () => { isOffline.value = true; });
 
                                     <!-- Admin Navigation -->
                                     <template v-else-if="isAdmin">
-                                        <NavLink v-if="hasPermission('manage_users')" href="/users" :active="isCurrentRoute('/users')" class="w-full block px-4 py-3 text-gray-900 dark:text-neutral-100 hover:text-gray-700 dark:hover:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-700/50 rounded-lg">
+                                        <NavLink v-if="hasPermission('manage_users')" href="/users" :active="isCurrentRoute('/users')" class="w-full block px-4 py-3 text-gray-900 hover:text-gray-700 hover:bg-gray-50 rounded-lg">
                                             Users
                                         </NavLink>
                                     </template>
                                 </nav>
                             </div>
 
-                            <div class="p-4 border-t border-gray-200 dark:border-neutral-700">
+                            <div class="p-4 border-t border-gray-200">
                                 <div class="flex flex-col space-y-3">
-                                    <Link href="/settings/profile" class="w-full block px-4 py-3 text-gray-900 dark:text-neutral-100 hover:text-gray-700 dark:hover:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-700/50 rounded-lg">
+                                    <Link href="/settings/profile" class="w-full block px-4 py-3 text-gray-900 hover:text-gray-700 hover:bg-gray-50 rounded-lg">
                                         Settings
                                     </Link>
-                                    <Link href="/logout" method="post" as="button" class="w-full block px-4 py-3 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
+                                    <Link href="/logout" method="post" as="button" class="w-full block px-4 py-3 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg">
                                         Logout
                                     </Link>
                                 </div>
@@ -261,7 +261,7 @@ window.addEventListener('offline', () => { isOffline.value = true; });
                 </div>
             </nav>
 
-            <header v-if="$slots.header" class="bg-white dark:bg-neutral-800 shadow">
+            <header v-if="$slots.header" class="bg-white shadow">
                 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
                     <slot name="header" />
                 </div>

@@ -24,9 +24,6 @@ class ReportController extends Controller
             })
             ->pluck('id');
         
-        // Debug: Log user's businesses
-        \Log::info("User ID: " . $user->id . ", User businesses: " . $userBusinesses->implode(', '));
-        
         // Load sales data only for user's businesses
         $query = Sale::query()
             ->whereIn('business_id', $userBusinesses)
@@ -34,22 +31,6 @@ class ReportController extends Controller
 
         $sales = $query->latest()->get();
         
-        // Debug: Check what's being loaded
-        \Log::info("Total sales for user: " . $sales->count());
-        foreach ($sales->take(3) as $sale) {
-            \Log::info("Sale ID: " . $sale->id . ", Business: " . ($sale->business->name ?? 'null') . ", Items count: " . ($sale->items ? $sale->items->count() : 'null'));
-            
-            // Debug product relationships
-            if ($sale->items) {
-                foreach ($sale->items->take(2) as $item) {
-                    \Log::info("Item ID: " . $item->id . ", Product ID: " . $item->product_id);
-                    \Log::info("Product name: " . ($item->product->name ?? 'null'));
-                    \Log::info("Product inventory_item_id: " . ($item->product->inventory_item_id ?? 'null'));
-                    \Log::info("InventoryItem name: " . ($item->product->inventoryItem->name ?? 'null'));
-                }
-            }
-        }
-
         // Summary calculations for user's businesses only
         $totalSales = $sales->count();
         $totalRevenue = $sales->sum('amount');

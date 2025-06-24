@@ -48,20 +48,6 @@ class SaleController extends Controller
             'items.product.inventoryItem'
         ])->get();
 
-        Log::info('Print Receipt - Loaded sales data', [
-            'total_sales' => $sales->count(),
-            'first_sale' => $sales->first() ? [
-                'id' => $sales->first()->id,
-                'reference' => $sales->first()->reference,
-                'business_id' => $sales->first()->business_id,
-                'branch_id' => $sales->first()->branch_id,
-                'items_count' => $sales->first()->items->count(),
-                'has_seller' => $sales->first()->seller ? true : false,
-                'has_business' => $sales->first()->branch->business ? true : false,
-                'has_branch' => $sales->first()->branch ? true : false
-            ] : null
-        ]);
-
         return Inertia::render('Sales/Index', [
             'sales' => [
                 'data' => $sales->map(function ($sale) {
@@ -118,31 +104,13 @@ class SaleController extends Controller
     public function store(Request $request)
     {
         // Simple test to see if request reaches here
-        Log::info('DEBUG: SaleController store method reached!', [
-            'timestamp' => now(),
-            'user' => auth()->user()->name ?? 'unknown'
-        ]);
-
         // Debug logging for request details
-        Log::info('DEBUG: SaleController store method called', [
-            'request_url' => $request->url(),
-            'request_method' => $request->method(),
-            'route_name' => $request->route()->getName(),
-            'business_id' => $request->input('business_id'),
-            'branch_id' => $request->input('branch_id'),
-            'user_id' => auth()->id(),
-            'user_roles' => auth()->user()->getRoleNames()->toArray(),
-            'user_branch_id' => auth()->user()->branch_id,
-            'request_data' => $request->all()
-        ]);
-
         // Get the request data
         $requestData = $request->all();
 
         // For sellers, automatically use their assigned branch if not provided
         if (auth()->user()->hasRole('seller') && !$request->input('branch_id')) {
             $requestData['branch_id'] = auth()->user()->branch_id;
-            Log::info('DEBUG: Auto-assigned branch_id for seller', ['branch_id' => $requestData['branch_id']]);
         }
 
         $validated = $request->validate([
@@ -156,7 +124,7 @@ class SaleController extends Controller
             'items.*.product.id' => 'required|exists:products,id',
             'items.*.product.name' => 'required|string',
             'items.*.product.price' => 'required|numeric|min:0',
-            'items.*.product.barcode' => 'required|string',
+            'items.*.product.barcode' => 'nullable|string',
             'items.*.product.is_taxable' => 'required|boolean',
             'items.*.product.tax_rate' => 'required|numeric|min:0',
             'items.*.quantity' => 'required|integer|min:1',
@@ -171,10 +139,6 @@ class SaleController extends Controller
         if (auth()->user()->hasRole('seller')) {
             $userBranchId = auth()->user()->branch_id;
             if ($validated['branch_id'] != $userBranchId) {
-                Log::error('DEBUG: Seller trying to sell from wrong branch', [
-                    'user_branch_id' => $userBranchId,
-                    'requested_branch_id' => $validated['branch_id']
-                ]);
                 return response()->json([
                     'success' => false,
                     'error' => 'You can only sell products from your assigned branch.'
@@ -242,12 +206,6 @@ class SaleController extends Controller
             ]);
             
         } catch (\Exception $e) {
-            \Log::error('Sale processing error: ' . $e->getMessage(), [
-                'exception' => $e,
-                'request_data' => $request->all(),
-                'user_id' => auth()->id(),
-            ]);
-        
             return response()->json([
                 'success' => false,
                 'error' => 'Error processing sale: ' . $e->getMessage()
@@ -516,23 +474,7 @@ class SaleController extends Controller
      */
     public function printReceipt(Sale $sale)
     {
-        Log::info('Print Receipt - Starting process', [
-            'sale_id' => $sale->id,
-            'reference' => $sale->reference,
-            'business_id' => $sale->business_id,
-            'branch_id' => $sale->branch_id
-        ]);
-
         $sale->load(['customer', 'seller', 'business', 'branch', 'items.product']);
-
-        Log::info('Print Receipt - Loaded sale data', [
-            'sale' => $sale->toArray(),
-            'items_count' => $sale->items->count(),
-            'has_customer' => $sale->customer ? true : false,
-            'has_seller' => $sale->seller ? true : false,
-            'has_business' => $sale->business ? true : false,
-            'has_branch' => $sale->branch ? true : false
-        ]);
 
         return Inertia::render('Sales/PrintReceipt', [
             'sale' => $sale
@@ -762,8 +704,6 @@ class SaleController extends Controller
     // Public receipt by reference (no auth required)
     public function publicReceipt($reference)
     {
-        \Log::info('Public receipt route hit', ['reference' => $reference]);
-
         // Find the receipt by reference
         $receipt = \App\Models\SalesReceipt::where('reference', $reference)
             ->with([
@@ -854,11 +794,6 @@ class SaleController extends Controller
             ]);
             
         } catch (\Exception $e) {
-            \Log::error('Test low stock notification failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
             return response()->json([
                 'success' => false,
                 'error' => 'Failed to test low stock notification: ' . $e->getMessage()

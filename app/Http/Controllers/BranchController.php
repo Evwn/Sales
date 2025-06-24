@@ -84,6 +84,7 @@ class BranchController extends Controller
                 'gps_longitude' => $validated['gps_longitude'] ?? null,
                 'phone' => $validated['phone'],
                 'email' => $validated['email'],
+                'status' => 'active', // Set branch as active by default
             ]);
 
             // Generate barcode for the new branch
