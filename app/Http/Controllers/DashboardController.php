@@ -46,8 +46,21 @@ class DashboardController extends Controller
 
             // Get recent activities
             $recentActivity = Activity::with(['user', 'subject', 'causer'])
-                ->whereHas('subject', function ($q) use ($business) {
-                    $q->where('business_id', $business->id);
+                ->where(function($query) use ($user) {
+                    // Get activities where the user is the owner
+                    $query->where('user_id', $user->id)
+                        // Or where the user is the causer
+                        ->orWhere('causer_id', $user->id)
+                        // Or where the user is related to the subject through ownership
+                        ->orWhereHasMorph('subject', [
+                            'App\Models\Product',
+                            'App\Models\Sale',
+                            'App\Models\User'
+                        ], function($query) use ($user) {
+                            $query->whereHas('branch.business', function($q) use ($user) {
+                                $q->where('owner_id', $user->id);
+                            });
+                        });
                 })
                 ->latest()
                 ->take(10)

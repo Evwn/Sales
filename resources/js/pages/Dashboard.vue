@@ -353,55 +353,62 @@ const paymentMethods = computed(() => {
 });
 const recentActivity = computed(() => {
     const activities = props.stats?.recent_activity || [];
-    return activities.map(activity => {
+    const currentUserId = props.auth?.user?.id;
+    return activities.slice(0, 10).map(activity => {
         let message = '';
         let icon = '';
-
+        let byText = '';
         // Only process activities with valid data
         if (!activity.type || !activity.data) {
             return null;
         }
-
+        // Determine who performed the activity
+        if (activity.data.user_id && currentUserId && activity.data.user_id === currentUserId) {
+            byText = 'by you';
+        } else if (activity.data.user_name) {
+            byText = `by ${activity.data.user_name}`;
+        } else {
+            byText = 'by Unknown';
+        }
         switch (activity.type) {
             case 'sale_created':
-                message = `New sale of ${formatCurrency(activity.data.amount)} by ${activity.data.seller_name} at ${activity.data.branch_name}`;
+                message = `New sale of ${formatCurrency(activity.data.amount)} by ${activity.data.seller_name || 'Unknown'} at ${activity.data.branch_name || 'Unknown'}`;
                 icon = 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z';
                 break;
             case 'product_updated':
-                message = `Product "${activity.data.product_name}" ${activity.data.action} by ${activity.data.user_name}`;
+                message = `Product "${activity.data.product_name || 'Unknown'}" updated ${byText}`;
                 icon = 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4';
                 break;
             case 'inventory_adjusted':
-                message = `Inventory for "${activity.data.product_name}" adjusted by ${activity.data.quantity} units by ${activity.data.user_name}`;
+                message = `Inventory for "${activity.data.product_name || 'Unknown'}" adjusted by ${activity.data.quantity ?? activity.data.adjustment ?? 'N/A'} units ${byText}`;
                 icon = 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2';
                 break;
             case 'user_logged_in':
-                message = `${activity.data.user_name} logged in`;
+                message = `${activity.data.user_name || 'Unknown'} logged in`;
                 icon = 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z';
                 break;
             case 'payment_received':
-                message = `Payment of ${formatCurrency(activity.data.amount)} received via ${activity.data.payment_method} at ${activity.data.branch_name}`;
+                message = `Payment of ${formatCurrency(activity.data.amount)} received via ${activity.data.payment_method || activity.data.method || 'Unknown'} at ${activity.data.branch_name || 'Unknown'}`;
                 icon = 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z';
                 break;
             case 'branch_created':
-                message = `New branch "${activity.data.branch_name}" created by ${activity.data.user_name}`;
+                message = `New branch "${activity.data.branch_name || 'Unknown'}" created by ${activity.data.user_name || 'Unknown'}`;
                 icon = 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4';
                 break;
             case 'business_updated':
-                message = `Business "${activity.data.business_name}" updated by ${activity.data.user_name}`;
+                message = `Business "${activity.data.business_name || 'Unknown'}" updated by ${activity.data.user_name || 'Unknown'}`;
                 icon = 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4';
                 break;
             default:
                 return null; // Skip unknown activity types
         }
-
         return {
             id: activity.id,
             message,
             icon,
             time: activity.time
         };
-    }).filter(activity => activity !== null); // Remove null activities
+    }).filter(activity => activity !== null);
 });
 
 // Add formatDate function

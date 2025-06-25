@@ -11,7 +11,6 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\Storage;
 use App\Notifications\ProfileChangedNotification;
-use Illuminate\Support\Facades\Log;
 
 class ProfileController extends Controller
 {
@@ -33,7 +32,7 @@ class ProfileController extends Controller
         $oldName = $user->name;
         $oldLogo = $user->logo_url;
 
-        // Debug: Log if file is present
+        // Handle logo upload
         if ($request->hasFile('logo')) {
             // Delete old logo if exists
             if ($user->logo_url) {

@@ -50,11 +50,22 @@ class BranchController extends Controller
 
     public function index(Business $business)
     {
+        $user = Auth::user();
+        
+        // Get all businesses the user has access to
+        $businesses = Business::where('owner_id', $user->id)
+            ->orWhereHas('admins', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })
+            ->get(['id', 'name']);
+
+        // Get branches for the specific business
         $branches = $business->branches()->with(['business'])->get();
         
         return Inertia::render('Branches/Index', [
             'business' => $business,
             'branches' => $branches,
+            'businesses' => $businesses
         ]);
     }
 

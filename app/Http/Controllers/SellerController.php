@@ -207,26 +207,34 @@ class SellerController extends Controller
     public function all()
     {
         $user = Auth::user();
-        $sellers = User::role('seller')
+        $query = User::role('seller')
             ->whereHas('branch.business', function ($q) use ($user) {
                 $q->where('owner_id', $user->id)
                   ->orWhereHas('admins', function ($q2) use ($user) {
                       $q2->where('user_id', $user->id);
                   });
-            })
-            ->with(['branch.business'])
-            ->get();
-        // Get branches for the business if it exists
+            });
+
+        // Get all branches for the businesses
         $branches = Branch::whereHas('business', function ($q) use ($user) {
             $q->where('owner_id', $user->id)
               ->orWhereHas('admins', function ($q2) use ($user) {
                   $q2->where('user_id', $user->id);
               });
         })->get();
+
+        // If branch filter is provided
+        if (request()->has('branch_id') && request('branch_id') !== 'all') {
+            $query->where('branch_id', request('branch_id'));
+        }
+
+        $sellers = $query->with(['branch.business'])->get();
+
         return Inertia::render('Sellers/Index', [
             'sellers' => $sellers,
             'branches' => $branches,
             'userRole' => $user->getRoleNames()->first(),
+            'selectedBranch' => request('branch_id', 'all')
         ]);
     }
 } 

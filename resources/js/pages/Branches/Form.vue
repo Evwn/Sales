@@ -58,48 +58,6 @@
       <InputError :message="form.errors.email" class="mt-2" />
     </div>
 
-    <!-- Barcode Section -->
-    <div v-if="branch" class="space-y-4">
-      <div class="flex items-center justify-between">
-        <InputLabel value="Branch Barcode" />
-        <SecondaryButton
-          type="button"
-          @click="generateBarcode"
-          :disabled="isGeneratingBarcode"
-        >
-          <span v-if="isGeneratingBarcode">Generating...</span>
-          <span v-else>Generate New Barcode</span>
-        </SecondaryButton>
-      </div>
-      
-      <div v-if="branch.barcode_path" class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Barcode</p>
-            <p class="font-mono text-lg">{{ branch.barcode_path }}</p>
-          </div>
-          <div class="flex space-x-2">
-            <SecondaryButton
-              type="button"
-              @click="downloadBarcode"
-              :disabled="isDownloadingBarcode"
-            >
-              <span v-if="isDownloadingBarcode">Downloading...</span>
-              <span v-else>Download</span>
-            </SecondaryButton>
-            <SecondaryButton
-              type="button"
-              @click="printBarcode"
-              :disabled="isPrintingBarcode"
-            >
-              <span v-if="isPrintingBarcode">Printing...</span>
-              <span v-else>Print</span>
-            </SecondaryButton>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <div class="flex items-center justify-end gap-4">
       <SecondaryButton
         type="button"
@@ -136,10 +94,6 @@ const props = defineProps({
     required: true,
   },
 });
-
-const isGeneratingBarcode = ref(false);
-const isDownloadingBarcode = ref(false);
-const isPrintingBarcode = ref(false);
 
 const form = useForm({
   name: props.branch?.name || '',
@@ -227,69 +181,6 @@ const submit = async () => {
       text: error.message || 'An unexpected error occurred',
       confirmButtonText: 'OK'
     });
-  }
-};
-
-const generateBarcode = async () => {
-  if (!props.branch) return;
-  
-  isGeneratingBarcode.value = true;
-  try {
-    const response = await axios.post(
-      `/branches/${props.business.id}/${props.branch.id}/generate-barcode`
-    );
-    props.branch.barcode_path = response.data.barcode;
-  } catch (error) {
-    console.error('Failed to generate barcode:', error);
-  } finally {
-    isGeneratingBarcode.value = false;
-  }
-};
-
-const downloadBarcode = async () => {
-  if (!props.branch?.barcode_path) return;
-  
-  isDownloadingBarcode.value = true;
-  try {
-    const response = await axios.get(
-      `/branches/${props.business.id}/${props.branch.id}/download-barcode`,
-      { responseType: 'blob' }
-    );
-    
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `barcode-${props.branch.barcode_path}.png`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-  } catch (error) {
-    console.error('Failed to download barcode:', error);
-  } finally {
-    isDownloadingBarcode.value = false;
-  }
-};
-
-const printBarcode = async () => {
-  if (!props.branch?.barcode_path) return;
-  
-  isPrintingBarcode.value = true;
-  try {
-    const response = await axios.get(
-      `/branches/${props.business.id}/${props.branch.id}/print-barcode`,
-      { responseType: 'blob' }
-    );
-    
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const printWindow = window.open(url, '_blank');
-    printWindow.onload = () => {
-      printWindow.print();
-      printWindow.close();
-    };
-  } catch (error) {
-    console.error('Failed to print barcode:', error);
-  } finally {
-    isPrintingBarcode.value = false;
   }
 };
 </script> 

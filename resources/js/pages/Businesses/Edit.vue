@@ -147,7 +147,7 @@
                         track-by=""
                       />
                       <div v-if="selectedCountry === 'Other (type manually)'" class="mt-2">
-                        <TextInput
+                      <TextInput
                           id="manual-country"
                           v-model="manualCountry"
                           type="text"
@@ -179,12 +179,12 @@
                         <TextInput
                           id="manual-county"
                           v-model="manualCounty"
-                          type="text"
-                          class="mt-1 block w-full"
+                        type="text"
+                        class="mt-1 block w-full"
                           placeholder="Type county manually"
                           @input="form.city = manualCounty"
-                          required
-                        />
+                        required
+                      />
                       </div>
                       <InputError :message="form.errors.city" class="mt-2" />
                     </div>
@@ -209,12 +209,12 @@
                         <TextInput
                           id="manual-ward"
                           v-model="manualWard"
-                          type="text"
-                          class="mt-1 block w-full"
+                        type="text"
+                        class="mt-1 block w-full"
                           placeholder="Type ward/constituency/village manually"
                           @input="form.state = manualWard"
-                          required
-                        />
+                        required
+                      />
                       </div>
                       <InputError :message="form.errors.state" class="mt-2" />
                     </div>
@@ -363,6 +363,35 @@
                     </div>
                     <InputError :message="form.errors.registration_document" class="mt-2" />
                   </div>
+
+                  <!-- Terms and Conditions Document -->
+                  <div>
+                    <InputLabel for="terms_and_conditions" value="Terms and Conditions Document" />
+                    <div class="mt-1 flex items-center">
+                      <div class="flex-1">
+                        <span v-if="business.terms_and_conditions && !selectedTermsDocument" class="text-sm text-gray-500 dark:text-gray-400 mr-4">
+                          Current: {{ business.terms_and_conditions.split('/').pop() }}
+                        </span>
+                        <span v-if="selectedTermsDocument" class="text-sm text-primary-600 dark:text-primary-400">
+                          Selected: {{ selectedTermsDocument.name }} ({{ (selectedTermsDocument.size / 1024).toFixed(1) }} KB)
+                        </span>
+                      </div>
+                      <input
+                        type="file"
+                        id="terms_and_conditions"
+                        @change="handleTermsDocumentChange"
+                        accept=".pdf,.doc,.docx"
+                        class="hidden"
+                      />
+                      <label
+                        for="terms_and_conditions"
+                        class="cursor-pointer inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150"
+                      >
+                        {{ selectedTermsDocument ? 'Change Document' : 'Upload Document' }}
+                      </label>
+                    </div>
+                    <InputError :message="form.errors.terms_and_conditions" class="mt-2" />
+                  </div>
                 </div>
               </div>
 
@@ -440,6 +469,7 @@ const currentStep = ref(0);
 const selectedLogo = ref(null);
 const selectedTaxDocument = ref(null);
 const selectedRegistrationDocument = ref(null);
+const selectedTermsDocument = ref(null);
 
 // Store the created object URL for cleanup
 let currentObjectUrl = null;
@@ -510,7 +540,8 @@ const form = useForm({
   tax_number: props.business.tax_number || '',
   logo: null,
   tax_document: null,
-  registration_document: null
+  registration_document: null,
+  terms_and_conditions: null
 });
 
 // Ensure form is properly initialized when component mounts
@@ -664,6 +695,53 @@ const handleRegistrationDocumentChange = (event: Event) => {
   }
 };
 
+const handleTermsDocumentChange = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (target.files && target.files[0]) {
+    const file = target.files[0];
+    
+    // Validate file type
+    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!allowedTypes.includes(file.type)) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Invalid File Type',
+        text: 'Please select a PDF or Word document',
+        confirmButtonText: 'OK'
+      });
+      target.value = '';
+      return;
+    }
+    
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      Swal.fire({
+        icon: 'error',
+        title: 'File Too Large',
+        text: 'Please select a document smaller than 5MB',
+        confirmButtonText: 'OK'
+      });
+      target.value = '';
+      return;
+    }
+    
+    // Update form data reactively
+    form.terms_and_conditions = file;
+    selectedTermsDocument.value = file;
+    console.log('Terms document selected:', file.name, file.size, file.type);
+    console.log('Form terms_and_conditions after update:', form.terms_and_conditions);
+    
+    // Show success message
+    Swal.fire({
+      icon: 'success',
+      title: 'Document Selected',
+      text: `${file.name} has been selected successfully`,
+      timer: 1500,
+      showConfirmButton: false
+    });
+  }
+};
+
 const handleSubmit = () => {
   // Ensure postal_code is set to 'N/A' if empty
   if (!form.postal_code || form.postal_code.trim() === '') {
@@ -691,18 +769,19 @@ const handleSubmit = () => {
     tax_number: form.tax_number,
     logo: form.logo ? `${form.logo.name} (${form.logo.size} bytes)` : 'No logo selected',
     tax_document: form.tax_document ? `${form.tax_document.name} (${form.tax_document.size} bytes)` : 'No tax document selected',
-    registration_document: form.registration_document ? `${form.registration_document.name} (${form.registration_document.size} bytes)` : 'No registration document selected'
+    registration_document: form.registration_document ? `${form.registration_document.name} (${form.registration_document.size} bytes)` : 'No registration document selected',
+    terms_and_conditions: form.terms_and_conditions ? `${form.terms_and_conditions.name} (${form.terms_and_conditions.size} bytes)` : 'No terms and conditions document selected'
   });
 
-  // Show loading state
-  Swal.fire({
-    title: 'Updating Business...',
+    // Show loading state
+    Swal.fire({
+      title: 'Updating Business...',
     text: 'Please wait while we update your business information.',
-    allowOutsideClick: false,
-    didOpen: () => {
-      Swal.showLoading();
-    }
-  });
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
 
   // Create a FormData object manually to ensure all data is included
   const formData = new FormData();
@@ -737,6 +816,9 @@ const handleSubmit = () => {
   if (form.registration_document) {
     formData.append('registration_document', form.registration_document);
   }
+  if (form.terms_and_conditions) {
+    formData.append('terms_and_conditions', form.terms_and_conditions);
+  }
 
   // Log what we're about to send
   console.log('FormData entries:');
@@ -758,17 +840,17 @@ const handleSubmit = () => {
     },
     onSuccess: (response) => {
       console.log('Success response:', response);
-      Swal.fire({
-        icon: 'success',
-        title: 'Success!',
+        Swal.fire({
+          icon: 'success',
+          title: 'Success!',
         text: 'Business updated successfully.',
         confirmButtonText: 'OK'
       }).then(() => {
         // Use Inertia navigation instead of page reload
         router.visit('/businesses');
-      });
-    },
-    onError: (errors) => {
+        });
+      },
+      onError: (errors) => {
       console.error('Form validation errors:', errors);
       console.error('Full error object:', errors);
       
@@ -780,18 +862,20 @@ const handleSubmit = () => {
         errorMessage = `Tax document error: ${errors.tax_document}`;
       } else if (errors.registration_document) {
         errorMessage = `Registration document error: ${errors.registration_document}`;
+      } else if (errors.terms_and_conditions) {
+        errorMessage = `Terms and conditions document error: ${errors.terms_and_conditions}`;
       } else if (Object.keys(errors).length > 0) {
         errorMessage = Object.values(errors).join('\n');
       }
       
-      Swal.fire({
-        icon: 'error',
+        Swal.fire({
+          icon: 'error',
         title: 'Validation Error',
         text: errorMessage,
-        confirmButtonText: 'OK'
-      });
-    }
-  });
+          confirmButtonText: 'OK'
+        });
+      }
+    });
 };
 
 watch(selectedCounty, (val) => {
@@ -885,6 +969,6 @@ const validateStep = (step: number): boolean => {
   }
   return true;
 };
-</script>
+</script> 
 
 <style src="vue-multiselect/dist/vue-multiselect.min.css"></style> 

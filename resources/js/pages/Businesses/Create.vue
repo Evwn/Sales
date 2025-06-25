@@ -280,35 +280,43 @@
                   <!-- Logo -->
                   <div>
                     <InputLabel for="logo" value="Business Logo" />
-                    <div class="mt-1 flex items-center">
-                      <img
-                        v-if="form.logo && form.logo instanceof File"
-                        :src="URL.createObjectURL(form.logo)"
-                        class="h-20 w-20 object-cover rounded-lg mr-4"
-                        alt="Business logo"
-                      />
-                      <img
-                        v-else-if="form.logo && typeof form.logo === 'string'"
-                        :src="form.logo"
-                        class="h-20 w-20 object-cover rounded-lg mr-4"
-                        alt="Business logo"
-                      />
-                      <input
-                        type="file"
-                        id="logo"
-                        @change="handleLogoChange"
-                        accept="image/*"
-                        class="hidden"
-                      />
-                      <label
-                        for="logo"
-                        class="cursor-pointer inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150"
-                      >
-                        {{ form.logo && form.logo instanceof File ? 'Change Logo' : 'Upload Logo' }}
-                      </label>
-                      <span v-if="form.logo && form.logo instanceof File" class="ml-2 text-sm text-primary-600 dark:text-primary-400">
-                        {{ form.logo.name }}
-                      </span>
+                    <div class="mt-1 flex items-center space-x-4">
+                      <div v-if="form.logo" class="relative">
+                        <div class="h-32 w-32 border-2 border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
+                          <img
+                            :src="logoPreview"
+                            class="h-full w-full object-contain"
+                            alt="Business logo preview"
+                          />
+                        </div>
+                        <button
+                          @click="removeLogo"
+                          class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                          type="button"
+                        >
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                      <div class="flex-1">
+                        <input
+                          type="file"
+                          id="logo"
+                          @change="handleLogoChange"
+                          accept="image/*"
+                          class="hidden"
+                        />
+                        <label
+                          for="logo"
+                          class="cursor-pointer inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150"
+                        >
+                          {{ form.logo ? 'Change Logo' : 'Upload Logo' }}
+                        </label>
+                        <span v-if="form.logo" class="mt-2 block text-sm text-primary-600 dark:text-primary-400">
+                          {{ form.logo.name }} ({{ (form.logo.size / 1024).toFixed(1) }} KB)
+                        </span>
+                      </div>
                     </div>
                     <InputError :message="form.errors.logo" class="mt-2" />
                   </div>
@@ -318,26 +326,37 @@
                     <InputLabel for="tax_document" value="Tax Document" />
                     <div class="mt-1 flex items-center">
                       <div class="flex-1">
-                        <span v-if="form.tax_document && typeof form.tax_document === 'string'" class="text-sm text-gray-500 dark:text-gray-400 mr-4">
-                          Current: {{ form.tax_document.split('/').pop() }}
-                        </span>
-                        <span v-if="form.tax_document && form.tax_document instanceof File" class="text-sm text-primary-600 dark:text-primary-400">
-                          Selected: {{ form.tax_document.name }}
-                        </span>
+                        <div v-if="form.tax_document" class="flex items-center mb-2">
+                          <svg class="w-8 h-8 text-gray-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
+                          </svg>
+                          <span class="text-sm text-primary-600">
+                            {{ form.tax_document.name }} ({{ (form.tax_document.size / 1024).toFixed(1) }} KB)
+                          </span>
+                          <button
+                            @click="removeTaxDocument"
+                            class="ml-2 text-red-500 hover:text-red-700"
+                            type="button"
+                          >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                        <input
+                          type="file"
+                          id="tax_document"
+                          @change="handleTaxDocumentChange"
+                          accept=".pdf,.doc,.docx"
+                          class="hidden"
+                        />
+                        <label
+                          for="tax_document"
+                          class="cursor-pointer inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150"
+                        >
+                          {{ form.tax_document ? 'Change Document' : 'Upload Document' }}
+                        </label>
                       </div>
-                      <input
-                        type="file"
-                        id="tax_document"
-                        @change="handleTaxDocumentChange"
-                        accept=".pdf,.doc,.docx"
-                        class="hidden"
-                      />
-                      <label
-                        for="tax_document"
-                        class="cursor-pointer inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150"
-                      >
-                        {{ form.tax_document && form.tax_document instanceof File ? 'Change Document' : 'Upload Document' }}
-                      </label>
                     </div>
                     <InputError :message="form.errors.tax_document" class="mt-2" />
                   </div>
@@ -347,55 +366,77 @@
                     <InputLabel for="registration_document" value="Business Registration Document" />
                     <div class="mt-1 flex items-center">
                       <div class="flex-1">
-                        <span v-if="form.registration_document && typeof form.registration_document === 'string'" class="text-sm text-gray-500 dark:text-gray-400 mr-4">
-                          Current: {{ form.registration_document.split('/').pop() }}
-                        </span>
-                        <span v-if="form.registration_document && form.registration_document instanceof File" class="text-sm text-primary-600 dark:text-primary-400">
-                          Selected: {{ form.registration_document.name }}
-                        </span>
+                        <div v-if="form.registration_document" class="flex items-center mb-2">
+                          <svg class="w-8 h-8 text-gray-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
+                          </svg>
+                          <span class="text-sm text-primary-600">
+                            {{ form.registration_document.name }} ({{ (form.registration_document.size / 1024).toFixed(1) }} KB)
+                          </span>
+                          <button
+                            @click="removeRegistrationDocument"
+                            class="ml-2 text-red-500 hover:text-red-700"
+                            type="button"
+                          >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                        <input
+                          type="file"
+                          id="registration_document"
+                          @change="handleRegistrationDocumentChange"
+                          accept=".pdf,.doc,.docx"
+                          class="hidden"
+                        />
+                        <label
+                          for="registration_document"
+                          class="cursor-pointer inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150"
+                        >
+                          {{ form.registration_document ? 'Change Document' : 'Upload Document' }}
+                        </label>
                       </div>
-                      <input
-                        type="file"
-                        id="registration_document"
-                        @change="handleRegistrationDocumentChange"
-                        accept=".pdf,.doc,.docx"
-                        class="hidden"
-                      />
-                      <label
-                        for="registration_document"
-                        class="cursor-pointer inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150"
-                      >
-                        {{ form.registration_document && form.registration_document instanceof File ? 'Change Document' : 'Upload Document' }}
-                      </label>
                     </div>
                     <InputError :message="form.errors.registration_document" class="mt-2" />
                   </div>
 
-                  <!-- Terms and Conditions Document -->
+                  <!-- Terms and Conditions -->
                   <div>
                     <InputLabel for="terms_and_conditions" value="Terms and Conditions (Document)" />
                     <div class="mt-1 flex items-center">
                       <div class="flex-1">
-                        <span v-if="form.terms_and_conditions && typeof form.terms_and_conditions === 'string'" class="text-sm text-gray-500 dark:text-gray-400 mr-4">
-                          Current: {{ form.terms_and_conditions.split('/').pop() }}
-                        </span>
-                        <span v-if="form.terms_and_conditions && form.terms_and_conditions instanceof File" class="text-sm text-primary-600 dark:text-primary-400">
-                          Selected: {{ form.terms_and_conditions.name }}
-                        </span>
+                        <div v-if="form.terms_and_conditions" class="flex items-center mb-2">
+                          <svg class="w-8 h-8 text-gray-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
+                          </svg>
+                          <span class="text-sm text-primary-600">
+                            {{ form.terms_and_conditions.name }} ({{ (form.terms_and_conditions.size / 1024).toFixed(1) }} KB)
+                          </span>
+                          <button
+                            @click="removeTermsDocument"
+                            class="ml-2 text-red-500 hover:text-red-700"
+                            type="button"
+                          >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                        <input
+                          type="file"
+                          id="terms_and_conditions"
+                          @change="handleTermsChange"
+                          accept=".pdf,.doc,.docx"
+                          class="hidden"
+                        />
+                        <label
+                          for="terms_and_conditions"
+                          class="cursor-pointer inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150"
+                        >
+                          {{ form.terms_and_conditions ? 'Change Document' : 'Upload Document' }}
+                        </label>
                       </div>
-                      <input
-                        type="file"
-                        id="terms_and_conditions"
-                        @change="handleTermsChange"
-                        accept=".pdf,.doc,.docx"
-                        class="hidden"
-                      />
-                      <label
-                        for="terms_and_conditions"
-                        class="cursor-pointer inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150"
-                      >
-                        {{ form.terms_and_conditions && form.terms_and_conditions instanceof File ? 'Change Document' : 'Upload Document' }}
-                      </label>
                     </div>
                     <InputError :message="form.errors.terms_and_conditions" class="mt-2" />
                   </div>
@@ -499,39 +540,185 @@ const countryOptions = ['Kenya', 'Other (type manually)'];
 const selectedCountry = ref('Kenya');
 const manualCountry = ref('');
 
+const logoPreview = ref('');
+
 onMounted(() => {
   if (form.city) selectedCounty.value = form.city;
   if (form.state) selectedWard.value = form.state;
   if (!form.country) {
-    form.country = selectedCountry.value || 'Kenya';
+    form.country = selectedCountry.value?.toString() || 'Kenya';
   }
 });
 
 const handleLogoChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files[0]) {
-    form.logo = target.files[0];
+    const file = target.files[0];
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Invalid File Type',
+        text: 'Please select an image file (JPG, PNG, GIF, etc.)',
+        confirmButtonText: 'OK'
+      });
+      target.value = '';
+      return;
+    }
+    
+    // Validate file size (1MB limit)
+    if (file.size > 1024 * 1024) {
+      Swal.fire({
+        icon: 'error',
+        title: 'File Too Large',
+        text: 'Please select an image smaller than 1MB',
+        confirmButtonText: 'OK'
+      });
+      target.value = '';
+      return;
+    }
+    
+    form.logo = file;
+    logoPreview.value = URL.createObjectURL(file);
+    
+    // Show success message
+    Swal.fire({
+      icon: 'success',
+      title: 'Logo Selected',
+      text: `${file.name} has been selected successfully`,
+      timer: 1500,
+      showConfirmButton: false
+    });
   }
 };
 
 const handleTaxDocumentChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files[0]) {
-    form.tax_document = target.files[0];
+    const file = target.files[0];
+    
+    // Validate file type
+    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!allowedTypes.includes(file.type)) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Invalid File Type',
+        text: 'Please select a PDF or Word document',
+        confirmButtonText: 'OK'
+      });
+      target.value = '';
+      return;
+    }
+    
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      Swal.fire({
+        icon: 'error',
+        title: 'File Too Large',
+        text: 'Please select a document smaller than 5MB',
+        confirmButtonText: 'OK'
+      });
+      target.value = '';
+      return;
+    }
+    
+    form.tax_document = file;
+    
+    // Show success message
+    Swal.fire({
+      icon: 'success',
+      title: 'Document Selected',
+      text: `${file.name} has been selected successfully`,
+      timer: 1500,
+      showConfirmButton: false
+    });
   }
 };
 
 const handleRegistrationDocumentChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files[0]) {
-    form.registration_document = target.files[0];
+    const file = target.files[0];
+    
+    // Validate file type
+    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!allowedTypes.includes(file.type)) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Invalid File Type',
+        text: 'Please select a PDF or Word document',
+        confirmButtonText: 'OK'
+      });
+      target.value = '';
+      return;
+    }
+    
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      Swal.fire({
+        icon: 'error',
+        title: 'File Too Large',
+        text: 'Please select a document smaller than 5MB',
+        confirmButtonText: 'OK'
+      });
+      target.value = '';
+      return;
+    }
+    
+    form.registration_document = file;
+    
+    // Show success message
+    Swal.fire({
+      icon: 'success',
+      title: 'Document Selected',
+      text: `${file.name} has been selected successfully`,
+      timer: 1500,
+      showConfirmButton: false
+    });
   }
 };
 
 const handleTermsChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files[0]) {
-    form.terms_and_conditions = target.files[0];
+    const file = target.files[0];
+    
+    // Validate file type
+    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!allowedTypes.includes(file.type)) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Invalid File Type',
+        text: 'Please select a PDF or Word document',
+        confirmButtonText: 'OK'
+      });
+      target.value = '';
+      return;
+    }
+    
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      Swal.fire({
+        icon: 'error',
+        title: 'File Too Large',
+        text: 'Please select a document smaller than 5MB',
+        confirmButtonText: 'OK'
+      });
+      target.value = '';
+      return;
+    }
+    
+    form.terms_and_conditions = file;
+    
+    // Show success message
+    Swal.fire({
+      icon: 'success',
+      title: 'Document Selected',
+      text: `${file.name} has been selected successfully`,
+      timer: 1500,
+      showConfirmButton: false
+    });
   }
 };
 
@@ -569,9 +756,12 @@ const validateStep = (step: number): boolean => {
         form.errors.state = 'The state field is required.';
         return false;
       }
-      if (!form.country) {
-        form.errors.country = 'The country field is required.';
-        return false;
+      if (!form.country || typeof form.country !== 'string') {
+        form.country = form.country?.toString() || '';
+        if (!form.country) {
+          form.errors.country = 'The country field is required.';
+          return false;
+        }
       }
       break;
     case 3: // Business Details
@@ -683,17 +873,66 @@ watch(manualWard, (val) => {
 
 watch(selectedCountry, (val) => {
   if (val === 'Other (type manually)') {
-    form.country = manualCountry;
+    form.country = manualCountry.value || '';
   } else {
-    form.country = val;
+    form.country = val || '';
   }
 });
 
 watch(manualCountry, (val) => {
-  if (selectedCountry === 'Other (type manually)') {
-    form.country = val;
+  if (selectedCountry.value === 'Other (type manually)') {
+    form.country = val || '';
   }
 });
+
+const removeLogo = () => {
+  form.logo = null;
+  logoPreview.value = '';
+  const input = document.getElementById('logo') as HTMLInputElement;
+  if (input) input.value = '';
+  Swal.fire({
+    icon: 'success',
+    title: 'Logo Removed',
+    timer: 1500,
+    showConfirmButton: false
+  });
+};
+
+const removeTaxDocument = () => {
+  form.tax_document = null;
+  const input = document.getElementById('tax_document') as HTMLInputElement;
+  if (input) input.value = '';
+  Swal.fire({
+    icon: 'success',
+    title: 'Tax Document Removed',
+    timer: 1500,
+    showConfirmButton: false
+  });
+};
+
+const removeRegistrationDocument = () => {
+  form.registration_document = null;
+  const input = document.getElementById('registration_document') as HTMLInputElement;
+  if (input) input.value = '';
+  Swal.fire({
+    icon: 'success',
+    title: 'Registration Document Removed',
+    timer: 1500,
+    showConfirmButton: false
+  });
+};
+
+const removeTermsDocument = () => {
+  form.terms_and_conditions = null;
+  const input = document.getElementById('terms_and_conditions') as HTMLInputElement;
+  if (input) input.value = '';
+  Swal.fire({
+    icon: 'success',
+    title: 'Terms Document Removed',
+    timer: 1500,
+    showConfirmButton: false
+  });
+};
 </script>
 
 <style src="vue-multiselect/dist/vue-multiselect.min.css"></style> 

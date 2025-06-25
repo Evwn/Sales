@@ -23,7 +23,11 @@ const form = useForm({
 
 const submit = () => {
     form.post('/login', {
-        onFinish: () => form.reset('password'),
+        onFinish: () => {
+            form.reset('password');
+            // Force a full reload after login to ensure session and CSRF token are fresh
+            setTimeout(() => { window.location.reload(); }, 100);
+        },
     });
 };
 </script>

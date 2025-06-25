@@ -41,7 +41,9 @@ class Branch extends Model
 
     public function sellers(): HasMany
     {
-        return $this->hasMany(User::class)->where('role_id', 3);
+        return $this->hasMany(User::class)->whereHas('roles', function($q) {
+            $q->where('name', 'seller');
+        });
     }
 
     public function inventory()

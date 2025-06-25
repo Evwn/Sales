@@ -8,24 +8,21 @@
           Sellers
         </h2>
         <div class="flex items-center space-x-4">
-          <!-- Always show branch selection if branches are available -->
+          <!-- Branch selection -->
           <select
-            v-if="branches && branches.length > 0"
-            v-model="selectedBranch"
+            v-model="selectedBranchId"
             class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
             @change="onBranchSelect"
           >
-            <option value="">Select a branch</option>
+            <option value="all">All Branches</option>
             <option v-for="branch in branches" :key="branch.id" :value="branch.id">
               {{ branch.name }}
             </option>
           </select>
           <!-- Add Seller button -->
           <Link
-            v-if="(selectedBranch && getBusinessIdForBranch(selectedBranch)) || (business && branch)"
-            :href="branch
-              ? `/businesses/${business.id}/branches/${branch.id}/sellers/create`
-              : `/businesses/${getBusinessIdForBranch(selectedBranch)}/branches/${selectedBranch}/sellers/create`"
+            v-if="selectedBranchId !== 'all'"
+            :href="`/businesses/${getBusinessIdForBranch(selectedBranchId)}/branches/${selectedBranchId}/sellers/create`"
             class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
           >
             Add Seller
@@ -69,7 +66,7 @@
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                  <tr v-for="seller in sellers" :key="seller.id">
+                  <tr v-for="seller in filteredSellers" :key="seller.id">
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {{ seller.name }}
                     </td>
@@ -108,7 +105,7 @@
                       </div>
                     </td>
                   </tr>
-                  <tr v-if="sellers.length === 0">
+                  <tr v-if="filteredSellers.length === 0">
                     <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                       No sellers found. Click "Add Seller" to create one.
                     </td>
@@ -126,7 +123,7 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import Swal from 'sweetalert2'
 
 const props = defineProps({
@@ -153,30 +150,46 @@ const props = defineProps({
   userRole: {
     type: String,
     required: true
+  },
+  selectedBranch: {
+    type: [String, Number],
+    default: 'all'
   }
 });
 
-const selectedBranch = ref('');
+const selectedBranchId = ref(props.selectedBranch);
+
+// Computed property to filter sellers based on selected branch
+const filteredSellers = computed(() => {
+  if (selectedBranchId.value === 'all') {
+    return props.sellers;
+  }
+  return props.sellers.filter(seller => seller.branch?.id == selectedBranchId.value);
+});
 
 const onBranchSelect = () => {
-  if (selectedBranch.value) {
-    // Find the business for the selected branch
-    const branch = props.branches.find(b => b.id == selectedBranch.value);
-    if (branch && branch.business_id) {
-      router.visit(`/businesses/${branch.business_id}/branches/${branch.id}/sellers`);
-    }
-  }
+  selectedBranchId.value = selectedBranchId.value;
 };
 
 function getBusinessIdForBranch(branchId) {
   const branch = props.branches.find(b => b.id == branchId);
-  return branch ? branch.business_id : '';
+  return branch ? branch.business_id : null;
 }
 
 const deleteSeller = (seller) => {
-  if (confirm('Are you sure you want to delete this seller?')) {
-    router.delete(`/businesses/${seller.branch.business.id}/branches/${seller.branch.id}/sellers/${seller.id}`);
-  }
+  Swal.fire({
+    title: 'Are you sure?',
+    text: "You won't be able to revert this!",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Yes, delete it!'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      router.delete(`/businesses/${seller.branch.business.id}/branches/${seller.branch.id}/sellers/${seller.id}`);
+    }
+  });
 };
 
 const showSellerDetails = (seller) => {

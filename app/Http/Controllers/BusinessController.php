@@ -103,16 +103,6 @@ class BusinessController extends Controller
 
     public function update(Request $request, Business $business)
     {
-        // Log all incoming request data
-        \Log::info('Business Update Request', [
-            'business_id' => $business->id,
-            'all_request_data' => $request->all(),
-            'files' => $request->allFiles(),
-            'has_logo' => $request->hasFile('logo'),
-            'has_tax_document' => $request->hasFile('tax_document'),
-            'has_registration_document' => $request->hasFile('registration_document'),
-        ]);
-
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'description' => 'nullable|string',
@@ -133,105 +123,51 @@ class BusinessController extends Controller
             'terms_and_conditions' => 'nullable|file|mimes:pdf,doc,docx|max:5120',
         ]);
 
-        // Log validated data
-        \Log::info('Business Update Validated Data', [
-            'validated_data' => $validated,
-            'business_before_update' => $business->toArray(),
-        ]);
-
         $business->fill($validated);
         $business->website = $request->input('website');
         $business->industry = $request->input('industry');
 
-        // Log business data after fill
-        \Log::info('Business Data After Fill', [
-            'business_data' => $business->toArray(),
-            'website_from_request' => $request->input('website'),
-            'industry_from_request' => $request->input('industry'),
-        ]);
-
         // Handle logo upload
         if ($request->hasFile('logo')) {
-            \Log::info('Processing Logo Upload', [
-                'logo_file' => $request->file('logo')->getClientOriginalName(),
-                'logo_size' => $request->file('logo')->getSize(),
-            ]);
-            
             // Delete old logo if exists
             if ($business->logo_path) {
                 Storage::disk('public')->delete($business->logo_path);
-                \Log::info('Deleted old logo', ['old_path' => $business->logo_path]);
             }
             $logoPath = $request->file('logo')->store('business-logos', 'public');
             $business->logo_path = $logoPath;
-            \Log::info('Logo uploaded successfully', ['new_path' => $logoPath]);
         }
 
         // Handle tax document upload
         if ($request->hasFile('tax_document')) {
-            \Log::info('Processing Tax Document Upload', [
-                'tax_file' => $request->file('tax_document')->getClientOriginalName(),
-                'tax_size' => $request->file('tax_document')->getSize(),
-            ]);
-            
             // Delete old document if exists
             if ($business->tax_document_path) {
                 Storage::disk('public')->delete($business->tax_document_path);
-                \Log::info('Deleted old tax document', ['old_path' => $business->tax_document_path]);
             }
             $taxDocPath = $request->file('tax_document')->store('business-documents', 'public');
             $business->tax_document_path = $taxDocPath;
-            \Log::info('Tax document uploaded successfully', ['new_path' => $taxDocPath]);
         }
 
         // Handle registration document upload
         if ($request->hasFile('registration_document')) {
-            \Log::info('Processing Registration Document Upload', [
-                'reg_file' => $request->file('registration_document')->getClientOriginalName(),
-                'reg_size' => $request->file('registration_document')->getSize(),
-            ]);
-            
             // Delete old document if exists
             if ($business->registration_document_path) {
                 Storage::disk('public')->delete($business->registration_document_path);
-                \Log::info('Deleted old registration document', ['old_path' => $business->registration_document_path]);
             }
             $regDocPath = $request->file('registration_document')->store('business-documents', 'public');
             $business->registration_document_path = $regDocPath;
-            \Log::info('Registration document uploaded successfully', ['new_path' => $regDocPath]);
         }
 
         // Handle terms and conditions upload
         if ($request->hasFile('terms_and_conditions')) {
-            \Log::info('Processing Terms Upload', [
-                'terms_file' => $request->file('terms_and_conditions')->getClientOriginalName(),
-                'terms_size' => $request->file('terms_and_conditions')->getSize(),
-            ]);
-            
             // Delete old document if exists
             if ($business->terms_and_conditions) {
                 Storage::disk('public')->delete($business->terms_and_conditions);
-                \Log::info('Deleted old terms document', ['old_path' => $business->terms_and_conditions]);
             }
             $termsPath = $request->file('terms_and_conditions')->store('business-documents', 'public');
             $business->terms_and_conditions = $termsPath;
-            \Log::info('Terms document uploaded successfully', ['new_path' => $termsPath]);
         }
 
-        // Log business data before save
-        \Log::info('Business Data Before Save', [
-            'business_data' => $business->toArray(),
-            'is_dirty' => $business->isDirty(),
-            'dirty_attributes' => $business->getDirty(),
-        ]);
-
         $business->save();
-
-        // Log after save
-        \Log::info('Business Update Completed', [
-            'business_after_save' => $business->fresh()->toArray(),
-            'was_saved' => true,
-        ]);
 
         return back()->with('success', 'Business updated successfully.');
     }

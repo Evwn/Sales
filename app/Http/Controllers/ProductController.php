@@ -215,7 +215,7 @@ class ProductController extends Controller
             ActivityLogger::logInventoryAdjusted($product, auth()->user(), $oldStock, $product->stock);
         }
 
-        return redirect()->route('products.branch.index', $branch)
+        return redirect()->route('products.all')
             ->with('success', 'Product updated successfully.');
     }
 

@@ -36,22 +36,28 @@ class ActivityLogger
 
     public static function logProductUpdated($product, $user)
     {
+        $productName = $product->inventoryItem ? ($product->inventoryItem->name ?? $product->name) : $product->name;
         return self::log('product_updated', [
-            'product_name' => $product->name,
+            'product_name' => $productName ?? 'Unknown Product',
             'old_price' => $product->getOriginal('price'),
             'new_price' => $product->price,
             'old_stock' => $product->getOriginal('stock'),
             'new_stock' => $product->stock,
+            'user_name' => $user->name ?? 'Unknown',
+            'user_id' => $user->id ?? null,
         ], $product, $user);
     }
 
     public static function logInventoryAdjusted($product, $user, $oldStock, $newStock)
     {
+        $productName = $product->inventoryItem ? ($product->inventoryItem->name ?? $product->name) : $product->name;
         return self::log('inventory_adjusted', [
-            'product_name' => $product->name,
+            'product_name' => $productName ?? 'Unknown Product',
             'old_stock' => $oldStock,
             'new_stock' => $newStock,
             'adjustment' => $newStock - $oldStock,
+            'user_name' => $user->name ?? 'Unknown',
+            'user_id' => $user->id ?? null,
         ], $product, $user);
     }
 

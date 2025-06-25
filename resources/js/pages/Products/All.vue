@@ -231,7 +231,7 @@ const handleSell = async (product: PageProps['products']['data'][0]) => {
                         id: product.id,
                         name: product.name,
                         price: product.price,
-                        barcode: product.barcode,
+                        barcode: product.barcode || '',
                         is_taxable: product.is_taxable || false,
                         tax_rate: product.tax_rate || 0
                     },
@@ -1042,6 +1042,40 @@ const scanBarcode = () => {
     // Implementation for barcode scanning
     Swal.fire('Info', 'Barcode scanning feature coming soon!', 'info');
 };
+
+const showProductDetails = (product) => {
+    Swal.fire({
+        title: product.name,
+        html: `
+            <div class="text-left">
+                <div class="mb-4">
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Basic Information</h3>
+                    <p><span class="font-medium">Description:</span> ${product.description || 'N/A'}</p>
+                    <p><span class="font-medium">SKU:</span> ${product.sku || 'N/A'}</p>
+                    <p><span class="font-medium">Barcode:</span> ${product.barcode || 'N/A'}</p>
+                </div>
+                <div class="mb-4">
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Pricing & Stock</h3>
+                    <p><span class="font-medium">Price:</span> KES ${product.price}</p>
+                    <p><span class="font-medium">Buying Price:</span> KES ${product.buying_price}</p>
+                    <p><span class="font-medium">Current Stock:</span> ${product.stock}</p>
+                    <p><span class="font-medium">Min Stock Level:</span> ${product.min_stock_level}</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Location</h3>
+                    <p><span class="font-medium">Business:</span> ${product.business?.name || 'N/A'}</p>
+                    <p><span class="font-medium">Branch:</span> ${product.branch?.name || 'N/A'}</p>
+                </div>
+            </div>
+        `,
+        width: '600px',
+        showCloseButton: true,
+        showConfirmButton: false,
+        customClass: {
+            container: 'product-details-modal'
+        }
+    });
+};
 </script>
 
 <template>
@@ -1268,71 +1302,24 @@ const scanBarcode = () => {
                                         <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.business.name }}</td>
                                         <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.branch?.name || 'No branch assigned' }}</td>
                                         <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <div class="flex space-x-3 items-center">
-                                                <template v-if="isSeller">
-                                                    <template v-if="product.stock === 0">
-                                                        <span class="text-red-600 font-medium bg-red-100 px-2 py-1 rounded">Out of Stock</span>
-                                                    </template>
-                                                    <template v-else>
-                                                        <div class="flex items-center space-x-1">
-                                                            <button
-                                                                class="text-gray-600 hover:text-gray-900 px-2 py-1 border rounded"
-                                                                :disabled="product.stock === 0 || (productQuantities[product.id] || 1) <= 1"
-                                                                @click="updateProductQuantity(product.id, -1)"
-                                                            >
-                                                                -
-                                                            </button>
-                                                            <input
-                                                                type="number"
-                                                                v-model="productQuantities[product.id]"
-                                                                :min="1"
-                                                                :max="product.stock"
-                                                                class="w-12 text-center border rounded px-1 py-0.5 text-sm"
-                                                                @input="(e) => handleQuantityInput(e, product.id)"
-                                                            />
-                                                            <button
-                                                                class="text-gray-600 hover:text-gray-900 px-2 py-1 border rounded"
-                                                                :disabled="product.stock === 0 || (productQuantities[product.id] || 1) >= product.stock"
-                                                                @click="updateProductQuantity(product.id, 1)"
-                                                            >
-                                                                +
-                                                            </button>
-                                                            <button
-                                                                class="text-blue-600 hover:text-blue-900 ml-1"
-                                                                :disabled="product.stock === 0"
-                                                                @click="addToCart(product)"
-                                                                title="Add to Cart"
-                                                            >
-                                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                    <path d="M6 6H21L20 12H7" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                                    <circle cx="9" cy="20" r="1" fill="#2563eb"/>
-                                                                    <circle cx="18" cy="20" r="1" fill="#2563eb"/>
-                                                                </svg>
-                                                            </button>
-                                                        </div>
-                                                    </template>
-                                                </template>
-                                                <template v-else>
-                                                    <Link
-                                                        :href="`/products/${product.id}`"
-                                                        class="text-blue-600 hover:text-blue-900"
-                                                    >
-                                                        View
-                                                    </Link>
-                                                    <button
-                                                        @click="editProduct(product)"
-                                                        class="text-blue-600 hover:text-blue-900"
-                                                    >
-                                                        Edit
+                                            <template v-if="isSeller">
+                                                <div class="flex items-center space-x-2">
+                                                    <button @click="updateProductQuantity(product.id, -1)" :disabled="(productQuantities[product.id] || 1) <= 1" class="px-2 py-1 text-lg text-gray-600 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50">-</button>
+                                                    <input type="number" v-model="productQuantities[product.id]" min="1" :max="product.stock" class="w-12 text-center border rounded px-1 py-0.5 text-sm" @input="(e) => handleQuantityInput(e, product.id)" />
+                                                    <button @click="updateProductQuantity(product.id, 1)" :disabled="(productQuantities[product.id] || 1) >= product.stock" class="px-2 py-1 text-lg text-gray-600 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50">+</button>
+                                                    <button @click="addToCart(product)" class="ml-2 bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 flex items-center">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.35 2.7A2 2 0 007.48 19h9.04a2 2 0 001.83-1.3L21 13M7 13V6a1 1 0 011-1h5a1 1 0 011 1v7" /></svg>
+                                                        Add to Cart
                                                     </button>
-                                                    <button
-                                                        @click="removeProduct(product)"
-                                                        class="text-red-600 hover:text-red-900"
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </template>
-                                            </div>
+                                                </div>
+                                            </template>
+                                            <template v-else>
+                                                <div class="flex space-x-3">
+                                                    <button @click="showProductDetails(product)" class="text-blue-600 hover:text-blue-900">View</button>
+                                                    <button @click="editProduct(product)" class="text-blue-600 hover:text-blue-900">Edit</button>
+                                                    <button @click="removeProduct(product)" class="text-red-600 hover:text-red-900">Delete</button>
+                                                </div>
+                                            </template>
                                         </td>
                                     </tr>
                                     <tr v-if="filteredProducts.length === 0" class="hover:bg-gray-50">
@@ -1635,5 +1622,17 @@ const scanBarcode = () => {
     .print-button {
         display: none !important;
     }
+}
+.product-details-modal {
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+}
+.product-details-modal p {
+    margin-bottom: 0.5rem;
+    color: #374151;
+}
+.product-details-modal h3 {
+    color: #111827;
+    border-bottom: 1px solid #E5E7EB;
+    padding-bottom: 0.5rem;
 }
 </style> 

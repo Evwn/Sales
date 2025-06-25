@@ -180,11 +180,10 @@ Route::post('/logout', function (Request $request) {
 Route::get('/settings/profile', function() {
     return redirect('/profile');
 });
+
+// Sellers routes
+Route::get('/sellers/all', [SellerController::class, 'all'])->name('sellers.all');
+Route::get('/businesses/{business}/branches/{branch}/sellers', [SellerController::class, 'index'])->name('sellers.index');
+
 require __DIR__.'/auth.php';
 require __DIR__.'/settings.php';
-
-// Catch-all route for unmatched URLs to trigger custom error UI
-Route::any('{any}', function () {
-    abort(404);
-})->where('any', '.*');
-

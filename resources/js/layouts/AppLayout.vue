@@ -84,6 +84,15 @@ const isOffline = ref(!navigator.onLine);
 
 window.addEventListener('online', () => { isOffline.value = false; });
 window.addEventListener('offline', () => { isOffline.value = true; });
+
+// Add csrfToken to the script
+const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+// Add handleLogout to force reload after logout
+const handleLogout = (e) => {
+    e.preventDefault();
+    document.getElementById('logout-form').submit();
+};
 </script>
 
 <template>
@@ -184,10 +193,13 @@ window.addEventListener('offline', () => { isOffline.value = true; });
                                             </DropdownMenuItem>
                                             <DropdownMenuSeparator />
                                             <DropdownMenuItem as-child>
-                                                <Link href="/logout" method="post" as="button" class="flex items-center gap-2 text-red-600">
-                                                    <LogOut class="size-4" />
-                                                    <span>Logout</span>
-                                                </Link>
+                                                <form id="logout-form" method="POST" action="/logout" @submit.prevent="handleLogout">
+                                                    <input type="hidden" name="_token" :value="csrfToken" />
+                                                    <button type="submit" class="flex items-center gap-2 text-red-600">
+                                                        <LogOut class="size-4" />
+                                                        <span>Logout</span>
+                                                    </button>
+                                                </form>
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
@@ -216,44 +228,14 @@ window.addEventListener('offline', () => { isOffline.value = true; });
                                 </button>
                             </div>
 
-                            <div class="flex-1 overflow-y-auto p-4">
-                                <nav class="flex flex-col space-y-3">
-                                    
-                                    <!-- Seller Navigation -->
-                                    <template v-if="isSeller">
-                                        <NavLink href="/dashboard" :active="isCurrentRoute('/dashboard')">Dashboard</NavLink>
-                                        <NavLink href="/products" :active="isCurrentRoute('/products')">Inventory</NavLink>
-                                    </template>
-
-                                    <!-- Owner Navigation -->
-                                    <template v-else-if="isOwner">
-                                        <NavLink href="/dashboard" :active="isCurrentRoute('/dashboard')">Dashboard</NavLink>
-                                        <NavLink href="/products" :active="isCurrentRoute('/products')">Inventory</NavLink>
-                                        <NavLink href="/inventory-items" :active="isCurrentRoute('/inventory-items')">Products</NavLink>
-                                        <NavLink href="/sales" :active="isCurrentRoute('/sales')">Sales</NavLink>
-                                        <NavLink href="/businesses" :active="isCurrentRoute('/businesses')">Businesses</NavLink>
-                                        <NavLink href="/branches" :active="isCurrentRoute('/branches')">Branches</NavLink>
-                                        <NavLink href="/sellers" :active="isCurrentRoute('/sellers')">Sellers</NavLink>
-                                        <NavLink href="/reports" :active="isCurrentRoute('/reports')">Reports</NavLink>
-                                    </template>
-
-                                    <!-- Admin Navigation -->
-                                    <template v-else-if="isAdmin">
-                                        <NavLink v-if="hasPermission('manage_users')" href="/users" :active="isCurrentRoute('/users')" class="w-full block px-4 py-3 text-gray-900 hover:text-gray-700 hover:bg-gray-50 rounded-lg">
-                                            Users
-                                        </NavLink>
-                                    </template>
-                                </nav>
-                            </div>
-
                             <div class="p-4 border-t border-gray-200">
                                 <div class="flex flex-col space-y-3">
-                                    <Link href="/settings/profile" class="w-full block px-4 py-3 text-gray-900 hover:text-gray-700 hover:bg-gray-50 rounded-lg">
-                                        Settings
-                                    </Link>
-                                    <Link href="/logout" method="post" as="button" class="w-full block px-4 py-3 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg">
-                                        Logout
-                                    </Link>
+                                    <form id="logout-form" method="POST" action="/logout" @submit.prevent="handleLogout">
+                                        <input type="hidden" name="_token" :value="csrfToken" />
+                                        <button type="submit" class="w-full block px-4 py-3 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg">
+                                            Logout
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
                         </div>
@@ -267,11 +249,86 @@ window.addEventListener('offline', () => { isOffline.value = true; });
                 </div>
             </header>
 
-            <main>
+            <main class="sm:pb-0 pb-20">
                 <slot />
             </main>
         </div>
     </div>
+
+    <!-- Bottom Scrollable Nav for Mobile -->
+    <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 sm:hidden flex overflow-x-auto" style="box-shadow: 0 -2px 8px rgba(0,0,0,0.04);">
+        <div class="flex flex-row w-full overflow-x-auto no-scrollbar">
+            <!-- Seller Navigation -->
+            <template v-if="isSeller">
+                <Link href="/dashboard" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/dashboard') ? 'text-blue-600' : 'text-gray-500'">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M13 5v6h6m-6 0H7m6 0v6m0 0H7m6 0h6" /></svg>
+                    <span class="text-xs leading-tight font-medium">Dashboard</span>
+                </Link>
+                <Link href="/products" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/products') ? 'text-blue-600' : 'text-gray-500'">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6m16 0v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6m16 0H4" /></svg>
+                    <span class="text-xs leading-tight font-medium">Inventory</span>
+                    </Link>
+                <Link href="/settings/profile" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/settings/profile') ? 'text-blue-600' : 'text-gray-500'">
+                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <span class="text-xs leading-tight font-medium">Profile</span>
+                </Link>
+            </template>
+            <!-- Owner Navigation -->
+            <template v-else-if="isOwner">
+                <Link href="/dashboard" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/dashboard') ? 'text-blue-600' : 'text-gray-500'">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M13 5v6h6m-6 0H7m6 0v6m0 0H7m6 0h6" /></svg>
+                    <span class="text-xs leading-tight font-medium">Dashboard</span>
+                </Link>
+                <Link href="/businesses" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/businesses') ? 'text-blue-600' : 'text-gray-500'">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                    <span class="text-xs leading-tight font-medium">Businesses</span>
+                </Link>
+                <Link href="/branches" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/branches') ? 'text-blue-600' : 'text-gray-500'">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    <span class="text-xs leading-tight font-medium">Branches</span>
+                </Link>
+                <Link href="/sellers" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/sellers') ? 'text-blue-600' : 'text-gray-500'">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M8 3.13a4 4 0 010 7.75" /></svg>
+                    <span class="text-xs leading-tight font-medium">Sellers</span>
+                </Link>
+                <Link href="/products" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/products') ? 'text-blue-600' : 'text-gray-500'">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6m16 0v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6m16 0H4" /></svg>
+                    <span class="text-xs leading-tight font-medium">Inventory</span>
+                </Link>
+                <Link href="/inventory-items" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/inventory-items') ? 'text-blue-600' : 'text-gray-500'">
+                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18" /></svg>
+                <span class="text-xs leading-tight font-medium">Products</span>
+                </Link>
+                <Link href="/sales" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/sales') ? 'text-blue-600' : 'text-gray-500'">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h2l.4 2M7 21h10l4-8H5.4M7 21l-1.35 2.7A2 2 0 007.48 27h9.04a2 2 0 001.83-1.3L21 21M7 21V14a1 1 0 011-1h5a1 1 0 011 1v7" /></svg>
+                    <span class="text-xs leading-tight font-medium">Sales</span>
+                </Link>
+                <Link href="/reports" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/reports') ? 'text-blue-600' : 'text-gray-500'">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 014-4h4m0 0V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2h6a2 2 0 002-2z" /></svg>
+                    <span class="text-xs leading-tight font-medium">Reports</span>
+                </Link>
+                <Link href="/settings/profile" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/settings/profile') ? 'text-blue-600' : 'text-gray-500'">
+                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <span class="text-xs leading-tight font-medium">Profile</span>
+                </Link>
+            </template>
+            <!-- Admin Navigation -->
+            <template v-else-if="isAdmin">
+                <Link href="/dashboard" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/dashboard') ? 'text-blue-600' : 'text-gray-500'">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M13 5v6h6m-6 0H7m6 0v6m0 0H7m6 0h6" /></svg>
+                    <span class="text-xs leading-tight font-medium">Dashboard</span>
+                </Link>
+                <Link href="/products" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/products') ? 'text-blue-600' : 'text-gray-500'">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6m16 0v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6m16 0H4" /></svg>
+                    <span class="text-xs leading-tight font-medium">Inventory</span>
+                </Link>
+                <Link v-if="hasPermission('manage_users')" href="/users" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/users') ? 'text-blue-600' : 'text-gray-500'">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M8 3.13a4 4 0 010 7.75" /></svg>
+                    <span class="text-xs leading-tight font-medium">Users</span>
+                </Link>
+            </template>
+        </div>
+    </nav>
 </template>
 
 <script lang="ts">
