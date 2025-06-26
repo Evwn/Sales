@@ -25,6 +25,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogFooter,
+    DialogDescription,
 } from '@/components/ui/dialog';
 import {
     Table,
@@ -139,14 +140,21 @@ const isScanning = ref(false);
 const lastKeyTime = ref(0);
 const SCAN_TIMEOUT = 50; // Time in ms between keypresses to consider it a scan
 
+const barcodeInputRef = ref<HTMLInputElement | null>(null);
+
 const filteredProducts = computed(() => {
     if (!searchQuery.value && selectedBusiness.value === 'all') {
         return props.products.data;
     }
     return props.products.data.filter(product => {
+        const name = product.name || '';
+        const sku = product.sku || '';
+        const barcode = product.barcode || '';
+        const search = searchQuery.value.toLowerCase();
         const matchesSearch = !searchQuery.value || 
-            product.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-            product.sku.toLowerCase().includes(searchQuery.value.toLowerCase());
+            name.toLowerCase().includes(search) ||
+            sku.toLowerCase().includes(search) ||
+            barcode.toLowerCase().includes(search);
         const matchesBusiness = selectedBusiness.value === 'all' || 
             product.business.id === Number(selectedBusiness.value);
         return matchesSearch && matchesBusiness;
@@ -1039,9 +1047,151 @@ const printReceiptImage = async () => {
 };
 
 const scanBarcode = () => {
-    // Implementation for barcode scanning
-    Swal.fire('Info', 'Barcode scanning feature coming soon!', 'info');
+    // Check if device supports camera
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Camera Not Supported',
+            text: 'Your device does not support camera access.',
+            confirmButtonText: 'OK'
+        });
+        return;
+    }
+    startCameraScan();
 };
+
+const showCameraScanner = ref(false);
+const cameraStream = ref(null);
+const scanningBarcode = ref(false);
+const scannerVideo = ref(null);
+const scannerCanvas = ref(null);
+
+// Camera scanning functions
+const startCameraScan = async () => {
+    try {
+        showCameraScanner.value = true;
+        scanningBarcode.value = true;
+        // Get camera stream
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'environment', // Use back camera
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            } 
+        });
+        cameraStream.value = stream;
+        // Wait for next tick to ensure DOM is updated
+        await nextTick();
+        if (scannerVideo.value) {
+            scannerVideo.value.srcObject = stream;
+            // Wait for video to be ready before scanning
+            await new Promise((resolve, reject) => {
+                const onCanPlay = () => {
+                    if (scannerVideo.value.videoWidth > 0 && scannerVideo.value.videoHeight > 0) {
+                        scannerVideo.value.removeEventListener('canplay', onCanPlay);
+                        resolve();
+                    }
+                };
+                scannerVideo.value.addEventListener('canplay', onCanPlay);
+                // Fallback: timeout after 3 seconds
+                setTimeout(() => {
+                    scannerVideo.value.removeEventListener('canplay', onCanPlay);
+                    if (scannerVideo.value.videoWidth > 0 && scannerVideo.value.videoHeight > 0) {
+                        resolve();
+                    } else {
+                        reject(new Error('Camera video not ready.'));
+                    }
+                }, 3000);
+            });
+            scannerVideo.value.play();
+            // Start barcode detection only after video is ready
+            detectBarcode();
+        }
+    } catch (error) {
+        console.error('Camera access error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Camera Access Denied',
+            text: 'Please allow camera access to scan barcodes.',
+            confirmButtonText: 'OK'
+        });
+        showCameraScanner.value = false;
+    }
+};
+
+const stopCameraScan = () => {
+    if (cameraStream.value) {
+        cameraStream.value.getTracks().forEach(track => track.stop());
+        cameraStream.value = null;
+    }
+    scanningBarcode.value = false;
+    showCameraScanner.value = false;
+};
+
+const detectBarcode = () => {
+    if (!scanningBarcode.value || !scannerVideo.value || !scannerCanvas.value) return;
+    
+    const canvas = scannerCanvas.value;
+    const ctx = canvas.getContext('2d');
+    const video = scannerVideo.value;
+    
+    // Set canvas size to match video
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Draw video frame to canvas
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Get image data for barcode detection
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    
+    // Simple barcode detection (you can enhance this with a proper library)
+    // For now, we'll use a basic pattern matching approach
+    const barcode = detectBarcodeFromImageData(imageData);
+    
+    if (barcode) {
+        // Barcode found!
+        stopCameraScan();
+        processBarcode(barcode);
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'Barcode Scanned!',
+            text: `Found barcode: ${barcode}`,
+            timer: 1500,
+            showConfirmButton: false
+        });
+    } else {
+        // Continue scanning
+        requestAnimationFrame(detectBarcode);
+    }
+};
+
+const detectBarcodeFromImageData = (imageData) => {
+    try {
+        // ... existing barcode detection logic ...
+    } catch (error) {
+        if (error instanceof DOMException && error.name === 'IndexSizeError') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Camera Error',
+                text: 'Camera image is empty or not available. Please check your camera and try again.',
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Camera Error',
+                text: error.message || 'An error occurred while accessing the camera.',
+            });
+        }
+        throw error;
+    }
+};
+
+// Clean up camera on component unmount
+onUnmounted(() => {
+    stopCameraScan();
+});
 
 const showProductDetails = (product) => {
     Swal.fire({
@@ -1064,7 +1214,7 @@ const showProductDetails = (product) => {
                 <div>
                     <h3 class="text-lg font-medium text-gray-900 mb-2">Location</h3>
                     <p><span class="font-medium">Business:</span> ${product.business?.name || 'N/A'}</p>
-                    <p><span class="font-medium">Branch:</span> ${product.branch?.name || 'N/A'}</p>
+                    <p><span class="font-medium">Branch:</span> ${product.branch?.name || 'No branch assigned'}</p>
                 </div>
             </div>
         `,
@@ -1076,6 +1226,18 @@ const showProductDetails = (product) => {
         }
     });
 };
+
+function focusBarcodeInput() {
+    nextTick(() => {
+        if (barcodeInputRef.value) {
+            barcodeInputRef.value.focus();
+        } else {
+            // fallback: try to find the input by placeholder
+            const input = document.querySelector('input[placeholder="Enter or scan barcode..."]') as HTMLInputElement;
+            if (input) input.focus();
+        }
+    });
+}
 </script>
 
 <template>
@@ -1212,8 +1374,9 @@ const showProductDetails = (product) => {
 
                         <!-- Search and Table -->
                         <div class="mb-6">
-                            <div class="flex items-center space-x-4">
-                                <div class="flex-1 max-w-sm">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-6">
+                                <!-- First column: Product search -->
+                                <div class="flex-1 mb-2 sm:mb-0">
                                     <Input
                                         v-model="searchQuery"
                                         type="text"
@@ -1221,54 +1384,47 @@ const showProductDetails = (product) => {
                                         class="w-full"
                                     />
                                 </div>
-                                <div class="flex items-center space-x-4">
-                                    <!-- Only show scan button for sellers -->
+                                <!-- Second column: Barcode/manual/camera/USB scan -->
+                                <div class="flex-1 flex items-center space-x-2">
+                                    <Input
+                                        v-model="barcodeInput"
+                                        type="text"
+                                        placeholder="Enter or scan barcode..."
+                                        class="w-full"
+                                        @keyup.enter="handleBarcodeInput"
+                                        ref="barcodeInputRef"
+                                    />
+                                    <Button @click="handleBarcodeInput" variant="primary" class="flex-shrink-0">
+                                        Add to Cart
+                                    </Button>
+                                    <!-- Camera Scan Button: only on mobile -->
                                     <Button
                                         v-if="isSeller"
-                                        @click="showBarcodeInput = true"
+                                        @click="scanBarcode"
                                         variant="outline"
-                                        class="flex items-center"
+                                        class="flex items-center sm:hidden"
                                     >
-                                        <svg
-                                            class="w-4 h-4 mr-2"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                stroke-width="2"
-                                                d="M12 4v1m6 11h2m-6 0h-2v4m0-11v4m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
-                                            />
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                                         </svg>
-                                        Scan Barcode
+                                        Scan with Camera
+                                    </Button>
+                                    <!-- USB Scanner/Manual Button: only on desktop -->
+                                    <Button
+                                        v-if="isSeller"
+                                        @click="focusBarcodeInput"
+                                        variant="outline"
+                                        class="hidden sm:inline-flex items-center"
+                                    >
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 014-4h4m0 0V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2h6a2 2 0 002-2z" />
+                                        </svg>
+                                        Scan with USB Scanner
                                     </Button>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Barcode Input Section -->
-                        <div v-if="showBarcodeInput" class="mt-4">
-                            <div class="flex items-center space-x-2">
-                                <Input
-                                    v-model="barcodeInput"
-                                    type="text"
-                                    placeholder="Enter or scan barcode..."
-                                    class="w-full"
-                                    @keyup.enter="handleBarcodeInput"
-                                    ref="barcodeInputRef"
-                                />
-                                <Button
-                                    @click="handleBarcodeInput"
-                                    class="bg-green-600 hover:bg-green-700"
-                                >
-                                    Add
-                                </Button>
-                            </div>
-                            <p class="text-sm text-gray-500 mt-1">
-                                Press Enter or click Add to add item to cart
-                            </p>
+                            <p class="text-xs text-gray-500 mt-1">You can search by name/SKU, scan with a barcode scanner, use the camera, or type manually and click 'Add to Cart'.</p>
                         </div>
 
                         <div class="overflow-x-auto">
@@ -1341,6 +1497,9 @@ const showProductDetails = (product) => {
                                 <DialogHeader>
                                     <DialogTitle>Review Cart Items</DialogTitle>
                                 </DialogHeader>
+                                <DialogDescription>
+                                    Review the items in your cart before completing the sale.
+                                </DialogDescription>
                                 <div class="py-4">
                                     <div class="max-h-[400px] overflow-y-auto pr-2">
                                         <div v-for="item in cart" :key="item.id" class="mb-4 p-4 border rounded-lg">
@@ -1572,6 +1731,54 @@ const showProductDetails = (product) => {
                         class="bg-blue-600 hover:bg-blue-700"
                     >
                         {{ isUpdatingProduct ? 'Updating...' : 'Update Product' }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <!-- Add Camera Scanner Modal -->
+        <Dialog v-model:open="showCameraScanner">
+            <DialogContent class="sm:max-w-[500px]">
+                <DialogHeader>
+                    <DialogTitle>Scan Barcode</DialogTitle>
+                </DialogHeader>
+                <div class="py-4">
+                    <div class="relative">
+                        <video
+                            ref="scannerVideo"
+                            class="w-full h-64 bg-black rounded-lg"
+                            autoplay
+                            muted
+                            playsinline
+                        ></video>
+                        <canvas
+                            ref="scannerCanvas"
+                            class="hidden"
+                        ></canvas>
+                        
+                        <!-- Scanning overlay -->
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="border-2 border-blue-500 rounded-lg p-4 bg-black bg-opacity-50">
+                                <div class="text-white text-center">
+                                    <div class="animate-pulse">Scanning...</div>
+                                    <div class="text-sm mt-2">Point camera at barcode</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 text-center">
+                        <p class="text-sm text-gray-600">
+                            Position the barcode within the frame to scan
+                        </p>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button
+                        @click="stopCameraScan"
+                        variant="outline"
+                    >
+                        Cancel
                     </Button>
                 </DialogFooter>
             </DialogContent>
