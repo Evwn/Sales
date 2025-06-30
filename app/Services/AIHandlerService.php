@@ -17,10 +17,7 @@ class AIHandlerService
         $intent = $this->classifyIntent($question);
         $context = $this->gatherContext($user, $intent, $question);
 
-        // Only fallback for ambiguous business queries
-        if ($intent === 'general' && preg_match('/\b(profit|sales|revenue|income|expenses|cost)\b/i', $question)) {
-            return 'Did you mean profit, total revenue, or something else?';
-        }
+        // Always process the question with data context, no ambiguous fallback
 
         $prompt = $this->formatPrompt($question, $context);
         // Limit token size for LLaMA
