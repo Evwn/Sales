@@ -17,8 +17,8 @@ class AIHandlerService
         $intent = $this->classifyIntent($question);
         $context = $this->gatherContext($user, $intent, $question);
 
-        // If intent is general/unclear, clarify
-        if ($intent === 'general') {
+        // Only fallback for ambiguous business queries
+        if ($intent === 'general' && preg_match('/\b(profit|sales|revenue|income|expenses|cost)\b/i', $question)) {
             return 'Did you mean profit, total revenue, or something else?';
         }
 
