@@ -145,85 +145,41 @@ class AIHandlerService
         }
         if (!$business) return [];
 
-        switch ($intent) {
-            case 'compare_weekly_profit':
+        // Gather today's business data from all relevant tables
+        $today = now()->toDateString();
+        $context = [];
+        // Sales
+        $context['sales'] = $business->sales()->whereDate('created_at', $today)->sum('total_amount');
+        // Purchases
+        $context['purchases'] = $business->purchases()->whereDate('created_at', $today)->sum('total_amount');
+        // Expenses
+        $context['expenses'] = $business->transactions()->where('type', 'debit')->whereDate('created_at', $today)->sum('amount');
+        // Profit
+        $context['profit'] = $context['sales'] - $context['purchases'] - $context['expenses'];
+        // Products sold today
+        $context['products_sold'] = $business->sales()->whereDate('created_at', $today)->with('items.product')->get()->flatMap(function($sale) {
+            return $sale->items->map(function($item) {
                 return [
-                    'branches' => $business->branches()->get(['id', 'name'])->toArray(),
-                    'profit_this_week' => $business->calculateProfitForPeriod(now()->startOfWeek(), now()->endOfWeek()),
-                    'profit_last_week' => $business->calculateProfitForPeriod(now()->subWeek()->startOfWeek(), now()->subWeek()->endOfWeek()),
+                    'product' => $item->product ? $item->product->name : null,
+                    'qty' => $item->quantity,
+                    'price' => $item->price
                 ];
-            case 'out_of_stock_sms':
-                $products = $business->products()
-                    ->with(['sales' => function($q) {
-                        $q->where('created_at', '>=', now()->subDay());
-                    }, 'supplier'])
-                    ->where('stock', 0)
-                    ->whereHas('sales', function($q) {
-                        $q->where('created_at', '>=', now()->subDay())
-                          ->groupBy('product_id')
-                          ->havingRaw('COUNT(*) > 5');
-                    })->get(['id', 'name', 'supplier_id']);
-                // Only include essential fields
-                $productsArr = $products->map(function($p) {
-                    return [
-                        'name' => $p->name,
-                        'supplier' => $p->supplier ? $p->supplier->name : null,
-                        'recent_sales' => $p->sales->count()
-                    ];
-                });
-                return ['products' => $productsArr];
-            case 'sellers_by_category':
-                $sellers = $business->sellers()
-                    ->with(['sales.product.category'])
-                    ->withCount(['sales as category_count' => function($q) {
-                        $q->select(\DB::raw('COUNT(DISTINCT category_id)'));
-                    }])->having('category_count', '>', 3)->get(['id', 'name']);
-                $sellersArr = $sellers->map(function($s) {
-                    return [
-                        'name' => $s->name,
-                        'category_count' => $s->category_count
-                    ];
-                });
-                return ['sellers' => $sellersArr];
-            case 'todays_sales':
-                $sales = $business->sales()
-                    ->with(['branch', 'items.product'])
-                    ->whereDate('created_at', now()->toDateString())
-                    ->get();
-                $salesArr = $sales->map(function($sale) {
-                    return [
-                        'total' => $sale->total,
-                        'time' => $sale->created_at->toDateTimeString(),
-                        'branch' => $sale->branch ? $sale->branch->name : null,
-                        'items' => $sale->items->map(function($item) {
-                            return [
-                                'product' => $item->product ? $item->product->name : null,
-                                'qty' => $item->quantity,
-                                'price' => $item->price
-                            ];
-                        })
-                    ];
-                });
-                return ['sales' => $salesArr];
-            case 'top_sales_sw':
-                $products = $business->products()
-                    ->with(['sales' => function($q) {
-                        $q->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
-                    }])
-                    ->where('discount', '<', 10)
-                    ->orderByDesc('sales_count')
-                    ->take(5)
-                    ->get(['id', 'name', 'sales_count']);
-                $productsArr = $products->map(function($p) {
-                    return [
-                        'name' => $p->name,
-                        'sales_count' => $p->sales_count
-                    ];
-                });
-                return ['products' => $productsArr];
-            default:
-                return ['business' => $business->only(['id', 'name'])];
-        }
+            });
+        })->toArray();
+        // Out of stock products
+        $context['out_of_stock'] = $business->products()->where('stock', 0)->pluck('name')->toArray();
+        // Top sellers
+        $context['top_sellers'] = $business->sellers()->withCount(['sales' => function($q) use ($today) {
+            $q->whereDate('created_at', $today);
+        }])->orderByDesc('sales_count')->take(5)->get(['id', 'name', 'sales_count'])->toArray();
+        // Add more tables as needed (e.g., payments, discounts, etc.)
+        $context['payments'] = $business->payments()->whereDate('created_at', $today)->sum('amount');
+        $context['discounts'] = $business->discounts()->whereDate('created_at', $today)->sum('amount');
+        $context['invoices'] = $business->invoices()->whereDate('created_at', $today)->sum('total');
+        $context['suppliers'] = $business->suppliers()->count();
+        $context['customers'] = $business->customers()->count();
+        // You can add more as needed for your business logic
+        return $context;
     }
 
     protected function formatPrompt($question, $context)
