@@ -227,24 +227,24 @@ const handleSell = async (product: PageProps['products']['data'][0]) => {
             console.log('DEBUG: Using sale URL:', saleUrl);
 
             const saleData = {
-                customer_id: page.props.defaultCustomerId, // Use default customer if available
-                seller_id: page.props.auth.user.id,
-                business_id: product.business.id,
+            customer_id: page.props.defaultCustomerId, // Use default customer if available
+            seller_id: page.props.auth.user.id,
+            business_id: product.business.id,
                 // Only include branch_id for owners/admins, sellers will have it auto-assigned
                 ...(isOwner.value || isAdmin.value ? { branch_id: product.branch?.id } : {}),
-                total_amount: product.price * parseInt(quantity),
-                payment_method: 'cash',
-                items: [{
-                    product: {
-                        id: product.id,
-                        name: product.name,
-                        price: product.price,
+            total_amount: product.price * parseInt(quantity),
+            payment_method: 'cash',
+            items: [{
+                product: {
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
                         barcode: product.barcode || '',
                         is_taxable: product.is_taxable || false,
                         tax_rate: product.tax_rate || 0
-                    },
-                    quantity: parseInt(quantity)
-                }]
+                },
+                quantity: parseInt(quantity)
+            }]
             };
 
             console.log('DEBUG: Sale data being sent:', saleData);
@@ -253,35 +253,35 @@ const handleSell = async (product: PageProps['products']['data'][0]) => {
             const response = await axios.post(saleUrl, saleData);
             console.log('DEBUG: Sale response received:', response);
 
-            // Close loading Swal
-            Swal.close();
-            
+                    // Close loading Swal
+                    Swal.close();
+                    
             if (response.data.success) {
-                // Show success message
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Sale Successful!',
-                    text: `Sold ${quantity} ${product?.name || 'N/A'} for KES ${(product.price * parseInt(quantity)).toFixed(2)}`,
-                    showConfirmButton: true,
-                    confirmButtonText: 'View Receipt'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        // Show receipt preview
-                        selectedSale.value = response.data.sale;
-                        showPreviewModal.value = true;
-                    }
-                });
+                    // Show success message
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Sale Successful!',
+                        text: `Sold ${quantity} ${product?.name || 'N/A'} for KES ${(product.price * parseInt(quantity)).toFixed(2)}`,
+                        showConfirmButton: true,
+                        confirmButtonText: 'View Receipt'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Show receipt preview
+                            selectedSale.value = response.data.sale;
+                            showPreviewModal.value = true;
+                        }
+                    });
 
-                // Update the Inventory's stock locally
-                product.stock -= parseInt(quantity);
-                // Refresh the products list
-                router.reload({ only: ['products'] });
+                    // Update the Inventory's stock locally
+                    product.stock -= parseInt(quantity);
+                    // Refresh the products list
+                    router.reload({ only: ['products'] });
             } else {
                 throw new Error(response.data.error || 'Failed to process sale');
             }
         } catch (error) {
-            // Close loading Swal
-            Swal.close();
+                    // Close loading Swal
+                    Swal.close();
             
             // Debug error logging
             console.error('DEBUG: Sale processing error:', {
@@ -293,20 +293,20 @@ const handleSell = async (product: PageProps['products']['data'][0]) => {
                 errorResponseHeaders: error.response?.headers
             });
 
-            let errorMessage = 'Failed to process sale. Please try again.';
-            
+                    let errorMessage = 'Failed to process sale. Please try again.';
+                    
             if (error.response?.data?.error) {
                 errorMessage = error.response.data.error;
             } else if (error.response?.data?.message) {
                 errorMessage = error.response.data.message;
             } else if (error.message) {
                 errorMessage = error.message;
-            }
+                    }
 
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: errorMessage,
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: errorMessage,
                 confirmButtonText: 'OK'
             });
         } finally {
@@ -1386,19 +1386,19 @@ function focusBarcodeInput() {
                                 </div>
                                 <!-- Second column: Barcode/manual/camera/USB scan -->
                                 <div class="flex-1 flex items-center space-x-2">
-                                    <Input
-                                        v-model="barcodeInput"
-                                        type="text"
-                                        placeholder="Enter or scan barcode..."
-                                        class="w-full"
-                                        @keyup.enter="handleBarcodeInput"
-                                        ref="barcodeInputRef"
-                                    />
+                                <Input
+                                    v-model="barcodeInput"
+                                    type="text"
+                                    placeholder="Enter or scan barcode..."
+                                    class="w-full"
+                                    @keyup.enter="handleBarcodeInput"
+                                    ref="barcodeInputRef"
+                                />
                                     <Button @click="handleBarcodeInput" variant="primary" class="flex-shrink-0">
                                         Add
                                     </Button>
                                     <!-- Camera Scan Button: only on mobile -->
-                                    <Button
+                                <Button
                                         v-if="isSeller"
                                         @click="scanBarcode"
                                         variant="outline"
@@ -1420,8 +1420,8 @@ function focusBarcodeInput() {
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 014-4h4m0 0V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2h6a2 2 0 002-2z" />
                                         </svg>
                                         Scan with USB Scanner
-                                    </Button>
-                                </div>
+                                </Button>
+                            </div>
                             </div>
                             <p class="text-xs text-gray-500 mt-1">You can search by name/SKU, scan with a barcode scanner, use the camera, or type manually and click 'Add to Cart'.</p>
                         </div>
@@ -1457,7 +1457,7 @@ function focusBarcodeInput() {
                                         <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.business.name }}</td>
                                         <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.branch?.name || 'No branch assigned' }}</td>
                                         <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <template v-if="isSeller">
+                                                <template v-if="isSeller">
                                                 <div class="flex items-center space-x-2">
                                                     <button @click="updateProductQuantity(product.id, -1)" :disabled="(productQuantities[product.id] || 1) <= 1" class="px-2 py-1 text-lg text-gray-600 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50">-</button>
                                                     <input type="number" v-model="productQuantities[product.id]" min="1" :max="product.stock" class="w-12 text-center border rounded px-1 py-0.5 text-sm" @input="(e) => handleQuantityInput(e, product.id)" />
@@ -1465,15 +1465,15 @@ function focusBarcodeInput() {
                                                     <button @click="addToCart(product)" class="ml-2 bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 flex items-center">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.35 2.7A2 2 0 007.48 19h9.04a2 2 0 001.83-1.3L21 13M7 13V6a1 1 0 011-1h5a1 1 0 011 1v7" /></svg>
                                                         Add to Cart
-                                                    </button>
-                                                </div>
-                                            </template>
-                                            <template v-else>
+                                                            </button>
+                                                        </div>
+                                                </template>
+                                                <template v-else>
                                                 <div class="flex space-x-3">
                                                     <button @click="showProductDetails(product)" class="text-blue-600 hover:text-blue-900">View</button>
                                                     <button @click="editProduct(product)" class="text-blue-600 hover:text-blue-900">Edit</button>
                                                     <button @click="removeProduct(product)" class="text-red-600 hover:text-red-900">Delete</button>
-                                                </div>
+                                            </div>
                                             </template>
                                         </td>
                                     </tr>

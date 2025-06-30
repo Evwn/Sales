@@ -147,7 +147,7 @@
                         track-by=""
                       />
                       <div v-if="selectedCountry === 'Other (type manually)'" class="mt-2">
-                        <TextInput
+                      <TextInput
                           id="manual-country"
                           v-model="manualCountry"
                           type="text"
@@ -179,12 +179,12 @@
                         <TextInput
                           id="manual-county"
                           v-model="manualCounty"
-                          type="text"
-                          class="mt-1 block w-full"
+                        type="text"
+                        class="mt-1 block w-full"
                           placeholder="Type county manually"
                           @input="form.city = manualCounty"
-                          required
-                        />
+                        required
+                      />
                       </div>
                       <InputError :message="form.errors.city" class="mt-2" />
                     </div>
@@ -209,12 +209,12 @@
                         <TextInput
                           id="manual-ward"
                           v-model="manualWard"
-                          type="text"
-                          class="mt-1 block w-full"
+                        type="text"
+                        class="mt-1 block w-full"
                           placeholder="Type ward/constituency/village manually"
                           @input="form.state = manualWard"
-                          required
-                        />
+                        required
+                      />
                       </div>
                       <InputError :message="form.errors.state" class="mt-2" />
                     </div>
@@ -300,22 +300,22 @@
                         </button>
                       </div>
                       <div class="flex-1">
-                        <input
-                          type="file"
-                          id="logo"
-                          @change="handleLogoChange"
-                          accept="image/*"
-                          class="hidden"
-                        />
-                        <label
-                          for="logo"
-                          class="cursor-pointer inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150"
-                        >
+                      <input
+                        type="file"
+                        id="logo"
+                        @change="handleLogoChange"
+                        accept="image/*"
+                        class="hidden"
+                      />
+                      <label
+                        for="logo"
+                        class="cursor-pointer inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150"
+                      >
                           {{ form.logo ? 'Change Logo' : 'Upload Logo' }}
-                        </label>
+                      </label>
                         <span v-if="form.logo" class="mt-2 block text-sm text-primary-600 dark:text-primary-400">
                           {{ form.logo.name }} ({{ (form.logo.size / 1024).toFixed(1) }} KB)
-                        </span>
+                      </span>
                       </div>
                     </div>
                     <InputError :message="form.errors.logo" class="mt-2" />
@@ -332,7 +332,7 @@
                           </svg>
                           <span class="text-sm text-primary-600">
                             {{ form.tax_document.name }} ({{ (form.tax_document.size / 1024).toFixed(1) }} KB)
-                          </span>
+                        </span>
                           <button
                             @click="removeTaxDocument"
                             class="ml-2 text-red-500 hover:text-red-700"
@@ -342,20 +342,20 @@
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                           </button>
-                        </div>
-                        <input
-                          type="file"
-                          id="tax_document"
-                          @change="handleTaxDocumentChange"
-                          accept=".pdf,.doc,.docx"
-                          class="hidden"
-                        />
-                        <label
-                          for="tax_document"
-                          class="cursor-pointer inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150"
-                        >
+                      </div>
+                      <input
+                        type="file"
+                        id="tax_document"
+                        @change="handleTaxDocumentChange"
+                        accept=".pdf,.doc,.docx"
+                        class="hidden"
+                      />
+                      <label
+                        for="tax_document"
+                        class="cursor-pointer inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150"
+                      >
                           {{ form.tax_document ? 'Change Document' : 'Upload Document' }}
-                        </label>
+                      </label>
                       </div>
                     </div>
                     <InputError :message="form.errors.tax_document" class="mt-2" />
@@ -372,7 +372,7 @@
                           </svg>
                           <span class="text-sm text-primary-600">
                             {{ form.registration_document.name }} ({{ (form.registration_document.size / 1024).toFixed(1) }} KB)
-                          </span>
+                        </span>
                           <button
                             @click="removeRegistrationDocument"
                             class="ml-2 text-red-500 hover:text-red-700"
@@ -382,20 +382,20 @@
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                           </button>
-                        </div>
-                        <input
-                          type="file"
-                          id="registration_document"
-                          @change="handleRegistrationDocumentChange"
-                          accept=".pdf,.doc,.docx"
-                          class="hidden"
-                        />
-                        <label
-                          for="registration_document"
-                          class="cursor-pointer inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150"
-                        >
+                      </div>
+                      <input
+                        type="file"
+                        id="registration_document"
+                        @change="handleRegistrationDocumentChange"
+                        accept=".pdf,.doc,.docx"
+                        class="hidden"
+                      />
+                      <label
+                        for="registration_document"
+                        class="cursor-pointer inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150"
+                      >
                           {{ form.registration_document ? 'Change Document' : 'Upload Document' }}
-                        </label>
+                      </label>
                       </div>
                     </div>
                     <InputError :message="form.errors.registration_document" class="mt-2" />
@@ -412,7 +412,7 @@
                           </svg>
                           <span class="text-sm text-primary-600">
                             {{ form.terms_and_conditions.name }} ({{ (form.terms_and_conditions.size / 1024).toFixed(1) }} KB)
-                          </span>
+                        </span>
                           <button
                             @click="removeTermsDocument"
                             class="ml-2 text-red-500 hover:text-red-700"
@@ -422,20 +422,20 @@
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                           </button>
-                        </div>
-                        <input
-                          type="file"
-                          id="terms_and_conditions"
-                          @change="handleTermsChange"
-                          accept=".pdf,.doc,.docx"
-                          class="hidden"
-                        />
-                        <label
-                          for="terms_and_conditions"
-                          class="cursor-pointer inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150"
-                        >
+                      </div>
+                      <input
+                        type="file"
+                        id="terms_and_conditions"
+                        @change="handleTermsChange"
+                        accept=".pdf,.doc,.docx"
+                        class="hidden"
+                      />
+                      <label
+                        for="terms_and_conditions"
+                        class="cursor-pointer inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150"
+                      >
                           {{ form.terms_and_conditions ? 'Change Document' : 'Upload Document' }}
-                        </label>
+                      </label>
                       </div>
                     </div>
                     <InputError :message="form.errors.terms_and_conditions" class="mt-2" />
@@ -758,10 +758,10 @@ const validateStep = (step: number): boolean => {
       }
       if (!form.country || typeof form.country !== 'string') {
         form.country = form.country?.toString() || '';
-        if (!form.country) {
-          form.errors.country = 'The country field is required.';
-          return false;
-        }
+      if (!form.country) {
+        form.errors.country = 'The country field is required.';
+        return false;
+      }
       }
       break;
     case 3: // Business Details
@@ -933,6 +933,6 @@ const removeTermsDocument = () => {
     showConfirmButton: false
   });
 };
-</script>
+</script> 
 
 <style src="vue-multiselect/dist/vue-multiselect.min.css"></style> 

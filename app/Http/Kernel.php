@@ -38,6 +38,7 @@ class Kernel extends HttpKernel
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \Inertia\Middleware::class,
             \App\Http\Middleware\HandleAppearance::class,
+            \App\Http\Middleware\UpdateOnlineStatus::class,
             // \App\Http\Middleware\RoleRouteAccess::class, // Removed to use alias only
         ],
 
@@ -72,5 +73,6 @@ class Kernel extends HttpKernel
         'role.access' => \App\Http\Middleware\RoleRouteAccess::class,
         'role' => \Spatie\Permission\Middlewares\RoleMiddleware::class,
         'permission' => \Spatie\Permission\Middlewares\PermissionMiddleware::class,
+        'update.online.status' => \App\Http\Middleware\UpdateOnlineStatus::class,
     ];
 } 

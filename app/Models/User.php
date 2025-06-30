@@ -18,6 +18,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     protected $fillable = [
         'name', 'email', 'password', 'business_id', 'branch_id', 'logo_path', 'logo_url', 'theme',
+        'is_online', 'last_seen_at', 'typing_in_chat_id'
     ];
 
     protected $hidden = [
@@ -27,6 +28,8 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'is_online' => 'boolean',
+        'last_seen_at' => 'datetime'
     ];
 
     public function business()
@@ -157,5 +160,80 @@ class User extends Authenticatable implements MustVerifyEmail
     public function salesCommission()
     {
         return $this->hasMany(SalesCommission::class, 'seller_id');
+    }
+
+    // Chat-related relationships
+    public function ownedChats()
+    {
+        return $this->hasMany(Chat::class, 'owner_id');
+    }
+
+    public function sellerChats()
+    {
+        return $this->hasMany(Chat::class, 'seller_id');
+    }
+
+    public function chatParticipants()
+    {
+        return $this->hasMany(ChatParticipant::class);
+    }
+
+    public function sentMessages()
+    {
+        return $this->hasMany(ChatMessage::class, 'user_id');
+    }
+
+    // Online status methods
+    public function markAsOnline()
+    {
+        $this->update([
+            'is_online' => true,
+            'last_seen_at' => now()
+        ]);
+    }
+
+    public function markAsOffline()
+    {
+        $this->update([
+            'is_online' => false,
+            'last_seen_at' => now()
+        ]);
+    }
+
+    public function updateLastSeen()
+    {
+        $this->update(['last_seen_at' => now()]);
+    }
+
+    public function setTypingStatus($chatId)
+    {
+        $this->update(['typing_in_chat_id' => $chatId]);
+    }
+
+    public function clearTypingStatus()
+    {
+        $this->update(['typing_in_chat_id' => null]);
+    }
+
+    public function getOnlineStatus()
+    {
+        if ($this->is_online) {
+            return 'online';
+        }
+        
+        if ($this->last_seen_at) {
+            $diff = now()->diffInMinutes($this->last_seen_at);
+            if ($diff < 1) {
+                return 'just now';
+            } elseif ($diff < 60) {
+                return $diff . ' minutes ago';
+            } elseif ($diff < 1440) {
+                return floor($diff / 60) . ' hours ago';
+            } else {
+                return $this->last_seen_at->format('M j');
+            }
+        }
+        
+        return 'offline';
     }
 }

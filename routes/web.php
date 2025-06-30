@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Broadcast;
 
 /*
 |--------------------------------------------------------------------------
@@ -49,6 +50,13 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::cla
     Route::get('/discounts', [DiscountController::class, 'index'])->name('discounts.index');
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
+    Route::get('/chat', function () {
+        return Inertia::render('Chat', [
+            'auth' => [
+                'user' => auth()->user(),
+            ],
+        ]);
+    })->name('chat');
     
     // Products - redirect to first business or show message if no businesses
     Route::get('/products', [ProductController::class, 'all'])->name('products.all');
@@ -145,6 +153,22 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::cla
         Route::get('/sales/yearly-report/pdf', [SaleController::class, 'exportYearlyReportPDF'])->name('sales.yearly-report.pdf');
         Route::post('/sales/batch-receipts/pdf', [SaleController::class, 'exportBatchReceiptsPDF'])->name('sales.batch-receipts.pdf');
     });
+
+    // Chat routes
+    Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::class])->group(function () {
+        Route::get('/chat/messages', [App\Http\Controllers\SellerChatController::class, 'generalHistory']);
+        Route::get('/chat/messages/{sellerId}', [App\Http\Controllers\SellerChatController::class, 'getChatMessages']);
+        Route::post('/chat/messages', [App\Http\Controllers\SellerChatController::class, 'generalSend']);
+        
+        // Advanced chat features
+        Route::post('/chat/{chatId}/mark-read', [App\Http\Controllers\SellerChatController::class, 'markAsRead']);
+        Route::post('/chat/{chatId}/typing', [App\Http\Controllers\SellerChatController::class, 'updateTypingStatus']);
+        Route::post('/chat/online-status', [App\Http\Controllers\SellerChatController::class, 'updateOnlineStatus']);
+        Route::put('/chat/messages/{messageId}/edit', [App\Http\Controllers\SellerChatController::class, 'editMessage']);
+        Route::delete('/chat/messages/{messageId}', [App\Http\Controllers\SellerChatController::class, 'deleteMessage']);
+        Route::get('/chat/{chatId}/online-status', [App\Http\Controllers\SellerChatController::class, 'getOnlineStatus']);
+        Route::get('/chat/unread-count', [App\Http\Controllers\SellerChatController::class, 'getUnreadCount']);
+    });
 });
 
 // Inventory Items
@@ -170,13 +194,6 @@ Route::get('/sales/{sale}/print-receipt', [SaleController::class, 'printReceipt'
 Route::post('/test-low-stock-notification', [App\Http\Controllers\SaleController::class, 'testLowStockNotification'])
     ->name('test.low.stock.notification');
 
-Route::post('/logout', function (Request $request) {
-    Auth::logout();
-    $request->session()->invalidate();
-    $request->session()->regenerateToken();
-    return redirect('/');
-})->name('logout');
-
 Route::get('/settings/profile', function() {
     return redirect('/profile');
 });
@@ -184,6 +201,11 @@ Route::get('/settings/profile', function() {
 // Sellers routes
 Route::get('/sellers/all', [SellerController::class, 'all'])->name('sellers.all');
 Route::get('/businesses/{business}/branches/{branch}/sellers', [SellerController::class, 'index'])->name('sellers.index');
+
+// Broadcasting authentication routes for Soketi
+Route::post('/broadcasting/auth', function (Request $request) {
+    return Broadcast::auth($request);
+})->middleware(['auth']);
 
 require __DIR__.'/auth.php';
 require __DIR__.'/settings.php';

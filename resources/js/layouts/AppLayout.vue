@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import { Head, Link, usePage } from "@inertiajs/vue3";
+import { ref, computed, onMounted } from "vue";
+import { Head, Link, usePage, router } from "@inertiajs/vue3";
 import type { BreadcrumbItemType } from "@/types";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, User as UserIcon, LogOut } from 'lucide-vue-next';
+import { ChevronDown, User as UserIcon, LogOut, Download, Menu, X } from 'lucide-vue-next';
 import NavLink from "@/components/NavLink.vue";
 import ApplicationLogo from "@/components/ApplicationLogo.vue";
 import Dropdown from '@/components/Dropdown/Dropdown.vue';
 import DropdownLink from '@/components/Dropdown/DropdownLink.vue';
 import ResponsiveNavLink from '@/components/ResponsiveNavLink.vue';
+import Swal from 'sweetalert2';
+import axios from 'axios';
 
 interface User {
     id: number;
@@ -38,6 +40,7 @@ defineProps<{
 
 const showingNavigationDropdown = ref(false);
 const page = usePage<PageProps>();
+const user = computed(() => page.props.auth.user);
 
 const isSeller = computed(() => {
     return page.props.auth?.user?.roles?.some(role => role.name === 'seller');
@@ -91,21 +94,122 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute
 // Add handleLogout to force reload after logout
 const handleLogout = (e) => {
     e.preventDefault();
-    document.getElementById('logout-form').submit();
+    router.post('/logout', {}, {
+        onSuccess: () => {
+            // Force a page reload after logout to ensure clean state
+            window.location.href = '/';
+        },
+        onError: (errors) => {
+            // Still try to redirect even if there's an error
+            window.location.href = '/';
+        }
+    });
 };
+
+const deferredPrompt = ref(null);
+const isAppInstalled = ref(false);
+
+// Listen for the beforeinstallprompt event
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt.value = e;
+});
+
+// Listen for appinstalled event
+window.addEventListener('appinstalled', () => {
+    isAppInstalled.value = true;
+    deferredPrompt.value = null;
+});
+
+function showInstallPrompt() {
+    if (deferredPrompt.value) {
+        deferredPrompt.value.prompt();
+        deferredPrompt.value.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+                isAppInstalled.value = true;
+            }
+            deferredPrompt.value = null;
+        });
+    }
+}
+
+function openAIAssistant() {
+  Swal.fire({
+    title: 'AI Assistant',
+    input: 'text',
+    inputLabel: 'Ask about your business, branches, sellers, profit, etc.',
+    inputPlaceholder: 'E.g. Which products are low in stock?',
+    showCancelButton: true,
+    confirmButtonText: 'Ask',
+    preConfirm: async (question) => {
+      if (!question) return 'Please enter a question.';
+      const response = await fetch('/api/ai-assistant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': csrfToken
+        },
+        body: JSON.stringify({ question }),
+        credentials: 'same-origin'
+      });
+      const data = await response.json();
+      // Always show the backend's message, fallback to a friendly message if truly empty
+      return (typeof data.answer === 'string' && data.answer.trim()) ? data.answer : 'We will be back soon.';
+    },
+    showLoaderOnConfirm: true,
+    allowOutsideClick: () => !Swal.isLoading(),
+    position: 'bottom-end',
+    customClass: {
+      popup: 'ai-swal-popup',
+      confirmButton: 'ai-swal-confirm',
+      cancelButton: 'ai-swal-cancel',
+      input: 'ai-swal-input',
+    },
+    width: 400
+  }).then((result) => {
+    if (result.isConfirmed) {
+      Swal.fire({
+        title: 'AI Answer',
+        html: `<div style=\"text-align:left;max-width:350px\">${result.value}</div>`,
+        position: 'bottom-end',
+        showConfirmButton: false,
+        timer: 15000,
+        width: 400,
+        customClass: {
+          popup: 'ai-swal-popup',
+        }
+      });
+    }
+  });
+}
+
+const unreadCount = ref(0);
+
+const fetchUnreadCount = async () => {
+  try {
+    const response = await axios.get('/chat/unread-count');
+    unreadCount.value = response.data.unread_count;
+  } catch (error) {
+  }
+};
+
+onMounted(() => {
+  fetchUnreadCount();
+  // Poll for unread count every 30 seconds
+  setInterval(fetchUnreadCount, 30000);
+});
 </script>
 
 <template>
     <div>
-        <div class="fixed bottom-4 right-4 z-50 flex items-center space-x-2 w-auto">
-            <span :class="[
-                'inline-block h-3 w-3 rounded-full',
-                isOffline ? 'bg-red-500' : 'bg-green-500'
-            ]"></span>
-            <span class="text-sm text-gray-800">
-                {{ isOffline ? 'Offline' : 'Online' }}
-            </span>
-        </div>
+        <!-- Online/Offline Dot (bottom right, just above mobile nav, not attached to AI button) -->
+        <span
+            v-if="isOwner"
+            :class="['fixed z-50 rounded-full border-2 border-white transition-colors', isOffline ? 'bg-red-500' : 'bg-green-500']"
+            style="width: 16px; height: 16px; bottom: 4.5rem; right: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"
+            title="{{ isOffline ? 'Offline' : 'Online' }}"
+        ></span>
         <div class="min-h-screen bg-gray-100">
             <nav class="bg-white border-b border-gray-100">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -192,14 +296,24 @@ const handleLogout = (e) => {
                                                 </Link>
                                             </DropdownMenuItem>
                                             <DropdownMenuSeparator />
+                                            <DropdownMenuItem v-if="deferredPrompt && !isAppInstalled" @click="showInstallPrompt" class="flex items-center gap-2 text-blue-600 hover:text-blue-800 cursor-pointer">
+                                                <Download class="size-4" />
+                                                <span>Download App</span>
+                                            </DropdownMenuItem>
                                             <DropdownMenuItem as-child>
-                                                <form id="logout-form" method="POST" action="/logout" @submit.prevent="handleLogout">
-                                                    <input type="hidden" name="_token" :value="csrfToken" />
-                                                    <button type="submit" class="flex items-center gap-2 text-red-600">
-                                                        <LogOut class="size-4" />
-                                                        <span>Logout</span>
-                                                    </button>
-                                                </form>
+                                                <Link href="/chat" class="flex items-center gap-2 text-gray-700 hover:text-blue-600 relative">
+                                                    <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                                    <span>Chat</span>
+                                                    <span v-if="unreadCount > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                                                        {{ unreadCount > 99 ? '99+' : unreadCount }}
+                                                    </span>
+                                                </Link>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem as-child>
+                                                <button @click="handleLogout" class="flex items-center gap-2 text-red-600 w-full text-left">
+                                                    <LogOut class="size-4" />
+                                                    <span>Logout</span>
+                                                </button>
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
@@ -230,12 +344,15 @@ const handleLogout = (e) => {
 
                             <div class="p-4 border-t border-gray-200">
                                 <div class="flex flex-col space-y-3">
-                                    <form id="logout-form" method="POST" action="/logout" @submit.prevent="handleLogout">
-                                        <input type="hidden" name="_token" :value="csrfToken" />
-                                        <button type="submit" class="w-full block px-4 py-3 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg">
-                                            Logout
-                                        </button>
-                                    </form>
+                                    <Link href="/chat" class="w-full block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg relative">
+                                        Chat
+                                        <span v-if="unreadCount > 0" class="absolute top-2 right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                                            {{ unreadCount > 99 ? '99+' : unreadCount }}
+                                        </span>
+                                    </Link>
+                                    <button @click="handleLogout" class="w-full block px-4 py-3 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg">
+                                        Logout
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -252,6 +369,18 @@ const handleLogout = (e) => {
             <main class="sm:pb-0 pb-20">
                 <slot />
             </main>
+        </div>
+
+        <!-- AI Button (bottom right, above mobile nav) -->
+        <div v-if="isOwner" class="fixed bottom-20 right-4 z-50">
+            <button
+                @click="openAIAssistant"
+                class="bg-blue-600 text-white rounded-full p-3 shadow-lg hover:bg-blue-700 transition"
+                title="Ask AI about your business"
+                style="box-shadow: 0 4px 24px rgba(37,99,235,0.2); font-size: 1.5rem;"
+            >
+                🧠
+            </button>
         </div>
     </div>
 
@@ -336,3 +465,24 @@ export default {
     name: 'AppLayout'
 };
 </script>
+
+<style>
+.ai-swal-popup {
+  border-radius: 1rem !important;
+  box-shadow: 0 8px 32px rgba(37,99,235,0.15) !important;
+  padding-bottom: 1.5rem !important;
+}
+.ai-swal-confirm {
+  background: #2563eb !important;
+  color: #fff !important;
+  border-radius: 0.5rem !important;
+  font-weight: 600 !important;
+}
+.ai-swal-cancel {
+  border-radius: 0.5rem !important;
+}
+.ai-swal-input {
+  border-radius: 0.5rem !important;
+  border: 1px solid #2563eb !important;
+}
+</style>

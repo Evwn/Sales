@@ -27,6 +27,7 @@ class RoleRouteAccess
                 'profile*',
                 'settings*',
                 'logout',
+                'chat*',
             ],
             'customer' => [
                 'dashboard*',
@@ -54,6 +55,7 @@ class RoleRouteAccess
                 'profile*',
                 'settings*',
                 'logout',
+                'chat*',
             ],
             'admin' => ['*'], // admin can access everything
         ];

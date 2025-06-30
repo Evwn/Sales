@@ -19,6 +19,19 @@
         // Always force light mode
         document.documentElement.classList.remove('dark');
     </script>
+
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/service-worker.js');
+        });
+      }
+    </script>
   </head>
   <body class="min-h-screen bg-background font-sans antialiased text-foreground transition-colors duration-200">
     @inertia

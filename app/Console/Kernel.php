@@ -16,6 +16,11 @@ class Kernel extends ConsoleKernel
         $schedule->command('inventory:check-low-stock')
                  ->dailyAt('09:00')
                  ->appendOutputTo(storage_path('logs/low-stock-check.log'));
+
+        // Mark inactive users as offline every minute
+        $schedule->command('users:mark-offline')
+                 ->everyMinute()
+                 ->appendOutputTo(storage_path('logs/laravel.log'));
     }
 
     /**

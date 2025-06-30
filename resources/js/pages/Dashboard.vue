@@ -615,9 +615,9 @@ const filteredSalesTrend = computed(() => {
     const datasets = branchNames.map((branchName, index) => {
         const data = sortedDates.map(date => {
             return groupedSales[date][branchName] || 0;
-        });
+    });
 
-        return {
+    return {
             label: branchName,
             data: data,
             borderColor: branchColors[index % branchColors.length],
@@ -956,11 +956,11 @@ const isSeller = computed(() => {
                 </div>
 
                 <!-- Charts Section -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    <!-- Sales Trend -->
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="p-6">
-                            <h3 class="text-lg font-medium text-gray-900 mb-4">Sales Trend</h3>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                            <!-- Sales Trend -->
+                            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                                <div class="p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Sales Trend</h3>
                             <LineChart
                                         :data="filteredSalesTrend.datasets"
                                         :labels="filteredSalesTrend.labels"
@@ -969,10 +969,10 @@ const isSeller = computed(() => {
                         </div>
                     </div>
 
-                    <!-- Branch Performance -->
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="p-6">
-                            <h3 class="text-lg font-medium text-gray-900 mb-4">Branch Performance</h3>
+                            <!-- Branch Performance -->
+                            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                                <div class="p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Branch Performance</h3>
                             <BarChart
                                         :data="filteredBranchPerformance.data"
                                         :labels="filteredBranchPerformance.labels"
