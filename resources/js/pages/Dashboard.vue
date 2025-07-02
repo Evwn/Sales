@@ -544,16 +544,46 @@ const getYesterdayRange = () => {
     });
 };
 
+// Shared color palette for branches
+const branchColorsPalette = [
+    'rgb(59, 130, 246)',   // Blue
+    'rgb(16, 185, 129)',   // Green
+    'rgb(245, 158, 11)',   // Yellow
+    'rgb(239, 68, 68)',    // Red
+    'rgb(139, 92, 246)',   // Purple
+    'rgb(236, 72, 153)',   // Pink
+    'rgb(14, 165, 233)',   // Sky Blue
+    'rgb(34, 197, 94)',    // Emerald
+    'rgb(251, 146, 60)',   // Orange
+    'rgb(168, 85, 247)'    // Violet
+];
+
+// Compute all unique branch names across all businesses for stable color mapping
+const allBranchNames = computed(() => {
+  return Array.from(
+    new Set(
+      businesses.flatMap(biz => (biz.branches || []).map(branch => branch.name))
+    )
+  );
+});
+
+// Map branch name to a color
+const branchColorMap = computed(() => {
+  const map = {};
+  allBranchNames.value.forEach((name, idx) => {
+    map[name] = branchColorsPalette[idx % branchColorsPalette.length];
+  });
+  return map;
+});
+
 // Update the filteredSalesTrend computed property
 const filteredSalesTrend = computed(() => {
     const sales = filteredSales.value;
-
     // Group sales by date and branch
     const groupedSales = sales.reduce((acc, sale) => {
         const date = new Date(sale.created_at);
-        const dateKey = date.toISOString().split('T')[0]; // Use YYYY-MM-DD format for consistency
+        const dateKey = date.toISOString().split('T')[0];
         const branchName = sale.branch?.name || 'Unknown Branch';
-        
         if (!acc[dateKey]) {
             acc[dateKey] = {};
         }
@@ -563,57 +593,32 @@ const filteredSalesTrend = computed(() => {
         acc[dateKey][branchName] += Number(sale.amount) || 0;
         return acc;
     }, {});
-
     // Get all unique branch names
     const allBranches = new Set();
     Object.values(groupedSales).forEach(dateData => {
         Object.keys(dateData).forEach(branch => allBranches.add(branch));
     });
     const branchNames = Array.from(allBranches);
-
-    // Sort dates chronologically (oldest to newest)
-    const sortedDates = Object.keys(groupedSales).sort((a, b) => {
-        return a.localeCompare(b); // Since we're using YYYY-MM-DD format, string comparison works
-    });
-
-    // Format dates for display (convert back to readable format)
+    // Sort dates chronologically
+    const sortedDates = Object.keys(groupedSales).sort((a, b) => a.localeCompare(b));
+    // Format dates for display
     const formattedLabels = sortedDates.map(date => {
         const dateObj = new Date(date);
-        return dateObj.toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: 'numeric' 
-        });
+        return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     });
-
-    // Create datasets for each branch
-    const branchColors = [
-        'rgb(59, 130, 246)',   // Blue
-        'rgb(16, 185, 129)',   // Green
-        'rgb(245, 158, 11)',   // Yellow
-        'rgb(239, 68, 68)',    // Red
-        'rgb(139, 92, 246)',   // Purple
-        'rgb(236, 72, 153)',   // Pink
-        'rgb(14, 165, 233)',   // Sky Blue
-        'rgb(34, 197, 94)',    // Emerald
-        'rgb(251, 146, 60)',   // Orange
-        'rgb(168, 85, 247)'    // Violet
-    ];
-
-    const datasets = branchNames.map((branchName, index) => {
-        const data = sortedDates.map(date => {
-            return groupedSales[date][branchName] || 0;
-    });
-
-    return {
+    // Create datasets for each branch with consistent color
+    const datasets = branchNames.map((branchName) => {
+        const data = sortedDates.map(date => groupedSales[date][branchName] || 0);
+        const color = branchColorMap.value[branchName] || branchColorsPalette[0];
+        return {
             label: branchName,
             data: data,
-            borderColor: branchColors[index % branchColors.length],
-            backgroundColor: branchColors[index % branchColors.length] + '20', // Add transparency
+            borderColor: color,
+            backgroundColor: color + '20', // Add transparency
             tension: 0.1,
             fill: false
         };
     });
-
     return {
         labels: formattedLabels,
         datasets: datasets
@@ -623,7 +628,6 @@ const filteredSalesTrend = computed(() => {
 // Update the filteredBranchPerformance computed property
 const filteredBranchPerformance = computed(() => {
     const sales = filteredSales.value;
-
     // Group sales by branch
     const branchSales = sales.reduce((acc, sale) => {
         const branchName = sale.branch?.name || 'Unknown Branch';
@@ -633,33 +637,12 @@ const filteredBranchPerformance = computed(() => {
         acc[branchName] += Number(sale.amount) || 0;
         return acc;
     }, {});
-
     // Convert to arrays for the chart
     const labels = Object.keys(branchSales);
     const data = Object.values(branchSales);
-
     // Use the same colors as Sales Trend chart
-    const branchColors = [
-        'rgb(59, 130, 246)',   // Blue
-        'rgb(16, 185, 129)',   // Green
-        'rgb(245, 158, 11)',   // Yellow
-        'rgb(239, 68, 68)',    // Red
-        'rgb(139, 92, 246)',   // Purple
-        'rgb(236, 72, 153)',   // Pink
-        'rgb(14, 165, 233)',   // Sky Blue
-        'rgb(34, 197, 94)',    // Emerald
-        'rgb(251, 146, 60)',   // Orange
-        'rgb(168, 85, 247)'    // Violet
-    ];
-
-    const backgroundColor = labels.map((_, index) => 
-        branchColors[index % branchColors.length]
-    );
-
-    const borderColor = labels.map((_, index) => 
-        branchColors[index % branchColors.length]
-    );
-
+    const backgroundColor = labels.map(branchName => branchColorMap.value[branchName] || branchColorsPalette[0]);
+    const borderColor = backgroundColor;
     return {
         labels: labels,
         data: data,
