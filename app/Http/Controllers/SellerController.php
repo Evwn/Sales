@@ -135,6 +135,7 @@ class SellerController extends Controller
                 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z\\d]).+$/'
             ],
             'branch_id' => 'required|exists:branches,id',
+            'business_id' => 'required|exists:businesses,id',
         ], [
             'password.regex' => 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one symbol.'
         ]);
@@ -149,6 +150,9 @@ class SellerController extends Controller
         if ($seller->branch_id != $validated['branch_id']) {
             $changes[] = 'Branch changed';
         }
+        if ($seller->business_id != $validated['business_id']) {
+            $changes[] = 'Business changed';
+        }
         if (!empty($validated['password'])) {
             $changes[] = 'Password changed';
         }
@@ -156,7 +160,7 @@ class SellerController extends Controller
         $seller->name = $validated['name'];
         $seller->email = $validated['email'];
         $seller->branch_id = $validated['branch_id'];
-        $seller->business_id = $business->id;
+        $seller->business_id = $validated['business_id'];
         if (!empty($validated['password'])) {
             $seller->password = Hash::make($validated['password']);
         }

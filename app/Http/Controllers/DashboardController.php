@@ -20,42 +20,50 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
         
-        // Get business based on user role
-        $business = null;
+        // Get all businesses for owner
+        $businesses = [];
         if ($user->hasRole('owner')) {
-            $business = Business::where('owner_id', $user->id)->first();
+            $businesses = Business::where('owner_id', $user->id)->get();
         } elseif ($user->hasRole('seller') && $user->business_id) {
-            $business = Business::with('owner')->find($user->business_id);
-        } else {
-            $business = $user->business;
+            $businesses = collect([Business::with('owner')->find($user->business_id)]);
+        } else if ($user->business) {
+            $businesses = collect([$user->business]);
         }
 
-        // Initialize empty collections for sales and activities
-        $sales = collect();
+        $businessesData = $businesses->map(function ($business) {
+            $branches = Branch::where('business_id', $business->id)->get();
+            $sales = Sale::with(['seller', 'branch'])->whereHas('branch', function ($q) use ($business) {
+                $q->where('business_id', $business->id);
+            })->latest()->get();
+            return [
+                'id' => $business->id,
+                'name' => $business->name,
+                'branches' => $branches,
+                'sales' => $sales,
+                'total_sales' => $sales->sum('amount'),
+                'total_orders' => $sales->count(),
+                'average_order_value' => $sales->avg('amount'),
+                'active_branches' => $branches->where('status', 'active')->count(),
+                'total_branches' => $branches->count(),
+            ];
+        });
+
+        // For backward compatibility, keep the first business as 'business' and 'stats'
+        $business = $businesses->first();
+        $sales = $business ? Sale::with(['seller', 'branch.business'])
+            ->whereHas('branch', function ($q) use ($business) {
+                $q->where('business_id', $business->id);
+            })->latest()->get() : collect();
         $recentActivity = collect();
-
-        // Only fetch data if user has a business
         if ($business) {
-            // Get all sales data
-            $sales = Sale::with(['seller', 'branch.business'])
-                ->whereHas('branch', function ($q) use ($business) {
-                    $q->where('business_id', $business->id);
-                })
-                ->latest()
-            ->get();
-
-            // Get recent activities
             $recentActivity = Activity::with(['user', 'subject', 'causer'])
                 ->where(function($query) use ($user) {
-                    // Get activities where the user is the owner
                     $query->where('user_id', $user->id)
-                        // Or where the user is the causer
                         ->orWhere('causer_id', $user->id)
-                        // Or where the user is related to the subject through ownership
                         ->orWhereHasMorph('subject', [
-                            'App\Models\Product',
-                            'App\Models\Sale',
-                            'App\Models\User'
+                            'App\\Models\\Product',
+                            'App\\Models\\Sale',
+                            'App\\Models\\User'
                         ], function($query) use ($user) {
                             $query->whereHas('branch.business', function($q) use ($user) {
                                 $q->where('owner_id', $user->id);
@@ -74,8 +82,6 @@ class DashboardController extends Controller
                     ];
                 });
         }
-
-        // Calculate stats with null checks
         $stats = [
             'sales' => $sales,
             'sales_today' => $sales->filter(function ($sale) {
@@ -88,19 +94,14 @@ class DashboardController extends Controller
             'total_branches' => $business ? Branch::where('business_id', $business->id)->count() : 0,
             'recent_activity' => $recentActivity,
         ];
-
-        $businessArray = null;
-        if ($business) {
-            $businessArray = $business->toArray();
-            if ($business->relationLoaded('owner') && $business->owner) {
-                $businessArray['owner'] = [
-                    'name' => $business->owner->name,
-                    'email' => $business->owner->email,
-                    'phone' => $business->owner->phone ?? null,
-                ];
-            }
+        $businessArray = $business ? $business->toArray() : null;
+        if ($business && $business->relationLoaded('owner') && $business->owner) {
+            $businessArray['owner'] = [
+                'name' => $business->owner->name,
+                'email' => $business->owner->email,
+                'phone' => $business->owner->phone ?? null,
+            ];
         }
-
         return Inertia::render('Dashboard', [
             'stats' => $stats,
             'name' => $user->name,
@@ -113,6 +114,7 @@ class DashboardController extends Controller
                 'business' => $businessArray,
                 'branch' => $user->branch,
             ],
+            'businesses' => $businessesData,
         ]);
     }
 

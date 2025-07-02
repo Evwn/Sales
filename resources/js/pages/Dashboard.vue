@@ -137,6 +137,11 @@ const props = defineProps({
             branch: null
         })
     },
+    businesses: {
+        type: Array,
+        required: false,
+        default: () => []
+    },
 });
 
 defineOptions({
@@ -334,8 +339,8 @@ const salesMonth = computed(() => props.stats?.sales_month || 0);
 const totalOrders = computed(() => {
     return totalFilteredOrders.value;
 });
-const activeBranches = computed(() => props.stats?.active_branches || 0);
-const totalBranches = computed(() => props.stats?.total_branches || 0);
+const activeBranches = computed(() => filteredBranches.value.filter(b => b.status === 'active').length);
+const totalBranches = computed(() => filteredBranches.value.length);
 const salesTrend = computed(() => props.stats?.sales_trend || { labels: [], data: [] });
 const branchPerformance = computed(() => props.stats?.branch_performance || { labels: [], data: [] });
 const topProducts = computed(() => props.stats?.top_products || []);
@@ -442,26 +447,28 @@ const filters = [
     { label: 'Custom Range', value: 'custom' }
 ];
 
-// Update the filteredSales computed property
+// Use businesses prop for all business data, but do not change the interface
+const businesses = props.businesses || [];
+
+// availableBusinesses: always show all businesses, even if no sales
+const availableBusinesses = computed(() => {
+    return businesses.map(biz => ({ id: biz.id, name: biz.name }));
+});
+
+// filteredSales: filter from all businesses' sales, not just props.stats.sales
 const filteredSales = computed(() => {
-    // Get all sales data from props
-    const sales = props.stats?.sales || [];
-
+    let allSales = businesses.flatMap(biz => biz.sales || []);
     // First filter by business if selected
-    let businessFilteredSales = sales;
+    let businessFilteredSales = allSales;
     if (selectedBusiness.value !== 'all') {
-        businessFilteredSales = sales.filter(sale => {
-            return sale.branch?.business?.id === Number(selectedBusiness.value);
-        });
+        businessFilteredSales = allSales.filter(sale => sale.business_id === Number(selectedBusiness.value));
     }
-
+    // Then apply time filter as before
     if (filter.value === 'all') return businessFilteredSales;
-
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
-
     return businessFilteredSales.filter(sale => {
         const saleDate = new Date(sale.created_at);
         switch (filter.value) {
@@ -522,26 +529,6 @@ const totalFilteredOrders = computed(() => filteredSales.value.length);
 const averageFilteredOrderValue = computed(() => {
     if (filteredSales.value.length === 0) return 0;
     return totalFilteredSales.value / filteredSales.value.length;
-});
-
-// Get unique businesses from sales data
-const availableBusinesses = computed(() => {
-    const sales = props.stats?.sales || [];
-    const businesses = new Map();
-    
-    sales.forEach(sale => {
-        if (sale.branch?.business) {
-            const business = sale.branch.business;
-            if (!businesses.has(business.id)) {
-                businesses.set(business.id, {
-                    id: business.id,
-                    name: business.name
-                });
-            }
-        }
-    });
-    
-    return Array.from(businesses.values()).sort((a, b) => a.name.localeCompare(b.name));
 });
 
 // Add watch for selectedPeriod changes
@@ -742,6 +729,14 @@ const getActivityIcon = (type) => {
 const isSeller = computed(() => {
     return props.auth?.user?.roles?.some(role => role.name === 'seller');
 });
+
+const filteredBranches = computed(() => {
+  if (selectedBusiness.value === 'all') {
+    return businesses.flatMap(biz => biz.branches || []);
+  }
+  const biz = businesses.find(biz => String(biz.id) === String(selectedBusiness.value));
+  return biz ? (biz.branches || []) : [];
+});
 </script>
 
 <template>
@@ -791,6 +786,7 @@ const isSeller = computed(() => {
                         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                             <div class="p-6">
                                 <div class="flex flex-wrap gap-4 items-center">
+                                <label class="text-sm font-medium text-gray-700">Time Filter:</label>
                                     <select
                                         v-model="filter"
                                         class="rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
@@ -821,9 +817,27 @@ const isSeller = computed(() => {
                                             class="rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                                         />
                                     </div>
+                                    <div class="flex flex-wrap gap-4 items-center">
+                                        <label class="text-sm font-medium text-gray-700">Business Filter:</label>
+                                        <select
+                                            v-model="selectedBusiness"
+                                            class="rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                        >
+                                            <option value="all">All Businesses</option>
+                                            <option 
+                                                v-for="business in availableBusinesses" 
+                                                :key="business.id" 
+                                                :value="business.id"
+                                            >
+                                                {{ business.name }}
+                                            </option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        
+                        
 
                         <!-- Stats Cards -->
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
@@ -929,28 +943,6 @@ const isSeller = computed(() => {
                                             </dl>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Business Filter for Charts -->
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                    <div class="p-6">
-                        <div class="flex flex-wrap gap-4 items-center">
-                            <label class="text-sm font-medium text-gray-700">Business Filter:</label>
-                            <select
-                                v-model="selectedBusiness"
-                                class="rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                            >
-                                <option value="all">All Businesses</option>
-                                <option 
-                                    v-for="business in availableBusinesses" 
-                                    :key="business.id" 
-                                    :value="business.id"
-                                >
-                                    {{ business.name }}
-                                </option>
-                            </select>
                         </div>
                     </div>
                 </div>
