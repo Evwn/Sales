@@ -88,6 +88,13 @@ class SellerChatController extends Controller
             $preview = $data['message'] ?? ($data['image_url'] ? '[Image]' : ($data['audio_url'] ? '[Audio]' : '[File]'));
             $chat->last_message_at = now();
             $chat->last_message_preview = $preview;
+            if ($isOwner && $sellerId) {
+                // Owner sent message, increment seller's unread count
+                $chat->incrementUnreadCountForUser($chat->seller_id);
+            } elseif ($isSeller) {
+                // Seller sent message, increment owner's unread count
+                $chat->incrementUnreadCountForUser($chat->owner_id);
+            }
             $chat->save();
             DB::commit();
             return response()->json($msg);
@@ -189,11 +196,16 @@ class SellerChatController extends Controller
             $ownerChat = Chat::where('seller_id', $user->id)
                        ->where('type', 'seller')
                        ->with(['owner', 'messages' => function($query) {
-                           $query->orderBy('created_at')->take(50);
+                           $query->orderBy('created_at', 'desc')->take(1);
                        }])
                        ->first();
             
+            $lastMessage = $ownerChat && $ownerChat->messages->count() > 0
+                ? $ownerChat->messages->first()->message
+                : 'No messages yet';
+            
             if ($ownerChat) {
+                $ownerChat->last_message_preview = $lastMessage;
                 $ownerChat->unread_count = $ownerChat->getUnreadCountForUser($user->id);
             }
             
@@ -485,6 +497,14 @@ class SellerChatController extends Controller
                     'message' => $message,
                     'message_type' => 'text',
                 ]);
+                if ($isOwner && $sellerId) {
+                    // Owner sent message, increment seller's unread count
+                    $chat->incrementUnreadCountForUser($chat->seller_id);
+                } elseif ($isSeller) {
+                    // Seller sent message, increment owner's unread count
+                    $chat->incrementUnreadCountForUser($chat->owner_id);
+                }
+                $chat->save();
                 
             } else if ($isSeller) {
                 // Seller sending message to their owner
@@ -502,6 +522,14 @@ class SellerChatController extends Controller
                     'message' => $message,
                     'message_type' => 'text',
                 ]);
+                if ($isOwner && $sellerId) {
+                    // Owner sent message, increment seller's unread count
+                    $chat->incrementUnreadCountForUser($chat->seller_id);
+                } elseif ($isSeller) {
+                    // Seller sent message, increment owner's unread count
+                    $chat->incrementUnreadCountForUser($chat->owner_id);
+                }
+                $chat->save();
                 
             } else {
                 return response()->json(['error' => 'Invalid request.'], 400);
@@ -613,7 +641,7 @@ class SellerChatController extends Controller
             // Increment unread count for the recipient
             if ($isOwner && $sellerId) {
                 // Owner sent message, increment seller's unread count
-                $chat->incrementUnreadCountForUser($sellerId);
+                $chat->incrementUnreadCountForUser($chat->seller_id);
             } elseif ($isSeller) {
                 // Seller sent message, increment owner's unread count
                 $chat->incrementUnreadCountForUser($chat->owner_id);
