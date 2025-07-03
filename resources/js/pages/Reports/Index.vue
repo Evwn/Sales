@@ -125,13 +125,69 @@ const filteredProducts = computed(() => {
 });
 
 function exportPDF() {
-  // Export filtered data
-  window.open(`/reports/export?...`);
+  // Build query parameters from current filters
+  const params = new URLSearchParams();
+  
+  if (filters.value.date?.start) {
+    params.append('date_from', filters.value.date.start);
+  }
+  if (filters.value.date?.end) {
+    params.append('date_to', filters.value.date.end);
+  }
+  if (filters.value.business_id) {
+    params.append('business_id', filters.value.business_id);
+  }
+  if (filters.value.branch_id) {
+    params.append('branch_id', filters.value.branch_id);
+  }
+  if (filters.value.product_id) {
+    params.append('product_id', filters.value.product_id);
+  }
+  if (filters.value.seller_id) {
+    params.append('seller_id', filters.value.seller_id);
+  }
+  if (filters.value.status) {
+    params.append('status', filters.value.status);
+  }
+  
+  // Add format parameter for PDF
+  params.append('format', 'pdf');
+  
+  // Export filtered data as PDF
+  window.open(`/reports/export?${params.toString()}`);
 }
 
 function exportCSV() {
-  // Export filtered data
-  window.open(`/reports/export?...`);
+  // Build query parameters from current filters
+  const params = new URLSearchParams();
+  
+  if (filters.value.date?.start) {
+    params.append('date_from', filters.value.date.start);
+  }
+  if (filters.value.date?.end) {
+    params.append('date_to', filters.value.date.end);
+  }
+  if (filters.value.business_id) {
+    params.append('business_id', filters.value.business_id);
+  }
+  if (filters.value.branch_id) {
+    params.append('branch_id', filters.value.branch_id);
+  }
+  if (filters.value.product_id) {
+    params.append('product_id', filters.value.product_id);
+  }
+  if (filters.value.seller_id) {
+    params.append('seller_id', filters.value.seller_id);
+  }
+  if (filters.value.status) {
+    params.append('status', filters.value.status);
+  }
+  
+  // Add format parameter for CSV
+  params.append('format', 'csv');
+  
+  // Export filtered data as CSV
+  window.open(`/reports/export?${params.toString()}`);
 }
 
 function expandSale(saleId) {
@@ -182,7 +238,7 @@ function expandSale(saleId) {
                             <div class="export-buttons flex gap-4 mb-6">
                                 <button class="btn btn-outline" @click="exportPDF">Export PDF</button>
                                 <button class="btn btn-outline" @click="exportCSV">Export CSV</button>
-                        </div>
+                            </div>
 
                             <!-- Detailed Table -->
                             <SalesTable :sales="filteredSales" @expand="expandSale" />

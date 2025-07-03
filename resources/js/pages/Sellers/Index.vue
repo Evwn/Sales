@@ -96,7 +96,7 @@
                           Edit
                         </Link>
                         <button
-                          v-if="seller.branch"
+                          v-if="isAdmin && seller.branch"
                           @click="deleteSeller(seller)"
                           class="text-red-600 hover:text-red-900"
                         >
@@ -158,6 +158,9 @@ const props = defineProps({
 });
 
 const selectedBranchId = ref(props.selectedBranch);
+
+// Computed property to check if user is admin
+const isAdmin = computed(() => props.userRole === 'admin');
 
 // Computed property to filter sellers based on selected branch
 const filteredSellers = computed(() => {

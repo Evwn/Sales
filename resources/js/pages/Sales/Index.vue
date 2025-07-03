@@ -81,8 +81,8 @@ const formatCurrency = (amount) => {
 };
 
 const formatDate = (date) => {
-    const now = new Date();
-    return now.toLocaleString('en-GB', {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleString('en-GB', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',

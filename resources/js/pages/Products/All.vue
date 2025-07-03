@@ -1385,21 +1385,20 @@ function focusBarcodeInput() {
                                     />
                                 </div>
                                 <!-- Second column: Barcode/manual/camera/USB scan -->
-                                <div class="flex-1 flex items-center space-x-2">
-                                <Input
-                                    v-model="barcodeInput"
-                                    type="text"
-                                    placeholder="Enter or scan barcode..."
-                                    class="w-full"
-                                    @keyup.enter="handleBarcodeInput"
-                                    ref="barcodeInputRef"
-                                />
+                                <div class="flex-1 flex items-center space-x-2" v-if="isSeller">
+                                    <Input
+                                        v-model="barcodeInput"
+                                        type="text"
+                                        placeholder="Enter or scan barcode..."
+                                        class="w-full"
+                                        @keyup.enter="handleBarcodeInput"
+                                        ref="barcodeInputRef"
+                                    />
                                     <Button @click="handleBarcodeInput" variant="primary" class="flex-shrink-0">
                                         Add
                                     </Button>
                                     <!-- Camera Scan Button: only on mobile -->
-                                <Button
-                                        v-if="isSeller"
+                                    <Button
                                         @click="scanBarcode"
                                         variant="outline"
                                         class="flex items-center sm:hidden"
@@ -1411,7 +1410,6 @@ function focusBarcodeInput() {
                                     </Button>
                                     <!-- USB Scanner/Manual Button: only on desktop -->
                                     <Button
-                                        v-if="isSeller"
                                         @click="focusBarcodeInput"
                                         variant="outline"
                                         class="hidden sm:inline-flex items-center"
@@ -1420,10 +1418,10 @@ function focusBarcodeInput() {
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 014-4h4m0 0V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2h6a2 2 0 002-2z" />
                                         </svg>
                                         Scan with USB Scanner
-                                </Button>
+                                    </Button>
+                                </div>
                             </div>
-                            </div>
-                            <p class="text-xs text-gray-500 mt-1">You can search by name/SKU, scan with a barcode scanner, use the camera, or type manually and click 'Add to Cart'.</p>
+                            <p class="text-xs text-gray-500 mt-1" v-if="isSeller">You can search by name/SKU, scan with a barcode scanner, use the camera, or type manually and click 'Add to Cart'.</p>
                         </div>
 
                         <div class="overflow-x-auto">
@@ -1472,7 +1470,7 @@ function focusBarcodeInput() {
                                                 <div class="flex space-x-3">
                                                     <button @click="showProductDetails(product)" class="text-blue-600 hover:text-blue-900">View</button>
                                                     <button @click="editProduct(product)" class="text-blue-600 hover:text-blue-900">Edit</button>
-                                                    <button @click="removeProduct(product)" class="text-red-600 hover:text-red-900">Delete</button>
+                                                    <button v-if="isAdmin" @click="removeProduct(product)" class="text-red-600 hover:text-red-900">Delete</button>
                                             </div>
                                             </template>
                                         </td>

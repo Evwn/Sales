@@ -93,6 +93,7 @@
                             Edit
                           </Link>
                           <button
+                            v-if="isAdmin"
                             @click="deleteBranch(branch)"
                             class="text-red-600 hover:text-red-900"
                             type="button"
@@ -148,6 +149,10 @@ const props = defineProps({
 const page = usePage();
 const isOwner = computed(() => {
   return page.props.auth?.user?.roles?.some(role => role.name === 'owner');
+});
+
+const isAdmin = computed(() => {
+  return page.props.auth?.user?.roles?.some(role => role.name === 'admin');
 });
 
 const selectedBusinessId = ref(props.business?.id || '');

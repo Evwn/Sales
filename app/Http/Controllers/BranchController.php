@@ -159,6 +159,11 @@ class BranchController extends Controller
 
     public function destroy(Business $business, Branch $branch)
     {
+        // Only allow admins to delete branches
+        if (!Auth::user()->hasRole('admin')) {
+            abort(403, 'Unauthorized action. Only admins can delete branches.');
+        }
+
         $branch->delete();
 
         return redirect()->route('branches.index', $business)

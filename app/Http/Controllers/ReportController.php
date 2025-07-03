@@ -166,8 +166,22 @@ class ReportController extends Controller
         $sales = $query->latest()->get();
 
         if ($request->format === 'pdf') {
-            // Get business info (assuming first sale's business)
-            $business = $sales->first() ? $sales->first()->business : null;
+            // Get business info based on filter
+            $business = null;
+            if ($request->business_id) {
+                // If specific business is selected, get that business
+                $business = Business::find($request->business_id);
+            } else {
+                // Check if we have sales from multiple businesses
+                $uniqueBusinesses = $sales->pluck('business_id')->unique();
+                if ($uniqueBusinesses->count() > 1) {
+                    // Multiple businesses - don't set a specific business
+                    $business = null;
+                } else {
+                    // Single business - use the first sale's business
+                    $business = $sales->first() ? $sales->first()->business : null;
+                }
+            }
             
             // Calculate summary statistics
             $summary = [
@@ -186,7 +200,8 @@ class ReportController extends Controller
                 'business' => $business,
                 'summary' => $summary,
                 'startDate' => $request->date_from,
-                'endDate' => $request->date_to
+                'endDate' => $request->date_to,
+                'isMultiBusiness' => !$request->business_id && $sales->pluck('business_id')->unique()->count() > 1
             ]);
             return $pdf->download('sales-report.pdf');
         }

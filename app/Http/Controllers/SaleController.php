@@ -53,54 +53,25 @@ class SaleController extends Controller
                 'data' => $sales->map(function ($sale) {
                     return [
                         'id' => $sale->id,
-                        'business_id' => $sale->business_id,
-                        'branch_id' => $sale->branch_id,
                         'reference' => $sale->reference,
-                        'date' => $sale->sale_date->format('d/m/Y'),
-                        'amount' => $sale->amount,
+                        'total_amount' => $sale->amount,
+                        'created_at' => $sale->sale_date ? $sale->sale_date->format('Y-m-d H:i:s') : $sale->created_at->format('Y-m-d H:i:s'),
+                        'payment_method' => $sale->payment_method,
                         'seller' => [
                             'id' => $sale->seller?->id,
                             'name' => $sale->seller?->name
                         ],
                         'branch' => [
                             'id' => $sale->branch?->id,
-                            'name' => $sale->branch?->name
-                        ],
-                        'business' => [
-                            'id' => $sale->branch->business?->id,
-                            'name' => $sale->branch->business?->name
-                        ],
-                        'payment_method' => $sale->payment_method,
-                        'status' => $sale->status,
-                        'items' => $sale->items->map(function ($item) {
-                            return [
-                                'id' => $item->id,
-                                'quantity' => $item->quantity,
-                                'unit_price' => $item->unit_price,
-                                'total' => $item->total,
-                                'product' => [
-                                    'id' => $item->product->id,
-                                    'name' => $item->product->name,
-                                    'display_name' => $item->product->display_name,
-                                    'buying_price' => $item->product->buying_price,
-                                    'selling_price' => $item->product->selling_price,
-                                    'barcode' => $item->product->barcode,
-                                    'inventoryItem' => $item->product->inventoryItem ? [
-                                        'id' => $item->product->inventoryItem->id,
-                                        'name' => $item->product->inventoryItem->name,
-                                        'description' => $item->product->inventoryItem->description
-                                    ] : null
-                                ]
-                            ];
-                        })
+                            'name' => $sale->branch?->name,
+                            'business' => [
+                                'id' => $sale->branch->business?->id,
+                                'name' => $sale->branch->business?->name
+                            ]
+                        ]
                     ];
                 }),
-                'meta' => [
-                    'current_page' => 1,
-                    'last_page' => 1,
-                    'per_page' => 10,
-                    'total' => $sales->count()
-                ]
+                'links' => [], // Add pagination if needed
             ]
         ]);
     }
@@ -364,54 +335,25 @@ class SaleController extends Controller
                 'data' => $sales->map(function ($sale) {
                     return [
                         'id' => $sale->id,
-                        'business_id' => $sale->business_id,
-                        'branch_id' => $sale->branch_id,
                         'reference' => $sale->reference,
-                        'date' => $sale->created_at->format('d/m/Y, H:i:s'),
-                        'amount' => $sale->amount,
+                        'total_amount' => $sale->amount,
+                        'created_at' => $sale->sale_date ? $sale->sale_date->format('Y-m-d H:i:s') : $sale->created_at->format('Y-m-d H:i:s'),
+                        'payment_method' => $sale->payment_method,
                         'seller' => $sale->seller ? [
                             'id' => $sale->seller->id,
                             'name' => $sale->seller->name
                         ] : null,
                         'branch' => $sale->branch ? [
                             'id' => $sale->branch->id,
-                            'name' => $sale->branch->name
-                        ] : null,
-                        'business' => $sale->branch && $sale->branch->business ? [
-                            'id' => $sale->branch->business->id,
-                            'name' => $sale->branch->business->name
-                        ] : null,
-                        'payment_method' => $sale->payment_method,
-                        'status' => $sale->status,
-                        'items' => $sale->items->map(function ($item) {
-                            return [
-                                'id' => $item->id,
-                                'quantity' => $item->quantity,
-                                'unit_price' => $item->unit_price,
-                                'total' => $item->total,
-                                'product' => [
-                                    'id' => $item->product->id,
-                                    'name' => $item->product->name,
-                                    'display_name' => $item->product->display_name,
-                                    'buying_price' => $item->product->buying_price,
-                                    'selling_price' => $item->product->selling_price,
-                                    'barcode' => $item->product->barcode,
-                                    'inventoryItem' => $item->product->inventoryItem ? [
-                                        'id' => $item->product->inventoryItem->id,
-                                        'name' => $item->product->inventoryItem->name,
-                                        'description' => $item->product->inventoryItem->description
-                                    ] : null
-                                ]
-                            ];
-                        })
+                            'name' => $sale->branch->name,
+                            'business' => [
+                                'id' => $sale->branch->business?->id,
+                                'name' => $sale->branch->business?->name
+                            ]
+                        ] : null
                     ];
                 }),
-                'meta' => [
-                    'current_page' => 1,
-                    'last_page' => 1,
-                    'per_page' => 10,
-                    'total' => $sales->count()
-                ]
+                'links' => [], // Add pagination if needed
             ]
         ]);
     }

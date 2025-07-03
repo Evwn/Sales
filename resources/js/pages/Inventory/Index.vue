@@ -188,7 +188,7 @@ const handleDelete = async (id: number) => {
                                                     Edit
                                                 </Link>
                                                 <button
-                                                    v-if="isAdmin || isOwner"
+                                                    v-if="isAdmin"
                                                     @click="handleDelete(item.id)"
                                                     class="text-red-600 hover:text-red-800"
                                                 >

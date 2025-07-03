@@ -93,10 +93,16 @@
 <body>
     <div class="report">
         <div class="header">
-            @if($business->logo)
+            @if($business && $business->logo)
                 <img src="{{ $business->logo }}" alt="Business Logo" class="logo">
             @endif
-            <div class="business-name">{{ $business->name }}</div>
+            <div class="business-name">
+                @if($business)
+                    {{ $business->name }}
+                @else
+                    All Businesses
+                @endif
+            </div>
             <div class="report-title">Sales Report</div>
             <div class="date-range">
                 @if($startDate && $endDate)
@@ -139,6 +145,9 @@
                 <tr>
                     <th>Reference</th>
                     <th>Date</th>
+                    @if(isset($isMultiBusiness) && $isMultiBusiness)
+                        <th>Business</th>
+                    @endif
                     <th>Amount</th>
                     <th>Payment Method</th>
                     <th>Seller</th>
@@ -150,10 +159,13 @@
                     <tr>
                         <td>{{ $sale->reference }}</td>
                         <td>{{ $sale->created_at->format('Y-m-d H:i:s') }}</td>
+                        @if(isset($isMultiBusiness) && $isMultiBusiness)
+                            <td>{{ $sale->business->name ?? 'Unknown Business' }}</td>
+                        @endif
                         <td>{{ number_format($sale->amount, 2) }}</td>
                         <td>{{ $sale->payment_method }}</td>
-                        <td>{{ $sale->seller->name }}</td>
-                        <td>{{ $sale->branch->name }}</td>
+                        <td>{{ $sale->seller->name ?? 'Unknown Seller' }}</td>
+                        <td>{{ $sale->branch->name ?? 'Unknown Branch' }}</td>
                     </tr>
                 @endforeach
             </tbody>
@@ -161,7 +173,11 @@
 
         <div class="footer">
             <p>Generated on {{ now()->format('Y-m-d H:i:s') }}</p>
-            <p>Business ID: {{ $business->id }}</p>
+            @if($business)
+                <p>Business ID: {{ $business->id }}</p>
+            @else
+                <p>All Businesses Report</p>
+            @endif
         </div>
     </div>
 </body>

@@ -42,7 +42,7 @@ class SaleService
                 'payment_method' => $data['payment_method'],
                 'business_id' => $data['business_id'],
                 'branch_id' => $data['branch_id'],
-                'sale_date' => now(),
+                'sale_date' => $data['sale_date'] ?? now(),
             ]);
 
             // 2. Create sale items with tax calculations

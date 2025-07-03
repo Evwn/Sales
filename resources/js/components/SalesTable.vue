@@ -37,33 +37,8 @@
                     return `${productName} x${i.quantity}`;
                   }).join(', ') : ''"
                   :class="sale.items.length > 1 ? 'cursor-pointer hover:text-blue-600' : 'cursor-help'"
-                  @click.stop="sale.items.length > 1 ? showItemsModal(sale) : null">
-              {{ sale.items.map((i, itemIndex) => {
-                // Try multiple sources for product name
-                let productName = 'Unknown Product';
-                if (i.product?.inventoryItem?.name) {
-                  productName = i.product.inventoryItem.name;
-                } else if (i.product?.name) {
-                  productName = i.product.name;
-                } else if (i.product?.display_name) {
-                  productName = i.product.display_name;
-                }
-                
-                const buyingPrice = i.product?.buying_price || 0;
-                const sellingPrice = i.unit_price || 0;
-                const profit = sellingPrice - buyingPrice;
-                const totalProfit = profit * i.quantity;
-                const itemText = `${productName} x${i.quantity} (Buy: KES ${buyingPrice}, Sell: KES ${sellingPrice}, Profit: KES ${totalProfit.toFixed(2)})`;
-                
-                // Show only first item in table, add "..." if there are more
-                if (itemIndex === 0) {
-                  if (sale.items.length > 1) {
-                    return itemText + ' ...';
-                  }
-                  return itemText;
-                }
-                return null; // Don't show other items in table
-              }).filter(text => text !== null).join(', ') }}
+                  @click.stop="sale.items.length > 1 ? showItemsModal(sale) : null"
+                  v-html="getProductDisplayText(sale)">
             </span>
             <span v-else>—</span>
           </td>
@@ -210,5 +185,40 @@ function showItemsModal(sale) {
       container: 'swal-items-modal'
     }
   });
+}
+
+function getProductDisplayText(sale) {
+  if (!sale.items || sale.items.length === 0) return '';
+  
+  const productTexts = sale.items.map((i, index) => {
+    // Try multiple sources for product name
+    let productName = 'Unknown Product';
+    if (i.product?.inventoryItem?.name) {
+      productName = i.product.inventoryItem.name;
+    } else if (i.product?.name) {
+      productName = i.product.name;
+    } else if (i.product?.display_name) {
+      productName = i.product.display_name;
+    }
+    
+    const buyingPrice = i.product?.buying_price || 0;
+    const sellingPrice = i.unit_price || 0;
+    const profit = sellingPrice - buyingPrice;
+    const totalProfit = profit * i.quantity;
+    const profitPercentage = sellingPrice > 0 ? ((profit / sellingPrice) * 100).toFixed(1) : 0;
+    
+    // Show only first item in table, add "..." if there are more
+    if (index === 0) {
+      if (sale.items.length > 1) {
+        // Mobile: show truncated version, Desktop: show full details
+        return `<span class="hidden md:inline">${productName} x${i.quantity} (Buy: KES ${buyingPrice}, Sell: KES ${sellingPrice}, Profit: KES ${totalProfit.toFixed(2)} (${profitPercentage}%)) ...</span><span class="md:hidden">${productName} x${i.quantity}...</span>`;
+      }
+      // Mobile: show truncated version, Desktop: show full details
+      return `<span class="hidden md:inline">${productName} x${i.quantity} (Buy: KES ${buyingPrice}, Sell: KES ${sellingPrice}, Profit: KES ${totalProfit.toFixed(2)} (${profitPercentage}%))</span><span class="md:hidden">${productName} x${i.quantity}</span>`;
+    }
+    return null; // Don't show other items in table
+  }).filter(text => text !== null).join(', ');
+
+  return productTexts;
 }
 </script> 

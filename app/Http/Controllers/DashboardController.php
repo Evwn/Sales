@@ -13,6 +13,7 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use App\Models\SalesReceiptItem;
 use App\Models\SalesReceipt;
+use App\Models\PaymentMethod;
 
 class DashboardController extends Controller
 {
@@ -32,9 +33,10 @@ class DashboardController extends Controller
 
         $businessesData = $businesses->map(function ($business) {
             $branches = Branch::where('business_id', $business->id)->get();
-            $sales = Sale::with(['seller', 'branch'])->whereHas('branch', function ($q) use ($business) {
-                $q->where('business_id', $business->id);
-            })->latest()->get();
+            $sales = Sale::with(['seller', 'branch.business'])
+                ->whereHas('branch', function ($q) use ($business) {
+                    $q->where('business_id', $business->id);
+                })->latest()->get();
             return [
                 'id' => $business->id,
                 'name' => $business->name,
@@ -45,6 +47,7 @@ class DashboardController extends Controller
                 'average_order_value' => $sales->avg('amount'),
                 'active_branches' => $branches->where('status', 'active')->count(),
                 'total_branches' => $branches->count(),
+                'payment_methods' => PaymentMethod::where('business_id', $business->id)->get(),
             ];
         });
 
@@ -93,6 +96,7 @@ class DashboardController extends Controller
             'active_branches' => $business ? Branch::where('business_id', $business->id)->where('status', 'active')->count() : 0,
             'total_branches' => $business ? Branch::where('business_id', $business->id)->count() : 0,
             'recent_activity' => $recentActivity,
+            'payment_methods' => $business ? PaymentMethod::where('business_id', $business->id)->get() : [],
         ];
         $businessArray = $business ? $business->toArray() : null;
         if ($business && $business->relationLoaded('owner') && $business->owner) {

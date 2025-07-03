@@ -137,6 +137,11 @@ class InventoryController extends Controller
 
     public function destroy(Inventory $inventory)
     {
+        // Only allow admins to delete inventory items
+        if (!Auth::user()->hasRole('admin')) {
+            abort(403, 'Unauthorized action. Only admins can delete inventory items.');
+        }
+
         $this->authorize('delete', $inventory->product->business);
 
         $inventory->delete();

@@ -221,6 +221,11 @@ class ProductController extends Controller
 
     public function destroy(Branch $branch, Product $product)
     {
+        // Only allow admins to delete products
+        if (!Auth::user()->hasRole('admin')) {
+            abort(403, 'Unauthorized action. Only admins can delete products.');
+        }
+
         // Check if product belongs to this branch
         if ($product->branch_id !== $branch->id) {
             abort(404);

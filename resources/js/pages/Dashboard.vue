@@ -345,16 +345,22 @@ const salesTrend = computed(() => props.stats?.sales_trend || { labels: [], data
 const branchPerformance = computed(() => props.stats?.branch_performance || { labels: [], data: [] });
 const topProducts = computed(() => props.stats?.top_products || []);
 const paymentMethods = computed(() => {
-    const methods = props.stats?.payment_methods || {};
-    const total = Object.values(methods).reduce((sum, val) => sum + (Number(val) || 0), 0);
-    
-    if (total === 0) return {};
-    
-    return Object.entries(methods).reduce((acc, [method, value]) => {
-        const percentage = Math.round((Number(value) / total) * 100);
-        acc[method] = isNaN(percentage) ? 0 : percentage;
-        return acc;
-    }, {});
+    // Gather all available payment methods from all businesses
+    const allMethods = businesses.flatMap(biz => (biz.payment_methods || []));
+    // Remove duplicates by name
+    const uniqueMethods = Array.from(new Map(allMethods.map(m => [m.name, m])).values());
+    // Count usage in filtered sales
+    const sales = filteredSales.value;
+    const methodCounts = {};
+    sales.forEach(sale => {
+        const method = sale.payment_method || 'Unknown';
+        methodCounts[method] = (methodCounts[method] || 0) + 1;
+    });
+    const total = sales.length;
+    return uniqueMethods.map(method => ({
+        name: method.name,
+        percentage: total > 0 ? Math.round(((methodCounts[method.name] || 0) / total) * 100) : 0
+    }));
 });
 const recentActivity = computed(() => {
     const activities = props.stats?.recent_activity || [];
@@ -960,6 +966,7 @@ const filteredBranches = computed(() => {
                 </div>
 
                         <!-- Payment Methods -->
+                        <div v-if="paymentMethods.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                             <div class="p-6">
                                 <h3 class="text-lg font-medium text-gray-900 mb-4">Payment Methods</h3>
@@ -980,6 +987,8 @@ const filteredBranches = computed(() => {
                                 <p v-else class="text-gray-500 text-center">No payment methods data available</p>
                         </div>
                     </div>
+                    </div>
+                                <p v-else class="text-gray-500 text-center"></p>
 
                     <!-- Recent Activity -->
                         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
@@ -1028,12 +1037,13 @@ const filteredBranches = computed(() => {
                                                     KES {{ Number(sale.amount).toFixed(2) }}
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    <Link
-                                                        :href="`/sales/${sale.id}`"
-                                                        class="text-indigo-600 hover:text-indigo-900"
+                                                    <button
+                                                        @click="handleViewSale(sale)"
+                                                        class="text-indigo-600 hover:text-indigo-900 focus:outline-none focus:underline"
+                                                        type="button"
                                                     >
                                                         View
-                                                    </Link>
+                                                    </button>
                                                 </td>
                                             </tr>
                                         </tbody>
