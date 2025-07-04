@@ -118,12 +118,16 @@
             <h3>Summary of Changes:</h3>
             @foreach($changes as $field => $change)
                 <div class="change-item">
-                    <div class="field-name">{{ ucfirst(str_replace('_', ' ', $field)) }} changed:</div>
+                    <div class="field-name">
+                        @if($field === 'logo_url')
+                            Logo changed:
+                        @else
+                            {{ ucfirst(str_replace('_', ' ', $field)) }}:
+                        @endif
+                    </div>
                     <div>
                         @if($field === 'logo_url')
-                            <span class="old-value">old Logo</span>
-                            <span class="arrow">→</span>
-                            <span class="new-value">new Logo</span>
+                            Logo changed from old logo to new logo
                         @else
                             <span class="old-value">{{ $change['old'] }}</span>
                             <span class="arrow">→</span>
