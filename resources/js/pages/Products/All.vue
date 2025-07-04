@@ -1386,19 +1386,19 @@ function focusBarcodeInput() {
                                 </div>
                                 <!-- Second column: Barcode/manual/camera/USB scan -->
                                 <div class="flex-1 flex items-center space-x-2" v-if="isSeller">
-                                    <Input
-                                        v-model="barcodeInput"
-                                        type="text"
-                                        placeholder="Enter or scan barcode..."
-                                        class="w-full"
-                                        @keyup.enter="handleBarcodeInput"
-                                        ref="barcodeInputRef"
-                                    />
+                                <Input
+                                    v-model="barcodeInput"
+                                    type="text"
+                                    placeholder="Enter or scan barcode..."
+                                    class="w-full"
+                                    @keyup.enter="handleBarcodeInput"
+                                    ref="barcodeInputRef"
+                                />
                                     <Button @click="handleBarcodeInput" variant="primary" class="flex-shrink-0">
                                         Add
                                     </Button>
                                     <!-- Camera Scan Button: only on mobile -->
-                                    <Button
+                                <Button
                                         @click="scanBarcode"
                                         variant="outline"
                                         class="flex items-center sm:hidden"
@@ -1418,8 +1418,8 @@ function focusBarcodeInput() {
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 014-4h4m0 0V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2h6a2 2 0 002-2z" />
                                         </svg>
                                         Scan with USB Scanner
-                                    </Button>
-                                </div>
+                                </Button>
+                            </div>
                             </div>
                             <p class="text-xs text-gray-500 mt-1" v-if="isSeller">You can search by name/SKU, scan with a barcode scanner, use the camera, or type manually and click 'Add to Cart'.</p>
                         </div>

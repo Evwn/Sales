@@ -54,7 +54,7 @@ class ProfileController extends Controller
 
         $oldEmail = $user->email;
         $oldName = $user->name;
-        $oldLogo = $user->logo_url;
+        $oldLogo = 'oldLogo';
 
         // Handle logo upload
         if ($request->hasFile('logo')) {
@@ -84,7 +84,7 @@ class ProfileController extends Controller
             $changes['name'] = ['old' => $oldName, 'new' => $user->name];
         }
         if ($user->isDirty('logo_url')) {
-            $changes['logo_url'] = ['old' => $oldLogo, 'new' => $user->logo_url];
+            $changes['logo_url'] = ['old' => 'oldLogo', 'new' => 'newLogo'];
         }
 
         $user->save();

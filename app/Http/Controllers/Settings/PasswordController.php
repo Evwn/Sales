@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Notifications\ProfileChangedNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -37,10 +38,20 @@ class PasswordController extends Controller
             'password.regex' => 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one symbol.'
         ]);
 
-        $request->user()->update([
+        $user = $request->user();
+        
+        // Send notification about password change
+        $user->notify(new ProfileChangedNotification([
+            'password' => [
+                'old' => '••••••••',
+                'new' => '•••••••• (Updated)'
+            ]
+        ]));
+
+        $user->update([
             'password' => Hash::make($validated['password']),
         ]);
 
-        return back();
+        return back()->with('status', 'Password updated successfully.');
     }
 }
