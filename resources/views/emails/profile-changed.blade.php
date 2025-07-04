@@ -144,7 +144,7 @@
                 <p class="warning-text">Because your email address was changed, you will need to verify your new email the next time you log in.</p>
             </div>
             
-            <a href="{{ url('/email/verify') }}" class="button">Verify Email</a>
+            <a href="{{ url('/verify-email') }}" class="button">Verify Email</a>
         @endif
         
         <p>If you did not make this change, please contact our support team immediately.</p>
