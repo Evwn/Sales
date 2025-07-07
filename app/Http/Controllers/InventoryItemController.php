@@ -81,7 +81,8 @@ class InventoryItemController extends Controller
             }),
             'branch_id' => $user->branch_id,
             'business_id' => $user->business_id,
-            'managedBranches' => $managedBranches
+            'managedBranches' => $managedBranches,
+            'all_permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
         ];
 
         return Inertia::render('InventoryItems/Index', [

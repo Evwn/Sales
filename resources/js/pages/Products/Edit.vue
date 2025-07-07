@@ -84,6 +84,21 @@
                                     </div>
                                 </div>
 
+                                <div class="mb-4">
+                                    <label class="block mb-1">Tax Group</label>
+                                    <select v-model="form.tax_group_id" class="border px-2 py-1 w-full">
+                                        <option value="">None</option>
+                                        <option v-for="tax in taxGroups" :key="tax.id" :value="tax.id">{{ tax.code }} - {{ tax.description }} ({{ tax.rate }}%)</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" v-model="form.tax_enabled" class="mr-2" />
+                                        Tax Enabled
+                                    </label>
+                                </div>
+
                                 <div class="flex justify-end space-x-3">
                                     <Link
                                         :href="`/branches/${branch.id}/products`"
@@ -111,6 +126,7 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { ref } from 'vue';
 
 const props = defineProps({
     branch: {
@@ -120,6 +136,10 @@ const props = defineProps({
     product: {
         type: Object,
         required: true
+    },
+    taxGroups: {
+        type: Array,
+        default: []
     }
 });
 
@@ -127,6 +147,10 @@ const form = useForm({
     price: props.product.price,
     buying_price: props.product.buying_price,
     stock: props.product.stock,
-    min_stock_level: props.product.min_stock_level
+    min_stock_level: props.product.min_stock_level,
+    tax_group_id: props.product.tax_group_id || '',
+    tax_enabled: !!props.product.tax_enabled
 });
+
+const taxGroups = ref(props.taxGroups || []);
 </script> 

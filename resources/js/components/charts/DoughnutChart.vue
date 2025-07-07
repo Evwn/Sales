@@ -44,4 +44,13 @@ watch(() => props.options, () => {
 onMounted(() => {
   initChart();
 });
+
+const getChartImage = () => {
+  if (chart) {
+    return chart.toBase64Image();
+  }
+  return null;
+};
+
+defineExpose({ getChartImage });
 </script> 

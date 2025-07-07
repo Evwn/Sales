@@ -22,28 +22,45 @@ class BranchController extends Controller
     {
         $user = Auth::user();
 
-        // Only show businesses owned or managed by the user
-        $businesses = Business::where('owner_id', $user->id)
-            ->orWhereHas('admins', function ($q) use ($user) {
-                $q->where('user_id', $user->id);
-            })
-            ->get(['id', 'name']);
+        if ($user->hasRole('admin')) {
+            $businesses = Business::all(['id', 'name']);
+            $branches = Branch::with('business')->get();
+        } else {
+            // Only show businesses owned or managed by the user
+            $businesses = Business::where('owner_id', $user->id)
+                ->orWhereHas('admins', function ($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                })
+                ->get(['id', 'name']);
 
-        if ($businesses->isEmpty()) {
-            return Inertia::render('Branches/NoBusiness');
+            if ($businesses->isEmpty()) {
+                return Inertia::render('Branches/NoBusiness');
+            }
+
+            // Get branches for all businesses
+            $branches = Branch::whereHas('business', function ($q) use ($user) {
+                $q->where('owner_id', $user->id)
+                  ->orWhereHas('admins', function ($q2) use ($user) {
+                      $q2->where('user_id', $user->id);
+                  });
+            })->with('business')->get();
         }
-
-        // Get branches for all businesses
-        $branches = Branch::whereHas('business', function ($q) use ($user) {
-            $q->where('owner_id', $user->id)
-              ->orWhereHas('admins', function ($q2) use ($user) {
-                  $q2->where('user_id', $user->id);
-              });
-        })->with('business')->get();
 
         return Inertia::render('Branches/Index', [
             'business' => null,
-            'branches' => $branches,
+            'branches' => $branches->map(function ($branch) {
+                return [
+                    'id' => $branch->id,
+                    'name' => $branch->name,
+                    'address' => $branch->address,
+                    'phone' => $branch->phone,
+                    'status' => $branch->status,
+                    'business' => $branch->business ? [
+                        'id' => $branch->business->id,
+                        'name' => $branch->business->name
+                    ] : null,
+                ];
+            }),
             'businesses' => $businesses
         ]);
     }
@@ -64,7 +81,19 @@ class BranchController extends Controller
         
         return Inertia::render('Branches/Index', [
             'business' => $business,
-            'branches' => $branches,
+            'branches' => $branches->map(function ($branch) {
+                return [
+                    'id' => $branch->id,
+                    'name' => $branch->name,
+                    'address' => $branch->address,
+                    'phone' => $branch->phone,
+                    'status' => $branch->status,
+                    'business' => $branch->business ? [
+                        'id' => $branch->business->id,
+                        'name' => $branch->business->name
+                    ] : null,
+                ];
+            }),
             'businesses' => $businesses
         ]);
     }
@@ -153,8 +182,12 @@ class BranchController extends Controller
             'email' => $validated['email'],
         ]);
 
-        return redirect()->route('businesses.branches.index', $business)
-            ->with('success', 'Branch updated successfully.');
+        $user = auth()->user();
+        if ($user && $user->hasRole('admin')) {
+            return redirect("/admin/branches/{$branch->id}")->with('success', 'Branch updated successfully.');
+        } else {
+            return redirect('/branches')->with('success', 'Branch updated successfully.');
+        }
     }
 
     public function destroy(Business $business, Branch $branch)
@@ -164,20 +197,30 @@ class BranchController extends Controller
             abort(403, 'Unauthorized action. Only admins can delete branches.');
         }
 
+        $branchName = $branch->name;
         $branch->delete();
 
+        // Send email to branch contact and business owner
+        try {
+            \Mail::to($branch->email)->send(new \App\Mail\BranchDeletedMail($branchName, $business->name, auth()->user()));
+            if ($business->owner && $business->owner->email !== $branch->email) {
+                \Mail::to($business->owner->email)->send(new \App\Mail\BranchDeletedMail($branchName, $business->name, auth()->user()));
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to send branch deleted email: ' . $e->getMessage());
+        }
+
+        // If the request expects JSON (axios/fetch), return JSON for SweetAlert
+        if (request()->expectsJson() || request()->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Branch deleted successfully.']);
+        }
+
+        $user = auth()->user();
+        if ($user && $user->hasRole('admin')) {
+            return redirect('/admin/branches')->with('success', 'Branch deleted successfully.');
+        }
         return redirect()->route('branches.index', $business)
             ->with('success', 'Branch deleted successfully.');
-    }
-
-    public function generateBarcode(Business $business, Branch $branch)
-    {
-        $barcode = $branch->generateBarcode();
-
-        return response()->json([
-            'barcode' => $barcode,
-            'message' => 'Barcode generated successfully'
-        ]);
     }
 
     public function downloadBarcode(Business $business, Branch $branch)
@@ -219,16 +262,138 @@ class BranchController extends Controller
             ErrorCorrectionLevel::High,
             300, // size
             10, // margin
-            RoundBlockSizeMode::Margin,
-            new Color(0, 0, 0), // foreground
-            new Color(255, 255, 255) // background
+            new RoundBlockSizeMode(RoundBlockSizeMode::Margin),
+            new Color(0, 0, 0),
+            new Color(255, 255, 255)
         );
 
         $writer = new PngWriter();
         $result = $writer->write($qrCode);
 
-        return response($result->getString(), 200)
-            ->header('Content-Type', 'image/png')
-            ->header('Content-Disposition', 'inline; filename="barcode-' . $branch->barcode_path . '.png"');
+        return response($result->getString())
+            ->header('Content-Type', $result->getMimeType())
+            ->header('Content-Disposition', 'inline; filename="barcode.png"');
+    }
+
+    // Admin methods for viewing all branches
+    public function adminIndex()
+    {
+        $this->checkAdminAccess();
+        
+        $branches = Branch::with(['business', 'sellers', 'products'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($branch) {
+                return [
+                    'id' => $branch->id,
+                    'name' => $branch->name,
+                    'address' => $branch->address,
+                    'gps_latitude' => $branch->gps_latitude,
+                    'gps_longitude' => $branch->gps_longitude,
+                    'phone' => $branch->phone,
+                    'email' => $branch->email,
+                    'status' => $branch->status,
+                    'barcode_path' => $branch->barcode_path,
+                    'business' => $branch->business ? [
+                        'id' => $branch->business->id,
+                        'name' => $branch->business->name,
+                        'owner' => $branch->business->owner ? [
+                            'id' => $branch->business->owner->id,
+                            'name' => $branch->business->owner->name,
+                            'email' => $branch->business->owner->email,
+                        ] : null,
+                    ] : null,
+                    'sellers_count' => $branch->sellers->count(),
+                    'products_count' => $branch->products->count(),
+                    'created_at' => $branch->created_at,
+                    'updated_at' => $branch->updated_at,
+                ];
+            });
+
+        return Inertia::render('Admin/Branches/Index', [
+            'branches' => $branches,
+        ]);
+    }
+
+    public function adminShow(Branch $branch)
+    {
+        $this->checkAdminAccess();
+        $branch->refresh();
+        $branch->load(['business.owner', 'sellers', 'products', 'business.admins']);
+        return Inertia::render('Admin/Branches/Show', [
+            'branch' => [
+                'id' => $branch->id,
+                'name' => $branch->name,
+                'address' => $branch->address,
+                'gps_latitude' => $branch->gps_latitude,
+                'gps_longitude' => $branch->gps_longitude,
+                'phone' => $branch->phone,
+                'email' => $branch->email,
+                'status' => $branch->status,
+                'barcode_path' => $branch->barcode_path,
+                'business' => $branch->business ? [
+                    'id' => $branch->business->id,
+                    'name' => $branch->business->name,
+                    'description' => $branch->business->description,
+                    'phone' => $branch->business->phone,
+                    'email' => $branch->business->email,
+                    'address' => $branch->business->address,
+                    'city' => $branch->business->city,
+                    'state' => $branch->business->state,
+                    'country' => $branch->business->country,
+                    'owner' => $branch->business->owner ? [
+                        'id' => $branch->business->owner->id,
+                        'name' => $branch->business->owner->name,
+                        'email' => $branch->business->owner->email,
+                        'created_at' => $branch->business->owner->created_at,
+                    ] : null,
+                    'admins' => $branch->business->admins->map(function ($admin) {
+                        return [
+                            'id' => $admin->id,
+                            'name' => $admin->name,
+                            'email' => $admin->email,
+                        ];
+                    }),
+                ] : null,
+                'sellers' => $branch->sellers->map(function ($seller) {
+                    return [
+                        'id' => $seller->id,
+                        'name' => $seller->name,
+                        'email' => $seller->email,
+                        'phone' => $seller->phone,
+                        'status' => $seller->status,
+                        'created_at' => $seller->created_at,
+                    ];
+                }),
+                'products' => $branch->products->map(function ($product) {
+                    return [
+                        'id' => $product->id,
+                        'name' => $product->name,
+                        'description' => $product->description,
+                        'price' => $product->price,
+                        'stock_quantity' => $product->stock_quantity,
+                        'status' => $product->status,
+                        'created_at' => $product->created_at,
+                    ];
+                }),
+                'created_at' => $branch->created_at,
+                'updated_at' => $branch->updated_at,
+            ],
+        ]);
+    }
+
+    public function toggleStatus(Business $business, Branch $branch)
+    {
+        $branch->status = $branch->status === 'active' ? 'inactive' : 'active';
+        $branch->save();
+        return back()->with('success', 'Branch status updated.');
+    }
+
+    private function checkAdminAccess()
+    {
+        $user = auth()->user();
+        if (!$user || !$user->hasRole('admin')) {
+            abort(403, 'Access denied. Admin role required.');
+        }
     }
 }

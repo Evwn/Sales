@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { LoaderCircle } from 'lucide-vue-next';
+import { ref } from 'vue';
 
 interface Props {
     token: string;
@@ -21,8 +22,28 @@ const form = useForm({
     password_confirmation: '',
 });
 
+const passwordError = ref('');
+
+function isStrongPassword(password: string): boolean {
+    // At least 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 symbol
+    return /[A-Z]/.test(password) &&
+           /[a-z]/.test(password) &&
+           /[0-9]/.test(password) &&
+           /[^A-Za-z0-9]/.test(password) &&
+           password.length >= 8;
+}
+
 const submit = () => {
-    form.post('/password/store', {
+    passwordError.value = '';
+    if (!isStrongPassword(form.password)) {
+        passwordError.value = 'Password must be at least 8 characters and include uppercase, lowercase, number, and symbol.';
+        return;
+    }
+    if (form.password !== form.password_confirmation) {
+        passwordError.value = 'Passwords do not match.';
+        return;
+    }
+    form.post('/reset-password', {
         onFinish: () => {
             form.reset('password', 'password_confirmation');
         },
@@ -54,7 +75,7 @@ const submit = () => {
                         autofocus
                         placeholder="Password"
                     />
-                    <InputError :message="form.errors.password" />
+                    <InputError :message="form.errors.password || passwordError" />
                 </div>
 
                 <div class="grid gap-2">

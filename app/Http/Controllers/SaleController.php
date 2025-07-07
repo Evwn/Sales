@@ -34,19 +34,27 @@ class SaleController extends Controller
 
     public function index(Business $business, Branch $branch)
     {
-        $query = Sale::where('business_id', $business->id);
+        if (auth()->user()->hasRole('admin')) {
+            $sales = Sale::with([
+                'seller',
+                'branch.business',
+                'items.product.inventoryItem'
+            ])->get();
+        } else {
+            $query = Sale::where('business_id', $business->id);
 
-        // If seller, only show their own sales
-        if (Auth::user()->role->name === 'seller') {
-            $query->where('branch_id', $branch->id)
-                  ->where('seller_id', Auth::id());
+            // If seller, only show their own sales
+            if (Auth::user()->role->name === 'seller') {
+                $query->where('branch_id', $branch->id)
+                      ->where('seller_id', Auth::id());
+            }
+
+            $sales = $query->with([
+                'seller',
+                'branch.business',
+                'items.product.inventoryItem'
+            ])->get();
         }
-
-        $sales = $query->with([
-            'seller',
-            'branch.business',
-            'items.product.inventoryItem'
-        ])->get();
 
         return Inertia::render('Sales/Index', [
             'sales' => [
@@ -123,44 +131,70 @@ class SaleController extends Controller
             }
         }
 
+        // Prevent sales from inactive branches
+        $branch = \App\Models\Branch::find($validated['branch_id']);
+        if (!$branch || $branch->status !== 'active') {
+            return response()->json([
+                'success' => false,
+                'error' => "Can't make sales, branch is inactive contact your owner to rectify this."
+            ], 403);
+        }
+
         try {
             $result = $this->saleService->processSale($validated);
             // Log the activity
             ActivityLogger::logSaleCreated($result['sale'], auth()->user());
 
+            // Reload sale and receipt with items and products
+            $sale = $result['sale']->load(['items.product.inventoryItem']);
+            $receipt = $result['receipt']->load(['items.product']);
+
             // Prepare receipt data
-                $receiptData = [
-                    'id' => $result['sale']->id,
-                    'reference' => $result['sale']->reference,
-                    'receipt_reference' => $result['receipt']->reference,
-                'receipt_barcode' => $result['receipt']->barcode,
-                    'created_at' => $result['sale']->created_at,
-                    'total_amount' => $result['sale']->amount,
-                    'payment_method' => $result['sale']->payment_method,
-                    'status' => $result['sale']->status,
-                    'seller' => [
-                        'id' => $result['sale']->seller->id,
-                        'name' => $result['sale']->seller->name
-                    ],
-                    'branch' => [
-                        'id' => $result['sale']->branch->id,
-                        'name' => $result['sale']->branch->name,
-                        'business' => [
-                            'id' => $result['sale']->branch->business->id,
-                        'name' => $result['sale']->branch->business->name,
-                        'logo_url' => $result['sale']->branch->business->logo_url,
-                        'receipt_footer' => $result['sale']->branch->business->receipt_footer,
-                        'terms_and_conditions' => $result['sale']->branch->business->terms_and_conditions,
-                        'contact_information' => $result['sale']->branch->business->contact_information,
-                        ]
-                    ],
-                    'customer' => $result['sale']->customer ? [
-                        'id' => $result['sale']->customer->id,
-                        'name' => $result['sale']->customer->name
-                    ] : null,
+            $receiptData = [
+                'id' => $sale->id,
+                'reference' => $sale->reference,
+                'receipt_reference' => $receipt->reference,
+                'receipt_barcode' => $receipt->barcode,
+                'created_at' => $sale->created_at,
+                'total_amount' => $sale->amount,
+                'payment_method' => $sale->payment_method,
+                'status' => $sale->status,
+                'seller' => [
+                    'id' => $sale->seller->id,
+                    'name' => $sale->seller->name
+                ],
+                'branch' => [
+                    'id' => $sale->branch->id,
+                    'name' => $sale->branch->name,
+                    'business' => [
+                        'id' => $sale->branch->business->id,
+                        'name' => $sale->branch->business->name,
+                        'logo_url' => $sale->branch->business->logo_url,
+                        'receipt_footer' => $sale->branch->business->receipt_footer,
+                        'terms_and_conditions' => $sale->branch->business->terms_and_conditions,
+                        'contact_information' => $sale->branch->business->contact_information,
+                    ]
+                ],
+                'customer' => $sale->customer ? [
+                    'id' => $sale->customer->id,
+                    'name' => $sale->customer->name
+                ] : null,
+                'items' => $sale->items->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'product' => [
+                            'id' => $item->product->id,
+                            'name' => $item->product->inventoryItem->name,
+                            'barcode' => $item->product->inventoryItem->barcode
+                        ],
+                        'quantity' => $item->quantity,
+                        'unit_price' => $item->unit_price,
+                        'total_price' => $item->total
+                    ];
+                }),
             ];
 
-                return response()->json([
+            return response()->json([
                 'success' => true,
                 'message' => 'Sale processed successfully',
                 'data' => $result,
@@ -168,10 +202,10 @@ class SaleController extends Controller
             ]);
 
         } catch (\Exception $e) {
-                return response()->json([
-                    'success' => false,
+            return response()->json([
+                'success' => false,
                 'error' => $e->getMessage()
-                ], 500);
+            ], 500);
         }
     }
 
@@ -228,7 +262,7 @@ class SaleController extends Controller
                 })
             ]
         ]);
-}
+    }
 
     public function edit(Business $business, Branch $branch, Sale $sale)
     {

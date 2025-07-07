@@ -515,7 +515,9 @@ const filteredSales = computed(() => {
 });
 
 // Update recentSales to use filteredSales
-const recentSales = computed(() => filteredSales.value);
+const recentSales = computed(() => {
+  return [...filteredSales.value].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+});
 
 // Update the totalFilteredSales computed property
 const totalFilteredSales = computed(() => {

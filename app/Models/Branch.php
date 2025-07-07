@@ -7,6 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\PngWriter;
+use Endroid\QrCode\Color\Color;
+use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\RoundBlockSizeMode;
 
 class Branch extends Model
 {
@@ -100,11 +107,8 @@ class Branch extends Model
     {
         // Generate a unique barcode for the branch
         $barcode = 'BR' . str_pad($this->id, 8, '0', STR_PAD_LEFT);
-        
-        // Save the barcode path
         $this->barcode_path = $barcode;
         $this->save();
-        
         return $barcode;
     }
 } 

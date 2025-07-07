@@ -29,6 +29,20 @@ class SaleService
             }
             $customerId = $customer->id;
 
+            // STOCK VALIDATION: Ensure no item exceeds available stock
+            foreach ($data['items'] as $item) {
+                $productId = $item['product']['id'];
+                $quantity = $item['quantity'];
+                $productModel = \App\Models\Product::find($productId);
+                if (!$productModel) {
+                    throw new \Exception('Product not found.');
+                }
+                $currentStock = $productModel->stock ?? 0;
+                if ($quantity > $currentStock) {
+                    throw new \Exception('Insufficient stock for product: ' . ($productModel->name ?? 'Unknown') . '. Requested: ' . $quantity . ', Available: ' . $currentStock);
+                }
+            }
+
             // 1. Create the sale record
             $sale = Sale::create([
                 'reference' => 'SALE-' . Str::random(8),

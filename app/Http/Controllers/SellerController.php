@@ -29,13 +29,17 @@ class SellerController extends Controller
 
     public function index(Business $business, Branch $branch)
     {
-        $sellers = User::whereHas('roles', function ($q) {
-                $q->where('name', 'seller');
-            })
-            ->where('business_id', $business->id)
-            ->where('branch_id', $branch->id)
-            ->with(['branch.business'])
-            ->get();
+        if (auth()->user()->hasRole('admin')) {
+            $sellers = User::role('seller')->with(['branch.business'])->get();
+        } else {
+            $sellers = User::whereHas('roles', function ($q) {
+                    $q->where('name', 'seller');
+                })
+                ->where('business_id', $business->id)
+                ->where('branch_id', $branch->id)
+                ->with(['branch.business'])
+                ->get();
+        }
 
         return Inertia::render('Sellers/Index', [
             'business' => $business,
@@ -78,8 +82,19 @@ class SellerController extends Controller
         // Send professional welcome email
         Mail::to($seller->email)->send(new SellerAccountCreatedMail($seller, $branch, $business));
 
-        return redirect()->route('sellers.index', [$business, $branch])
-            ->with('success', 'Seller created successfully. An email has been sent for verification.');
+        $user = Auth::user();
+        if ($user && $user->hasRole('owner')) {
+            // Redirect owners to /sellers
+            return redirect('/sellers')->with('success', 'Seller created successfully. An email has been sent for verification.');
+        } elseif ($user && $user->hasRole('admin')) {
+            // Redirect admins to /admin/branches/{branch}?tab=sellers
+            return redirect()->to(url("/admin/branches/{$branch->id}?tab=sellers"))
+                ->with('success', 'Seller created successfully. An email has been sent for verification.');
+        } else {
+            // Default fallback
+            return redirect()->route('sellers.index', [$business, $branch])
+                ->with('success', 'Seller created successfully. An email has been sent for verification.');
+        }
     }
 
     public function show(Business $business, Branch $branch, User $seller)

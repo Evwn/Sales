@@ -22,6 +22,8 @@ interface User {
         name: string;
         permissions: string[];
     }[];
+    permissions: string[];
+    all_permissions: string[];
     branch_id: number | null;
     business_id: number | null;
 }
@@ -55,9 +57,7 @@ const isAdmin = computed(() =>
 );
 
 const hasPermission = (permission: string) => {
-    return page.props.auth?.user?.roles?.some(role => 
-        role.permissions?.includes(permission)
-    ) ?? false;
+    return page.props.auth?.user?.all_permissions?.includes(permission) ?? false;
 };
 
 const canAccessInventory = computed(() => {
@@ -235,43 +235,49 @@ onMounted(() => {
                             </div>
 
                             <div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex sm:items-center">
-                            <!-- Seller Navigation: Only show Dashboard, Inventory, Sales -->
-                            <template v-if="isSeller">
-                                <NavLink href="/dashboard" :active="isCurrentRoute('/dashboard')" class="text-gray-900 hover:text-gray-700">
-                                    Dashboard
-                                </NavLink>
-                                <NavLink href="/products" :active="isCurrentRoute('/products')" class="text-gray-900 hover:text-gray-700">
-                                    Inventory
-                                </NavLink>
-                            </template>
-                            <!-- Owner Navigation -->
-                            <template v-else-if="isOwner">
-                                <NavLink href="/dashboard" :active="isCurrentRoute('/dashboard')" class="text-gray-900 hover:text-gray-700">
-                                    Dashboard
-                                </NavLink>
-                                <NavLink href="/sales" :active="isCurrentRoute('/sales')">Sales</NavLink>
-                                <NavLink href="/businesses" :active="isCurrentRoute('/businesses')">Businesses</NavLink>
-                                <NavLink href="/branches" :active="isCurrentRoute('/branches')">Branches</NavLink>
-                                <NavLink href="/sellers" :active="isCurrentRoute('/sellers')">Sellers</NavLink>
-                                <NavLink href="/products" :active="isCurrentRoute('/products')" class="text-gray-900 hover:text-gray-700">
-                                    Inventory
-                                </NavLink>
-                                <NavLink href="/inventory-items" :active="isCurrentRoute('/inventory-items')" class="text-gray-900 hover:text-gray-700">
-                                    Products
-                                </NavLink>
-                                <NavLink v-if="isOwner || canAccessReports" href="/reports" :active="isCurrentRoute('/reports')" class="text-gray-900 hover:text-gray-700">
-                                    Reports
-                                </NavLink>
-                            </template>
-                            <!-- Admin Navigation -->
-                            <template v-else-if="isAdmin">
-                                <NavLink v-if="hasPermission('manage_users')" href="/users" :active="isCurrentRoute('/users')" class="text-gray-900 hover:text-gray-700">
-                                    Users
-                                </NavLink>
-                                <NavLink href="/products" :active="isCurrentRoute('/products')" class="text-gray-900 hover:text-gray-700">
-                                    Inventory
-                                </NavLink>
-                            </template>
+                                <template v-if="isOwner || isSeller">
+                                    <NavLink v-if="hasPermission('view_dashboard')" href="/dashboard" :active="isCurrentRoute('/dashboard')" class="text-gray-900 hover:text-gray-700">
+                                        Dashboard
+                                    </NavLink>
+                                    <NavLink v-if="hasPermission('view_sales')" href="/sales" :active="isCurrentRoute('/sales')">Sales</NavLink>
+                                    <NavLink v-if="hasPermission('manage_business')" href="/businesses" :active="isCurrentRoute('/businesses')">Businesses</NavLink>
+                                    <NavLink v-if="hasPermission('manage_branches')" href="/branches" :active="isCurrentRoute('/branches')">Branches</NavLink>
+                                    <NavLink v-if="hasPermission('view_sellers')" href="/sellers" :active="isCurrentRoute('/sellers')">Sellers</NavLink>
+                                    <NavLink v-if="hasPermission('view_inventory')" href="/products" :active="isCurrentRoute('/products')" class="text-gray-900 hover:text-gray-700">
+                                        Inventory
+                                    </NavLink>
+                                    <NavLink v-if="hasPermission('view_products')" href="/inventory-items" :active="isCurrentRoute('/inventory-items')" class="text-gray-900 hover:text-gray-700">
+                                        Products
+                                    </NavLink>
+                                    <NavLink v-if="hasPermission('view_reports')" href="/reports" :active="isCurrentRoute('/reports')" class="text-gray-900 hover:text-gray-700">
+                                        Reports
+                                    </NavLink>
+                                    </template>
+                                    <!-- Admin-specific links -->
+                                    <template v-else-if="isAdmin">
+                                        <NavLink v-if="hasPermission('view_users')" href="/users" :active="isCurrentRoute('/users')" class="text-gray-900 hover:text-gray-700">
+                                            Users
+                                        </NavLink>
+                                        <NavLink v-if="hasPermission('manage_business')" href="/admin/businesses" :active="isCurrentRoute('/admin/businesses')" class="text-gray-900 hover:text-gray-700">
+                                            All Businesses
+                                        </NavLink>
+                                        <NavLink  href="/admin/branches" :active="isCurrentRoute('/admin/branches')" class="text-gray-900 hover:text-gray-700">
+                                            All Branches
+                                        </NavLink>
+                                        <NavLink v-if="hasPermission('view_inventory')" href="/products" :active="isCurrentRoute('/products')" class="text-gray-900 hover:text-gray-700">
+                                        Inventory
+                                        </NavLink>
+                                        <NavLink v-if="hasPermission('view_products')" href="/inventory-items" :active="isCurrentRoute('/inventory-items')" class="text-gray-900 hover:text-gray-700">
+                                            Products
+                                        </NavLink>
+                                        <NavLink v-if="hasPermission('view_reports')" href="/reports" :active="isCurrentRoute('/reports')" class="text-gray-900 hover:text-gray-700">
+                                            Reports
+                                        </NavLink>
+                                        <NavLink v-if="hasPermission('not_active')" href="/admin/tax-groups" :active="isCurrentRoute('/admin/tax-groups')" class="text-gray-900 hover:text-gray-700">
+                                          Tax Codes
+                                        </NavLink>
+                                    </template>
+                                
                             </div>
                         </div>
 
@@ -387,7 +393,6 @@ onMounted(() => {
     <!-- Bottom Scrollable Nav for Mobile -->
     <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 sm:hidden flex overflow-x-auto" style="box-shadow: 0 -2px 8px rgba(0,0,0,0.04);">
         <div class="flex flex-row w-full overflow-x-auto no-scrollbar">
-            <!-- Seller Navigation -->
             <template v-if="isSeller">
                 <Link href="/dashboard" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/dashboard') ? 'text-blue-600' : 'text-gray-500'">
                     <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M13 5v6h6m-6 0H7m6 0v6m0 0H7m6 0h6" /></svg>
@@ -396,13 +401,12 @@ onMounted(() => {
                 <Link href="/products" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/products') ? 'text-blue-600' : 'text-gray-500'">
                     <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6m16 0v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6m16 0H4" /></svg>
                     <span class="text-xs leading-tight font-medium">Inventory</span>
-                    </Link>
+                </Link>
                 <Link href="/settings/profile" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/settings/profile') ? 'text-blue-600' : 'text-gray-500'">
-                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                <span class="text-xs leading-tight font-medium">Profile</span>
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    <span class="text-xs leading-tight font-medium">Profile</span>
                 </Link>
             </template>
-            <!-- Owner Navigation -->
             <template v-else-if="isOwner">
                 <Link href="/dashboard" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/dashboard') ? 'text-blue-600' : 'text-gray-500'">
                     <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M13 5v6h6m-6 0H7m6 0v6m0 0H7m6 0h6" /></svg>
@@ -425,8 +429,8 @@ onMounted(() => {
                     <span class="text-xs leading-tight font-medium">Inventory</span>
                 </Link>
                 <Link href="/inventory-items" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/inventory-items') ? 'text-blue-600' : 'text-gray-500'">
-                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18" /></svg>
-                <span class="text-xs leading-tight font-medium">Products</span>
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18" /></svg>
+                    <span class="text-xs leading-tight font-medium">Products</span>
                 </Link>
                 <Link href="/sales" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/sales') ? 'text-blue-600' : 'text-gray-500'">
                     <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h2l.4 2M7 21h10l4-8H5.4M7 21l-1.35 2.7A2 2 0 007.48 27h9.04a2 2 0 001.83-1.3L21 21M7 21V14a1 1 0 011-1h5a1 1 0 011 1v7" /></svg>
@@ -437,25 +441,39 @@ onMounted(() => {
                     <span class="text-xs leading-tight font-medium">Reports</span>
                 </Link>
                 <Link href="/settings/profile" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/settings/profile') ? 'text-blue-600' : 'text-gray-500'">
-                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                <span class="text-xs leading-tight font-medium">Profile</span>
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    <span class="text-xs leading-tight font-medium">Profile</span>
                 </Link>
             </template>
-            <!-- Admin Navigation -->
             <template v-else-if="isAdmin">
-                <Link href="/dashboard" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/dashboard') ? 'text-blue-600' : 'text-gray-500'">
-                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M13 5v6h6m-6 0H7m6 0v6m0 0H7m6 0h6" /></svg>
-                    <span class="text-xs leading-tight font-medium">Dashboard</span>
+                <Link href="/users" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/users') ? 'text-blue-600' : 'text-gray-500'">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M8 3.13a4 4 0 010 7.75" /></svg>
+                    <span class="text-xs leading-tight font-medium">Users</span>
+                </Link>
+                <Link href="/admin/businesses" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/admin/businesses') ? 'text-blue-600' : 'text-gray-500'">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                    <span class="text-xs leading-tight font-medium">All Businesses</span>
+                </Link>
+                <Link href="/admin/branches" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/admin/branches') ? 'text-blue-600' : 'text-gray-500'">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    <span class="text-xs leading-tight font-medium">All Branches</span>
                 </Link>
                 <Link href="/products" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/products') ? 'text-blue-600' : 'text-gray-500'">
                     <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6m16 0v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6m16 0H4" /></svg>
                     <span class="text-xs leading-tight font-medium">Inventory</span>
                 </Link>
-                <Link v-if="hasPermission('manage_users')" href="/users" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/users') ? 'text-blue-600' : 'text-gray-500'">
-                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M8 3.13a4 4 0 010 7.75" /></svg>
-                    <span class="text-xs leading-tight font-medium">Users</span>
+                <Link href="/inventory-items" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/inventory-items') ? 'text-blue-600' : 'text-gray-500'">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18" /></svg>
+                    <span class="text-xs leading-tight font-medium">Products</span>
+                </Link>
+                <Link href="/reports" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/reports') ? 'text-blue-600' : 'text-gray-500'">
+                    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 014-4h4m0 0V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2h6a2 2 0 002-2z" /></svg>
+                    <span class="text-xs leading-tight font-medium">Reports</span>
                 </Link>
             </template>
+            <Link v-if="$page.props.auth.user && $page.props.auth.user.roles.includes('admin') && hasPermission('not_active')" href="/admin/tax-groups" class="nav-link">
+              Tax Codes
+            </Link>
         </div>
     </nav>
 </template>

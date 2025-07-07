@@ -29,7 +29,9 @@ class Product extends Model
         'price',
         'buying_price',
         'stock',
-        'min_stock_level'
+        'min_stock_level',
+        'tax_group_id',
+        'tax_enabled',
     ];
 
     protected $casts = [
@@ -129,5 +131,10 @@ class Product extends Model
     public function business()
     {
         return $this->belongsTo(\App\Models\Business::class);
+    }
+
+    public function taxGroup()
+    {
+        return $this->belongsTo(TaxGroup::class);
     }
 }

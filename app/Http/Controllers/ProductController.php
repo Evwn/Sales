@@ -11,40 +11,56 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Business;
 use App\Models\Customer;
 use App\Services\ActivityLogger;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class ProductController extends Controller
 {
     public function all()
     {
         $user = Auth::user();
-        $query = Product::query();
+        $products = new LengthAwarePaginator([], 0, 10); // default empty paginator
+        $businesses = collect();
+        $defaultCustomer = Customer::where('email', 'walkin@default.com')->first();
 
-        // If user is a seller, only show products from their branch
-        if ($user->hasRole('seller')) {
-            $query->where('branch_id', $user->branch_id);
-        }
-        // If user is an owner, only show products from branches of their businesses
-        elseif ($user->hasRole('owner')) {
-            $query->whereHas('branch.business', function ($q) use ($user) {
+        if ($user->hasRole('admin')) {
+            $products = Product::with(['inventoryItem', 'branch.business'])->paginate(10);
+            $businesses = Business::all(['id', 'name']);
+            $branchStatus = null;
+        } elseif ($user->hasRole('seller')) {
+            $branchStatus = null;
+            if ($user->branch_id && $user->business_id) {
+                $products = Product::where('branch_id', $user->branch_id)
+                    ->whereHas('branch', function ($q) {
+                        $q->whereNull('deleted_at');
+                    })
+                    ->with(['inventoryItem', 'branch.business'])
+                    ->paginate(10);
+                $businesses = Business::where('id', $user->business_id)->get(['id', 'name']);
+                // Fetch branch status
+                $branch = Branch::find($user->branch_id);
+                $branchStatus = $branch ? $branch->status : null;
+            }
+            // else: leave $products as empty paginator
+        } elseif ($user->hasRole('owner')) {
+            $products = Product::whereHas('branch.business', function ($q) use ($user) {
                 $q->where('owner_id', $user->id)
                   ->orWhereHas('admins', function ($q2) use ($user) {
                       $q2->where('user_id', $user->id);
                   });
-            });
-        }
-        // If user is an admin, only show products from businesses they manage
-        elseif ($user->hasRole('admin')) {
-            $query->whereHas('branch.business', function ($q) use ($user) {
-                $q->where('owner_id', $user->id)
-                  ->orWhereHas('admins', function ($q2) use ($user) {
-                      $q2->where('user_id', $user->id);
-                  });
-            });
+            })
+            ->with(['inventoryItem', 'branch.business'])
+            ->paginate(10);
+            $businesses = Business::where('owner_id', $user->id)
+                ->orWhereHas('admins', function ($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                })
+                ->get(['id', 'name']);
+            $branchStatus = null;
         }
 
-        $products = $query->with(['inventoryItem', 'branch.business'])
-            ->paginate(10)
-            ->through(function ($product) {
+        // Only transform if $products is not empty
+        if ($products->count()) {
+            $products = $products->through(function ($product) {
                 return [
                     'id' => $product->id,
                     'name' => $product->inventoryItem->name,
@@ -61,7 +77,7 @@ class ProductController extends Controller
                         'id' => $product->branch->id,
                         'name' => $product->branch->name
                     ] : null,
-                    'business' => $product->branch ? [
+                    'business' => $product->branch && $product->branch->business ? [
                         'id' => $product->branch->business->id,
                         'name' => $product->branch->business->name
                     ] : null,
@@ -71,21 +87,14 @@ class ProductController extends Controller
                     'image_url' => $product->inventoryItem->image_url ?? null
                 ];
             });
-
-        // Get businesses for the current user
-        $businesses = Business::where('owner_id', $user->id)
-            ->orWhereHas('admins', function ($q) use ($user) {
-                $q->where('user_id', $user->id);
-            })
-            ->get(['id', 'name']);
-
-        $defaultCustomer = Customer::where('email', 'walkin@default.com')->first();
+        }
 
         return Inertia::render('Products/All', [
             'products' => $products,
             'businesses' => $businesses,
             'defaultCustomerId' => $defaultCustomer ? $defaultCustomer->id : null,
             'sales' => [], // Always provide sales, even if empty
+            'branchStatus' => $branchStatus,
         ]);
     }
 

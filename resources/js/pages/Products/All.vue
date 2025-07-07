@@ -121,6 +121,7 @@ watch(() => page.props.flash, (flash) => {
 const props = defineProps<{
     businesses: PageProps['businesses'];
     products: PageProps['products'];
+    branchStatus?: string | null;
 }>();
 
 const selectedBusiness = ref<string>('all');
@@ -441,17 +442,42 @@ const updateProductQuantity = (productId: number, change: number) => {
 
 const handleQuantityInput = (e: Event, productId: number) => {
     const target = e.target as HTMLInputElement;
-    const value = parseInt(target.value);
-    if (!isNaN(value)) {
+    let value = parseInt(target.value);
+    const item = cart.value.find(item => item.id === productId);
+    if (item) {
+        const maxStock = item?.stock || 0;
+        if (isNaN(value) || value < 1) {
+            value = 1;
+        } else if (value > maxStock) {
+            value = maxStock;
+            target.value = String(maxStock);
+            Swal.fire({
+                icon: 'error',
+                title: 'Stock Limit',
+                text: 'Cannot add more items than available in stock. Value reset to max stock.'
+            });
+        }
         updateQuantity(productId, value);
     }
 };
 
 const addToCart = (product: any) => {
+    if (isBranchInactive.value && isSeller.value) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Branch Inactive',
+            text: 'No sales can be made because your branch is inactive. Please contact your administrator.',
+        });
+        return;
+    }
+    if (!product || !product.id) {
+        console.error('Invalid product data:', product);
+        return;
+    }
     const quantity = productQuantities.value[product.id] || 1;
     const existingItem = cart.value.find(item => item.id === product.id);
     if (existingItem) {
-        if (existingItem.quantity + quantity <= product.stock) {
+        if (existingItem.quantity + quantity <= (product?.stock || 0)) {
             existingItem.quantity += quantity;
             // Show success toast
             const Toast = Swal.mixin({
@@ -475,15 +501,15 @@ const addToCart = (product: any) => {
     } else {
         cart.value.push({
             id: product.id,
-            name: product.name,
-            price: Number(product.price),
+            name: product?.name || 'Unknown Product',
+            price: Number(product?.price || 0),
             quantity: quantity,
-            stock: product.stock,
-            sku: product.sku,
-            is_taxable: product.is_taxable || false,
-            tax_rate: product.tax_rate || 0,
-            barcode: product.barcode,
-            image_url: product.inventory_item?.image_url || product.image_url || null
+            stock: product?.stock || 0,
+            sku: product?.sku || 'N/A',
+            is_taxable: product?.is_taxable || false,
+            tax_rate: product?.tax_rate || 0,
+            barcode: product?.barcode || '',
+            image_url: product?.inventory_item?.image_url || product?.image_url || null
         });
         // Show success toast
         const Toast = Swal.mixin({
@@ -506,25 +532,33 @@ const addToCart = (product: any) => {
 
 const removeFromCart = (productId: number) => {
     cart.value = cart.value.filter(item => item.id !== productId);
+    // Hide scroll message if cart is empty
+    if (cart.value.length === 0) {
+        isScrollLocked.value = false;
+    }
 };
 
 const updateQuantity = (productId: number, newQuantity: number) => {
     const item = cart.value.find(item => item.id === productId);
     if (item) {
-        if (newQuantity <= item.stock) {
-            item.quantity = newQuantity;
-        } else {
+        const maxStock = item?.stock || 0;
+        if (newQuantity > maxStock) {
+            item.quantity = maxStock;
             Swal.fire({
                 icon: 'error',
                 title: 'Stock Limit',
-                text: 'Cannot add more items than available in stock.'
+                text: 'Cannot add more items than available in stock. Value reset to max stock.'
             });
+        } else if (newQuantity < 1 || isNaN(newQuantity)) {
+            item.quantity = 1;
+        } else {
+            item.quantity = newQuantity;
         }
     }
 };
 
 const cartTotal = computed(() => {
-    return cart.value.reduce((total, item) => total + (Number(item.price) * item.quantity), 0);
+    return cart.value.reduce((total, item) => total + (Number(item?.price || 0) * (item?.quantity || 0)), 0);
 });
 
 const showReceiptModal = ref(false);
@@ -532,6 +566,16 @@ const receiptData = ref(null);
 const receiptComponent = ref(null);
 
 const processSale = async () => {
+    // Check for any overstocked items before proceeding
+    const overstocked = cart.value.find(item => item.quantity > (item.stock || 0));
+    if (overstocked) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Insufficient Stock',
+            text: `Cannot process sale. "${overstocked.name}" has quantity ${overstocked.quantity} but only ${overstocked.stock} in stock. Please correct before proceeding.`
+        });
+        return;
+    }
     if (cart.value.length === 0) {
         Swal.fire({
             icon: 'error',
@@ -558,11 +602,11 @@ const processSale = async () => {
                         ${cart.value.map(item => `
                             <div class="mb-2 p-2 bg-gray-50 rounded">
                                 <div class="flex items-center gap-3">
-                                    ${item.image_url ? `<img src="/storage/${item.image_url}" alt="${item.name}" class="h-12 w-12 object-cover rounded" />` : ''}
+                                    ${item?.image_url ? `<img src="/storage/${item.image_url}" alt="${item?.name || 'Product'}" class="h-12 w-12 object-cover rounded" />` : ''}
                                     <div>
-                                        <p class="font-medium">${item.name}</p>
-                                        <p class="text-sm text-gray-600">Quantity: ${item.quantity} × KES ${Number(item.price).toFixed(2)} = KES ${(Number(item.price) * item.quantity).toFixed(2)}</p>
-                                        ${item.is_taxable ? `<p class="text-sm text-gray-600">Tax (${item.tax_rate}%): KES ${((Number(item.price) * item.quantity * item.tax_rate) / 100).toFixed(2)}</p>` : ''}
+                                        <p class="font-medium">${item?.name || 'N/A'}</p>
+                                        <p class="text-sm text-gray-600">Quantity: ${item?.quantity || 0} × KES ${Number(item?.price || 0).toFixed(2)} = KES ${(Number(item?.price || 0) * (item?.quantity || 0)).toFixed(2)}</p>
+                                        ${item?.is_taxable ? `<p class="text-sm text-gray-600">Tax (${item?.tax_rate || 0}%): KES ${((Number(item?.price || 0) * (item?.quantity || 0) * (item?.tax_rate || 0)) / 100).toFixed(2)}</p>` : ''}
                                     </div>
                                 </div>
                             </div>
@@ -570,8 +614,8 @@ const processSale = async () => {
                     </div>
                 </div>
                 <div class="mt-4 pt-2 border-t">
-                    <p class="font-semibold">Subtotal: KES ${(cartTotal.value - cart.value.reduce((sum, item) => sum + ((Number(item.price) * item.quantity * item.tax_rate) / 100), 0)).toFixed(2)}</p>
-                    <p class="font-semibold">Tax: KES ${cart.value.reduce((sum, item) => sum + ((Number(item.price) * item.quantity * item.tax_rate) / 100), 0).toFixed(2)}</p>
+                    <p class="font-semibold">Subtotal: KES ${(cartTotal.value - cart.value.reduce((sum, item) => sum + ((Number(item?.price || 0) * (item?.quantity || 0) * (item?.tax_rate || 0)) / 100), 0)).toFixed(2)}</p>
+                    <p class="font-semibold">Tax: KES ${cart.value.reduce((sum, item) => sum + ((Number(item?.price || 0) * (item?.quantity || 0) * (item?.tax_rate || 0)) / 100), 0).toFixed(2)}</p>
                     <p class="font-semibold">Total Amount: KES ${cartTotal.value.toFixed(2)}</p>
                 </div>
             </div>
@@ -616,7 +660,7 @@ const processSale = async () => {
 
             try {
                 const totalTax = cart.value.reduce((sum, item) => 
-                    sum + ((Number(item.price) * item.quantity * item.tax_rate) / 100), 0);
+                    sum + ((Number(item?.price || 0) * (item?.quantity || 0) * (item?.tax_rate || 0)) / 100), 0);
                 const form = useForm({
                     customer_id: page.props.defaultCustomerId,
                     seller_id: page.props.auth.user.id,
@@ -626,14 +670,14 @@ const processSale = async () => {
                     tax: totalTax,
                     items: cart.value.map(item => ({
                         product: {
-                            id: item.id,
-                            name: item.name,
-                            price: item.price,
-                            barcode: item.barcode,
-                            is_taxable: item.is_taxable,
-                            tax_rate: item.tax_rate
+                            id: item?.id || 0,
+                            name: item?.name || 'Unknown Product',
+                            price: item?.price || 0,
+                            barcode: item?.barcode || '',
+                            is_taxable: item?.is_taxable || false,
+                            tax_rate: item?.tax_rate || 0
                         },
-                        quantity: item.quantity
+                        quantity: item?.quantity || 0
                     })),
                     payment_method: paymentMethod
                 });
@@ -691,9 +735,14 @@ const processSale = async () => {
 };
 
 const addToCartWithQuantity = (product: any, quantity: number) => {
+    if (!product || !product.id) {
+        console.error('Invalid product data:', product);
+        return;
+    }
+    
     const existingItem = cart.value.find(item => item.id === product.id);
     if (existingItem) {
-        if (existingItem.quantity + quantity <= product.stock) {
+        if (existingItem.quantity + quantity <= (product?.stock || 0)) {
             existingItem.quantity += quantity;
         } else {
             Swal.fire({
@@ -705,15 +754,15 @@ const addToCartWithQuantity = (product: any, quantity: number) => {
     } else {
         cart.value.push({
             id: product.id,
-            name: product.name,
-            price: product.price,
+            name: product?.name || 'Unknown Product',
+            price: product?.price || 0,
             quantity: quantity,
-            stock: product.stock,
-            sku: product.sku,
-            is_taxable: product.is_taxable || false,
-            tax_rate: product.tax_rate || 0,
-            barcode: product.barcode,
-            image_url: product.inventory_item?.image_url || product.image_url || null
+            stock: product?.stock || 0,
+            sku: product?.sku || 'N/A',
+            is_taxable: product?.is_taxable || false,
+            tax_rate: product?.tax_rate || 0,
+            barcode: product?.barcode || '',
+            image_url: product?.inventory_item?.image_url || product?.image_url || null
         });
     }
 };
@@ -1238,6 +1287,9 @@ function focusBarcodeInput() {
         }
     });
 }
+
+const branchStatus = computed(() => props.branchStatus ?? 'active');
+const isBranchInactive = computed(() => branchStatus.value !== 'active');
 </script>
 
 <template>
@@ -1269,7 +1321,13 @@ function focusBarcodeInput() {
             </div>
         </template>
 
-        <div class="py-12">
+        <div v-if="isSeller && !page.props.auth.user.branch_id" class="py-12">
+            <div class="max-w-2xl mx-auto bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-6 rounded">
+                <h3 class="text-lg font-semibold mb-2">No Branch Assigned</h3>
+                <p>You are not assigned to any branch. Please contact your administrator to be assigned to a branch before you can access inventory.</p>
+            </div>
+        </div>
+        <div v-else class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                     <div class="p-6 lg:p-8">
@@ -1315,10 +1373,10 @@ function focusBarcodeInput() {
                                         <div v-for="item in [...cart].reverse()" :key="item.id" class="flex-none w-64 p-3 bg-white rounded-lg border hover:shadow-md transition-shadow">
                                             <div class="flex justify-between items-start">
                                                 <div class="flex items-center gap-3">
-                                                    <img v-if="item.image_url" :src="`/storage/${item.image_url}`" :alt="item.name" class="h-12 w-12 object-cover rounded" />
+                                                    <img v-if="item?.image_url" :src="`/storage/${item.image_url}`" :alt="item?.name || 'Product'" class="h-12 w-12 object-cover rounded" />
                                                     <div>
-                                                        <h4 class="font-medium">{{ item.name }}</h4>
-                                                        <p class="text-sm text-gray-500">SKU: {{ item.sku }}</p>
+                                                        <h4 class="font-medium">{{ item?.name || 'N/A' }}</h4>
+                                                        <p class="text-sm text-gray-500">SKU: {{ item?.sku || 'N/A' }}</p>
                                                     </div>
                                                 </div>
                                                 <Button
@@ -1333,8 +1391,8 @@ function focusBarcodeInput() {
                                                 <div class="flex items-center space-x-1">
                                                     <button
                                                         class="text-gray-600 hover:text-gray-900 px-2 py-1 border rounded"
-                                                        :disabled="item.quantity <= 1"
-                                                        @click="updateQuantity(item.id, item.quantity - 1)"
+                                                        :disabled="(item?.quantity || 0) <= 1"
+                                                        @click="updateQuantity(item.id, (item?.quantity || 0) - 1)"
                                                     >
                                                         -
                                                     </button>
@@ -1343,20 +1401,20 @@ function focusBarcodeInput() {
                                                         v-model="item.quantity"
                                                         @input="(e) => handleQuantityInput(e, item.id)"
                                                         :min="1"
-                                                        :max="item.stock"
+                                                        :max="item?.stock || 0"
                                                         class="w-12 text-center border rounded px-1 py-0.5 text-sm"
                                                     />
                                                     <button
                                                         class="text-gray-600 hover:text-gray-900 px-2 py-1 border rounded"
-                                                        :disabled="item.quantity >= item.stock"
-                                                        @click="updateQuantity(item.id, item.quantity + 1)"
+                                                        :disabled="(item?.quantity || 0) >= (item?.stock || 0)"
+                                                        @click="updateQuantity(item.id, (item?.quantity || 0) + 1)"
                                                     >
                                                         +
                                                     </button>
                                                 </div>
                                                 <div class="text-right">
-                                                    <p class="text-sm text-gray-600">KES {{ Number(item.price).toFixed(2) }} each</p>
-                                                    <p class="font-medium">Total: KES {{ (Number(item.price) * item.quantity).toFixed(2) }}</p>
+                                                    <p class="text-sm text-gray-600">KES {{ Number(item?.price || 0).toFixed(2) }} each</p>
+                                                    <p class="font-medium">Total: KES {{ (Number(item?.price || 0) * (item?.quantity || 0)).toFixed(2) }}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -1448,18 +1506,21 @@ function focusBarcodeInput() {
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <tr v-for="product in filteredProducts" :key="product.id" class="hover:bg-gray-50">
                                         <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product?.name || 'N/A' }}</td>
-                                        <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">KES {{ Number(product.price).toFixed(2) }}</td>
-                                        <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.sku }}</td>
-                                        <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.barcode }}</td>
-                                        <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.stock }}</td>
-                                        <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.business.name }}</td>
-                                        <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.branch?.name || 'No branch assigned' }}</td>
+                                        <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">KES {{ Number(product?.price || 0).toFixed(2) }}</td>
+                                        <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product?.sku || 'N/A' }}</td>
+                                        <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product?.barcode || 'N/A' }}</td>
+                                        <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product?.stock || 0 }}</td>
+                                        <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product?.business?.name || 'N/A' }}</td>
+                                        <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product?.branch?.name || 'No branch assigned' }}</td>
                                         <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 <template v-if="isSeller">
-                                                <div class="flex items-center space-x-2">
+                                                <div v-if="product.stock === 0" class="flex items-center justify-center">
+                                                    <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-semibold">Stock Insufficient</span>
+                                                </div>
+                                                <div v-else class="flex items-center space-x-2">
                                                     <button @click="updateProductQuantity(product.id, -1)" :disabled="(productQuantities[product.id] || 1) <= 1" class="px-2 py-1 text-lg text-gray-600 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50">-</button>
-                                                    <input type="number" v-model="productQuantities[product.id]" min="1" :max="product.stock" class="w-12 text-center border rounded px-1 py-0.5 text-sm" @input="(e) => handleQuantityInput(e, product.id)" />
-                                                    <button @click="updateProductQuantity(product.id, 1)" :disabled="(productQuantities[product.id] || 1) >= product.stock" class="px-2 py-1 text-lg text-gray-600 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50">+</button>
+                                                    <input type="number" v-model="productQuantities[product.id]" min="1" :max="product?.stock || 0" class="w-12 text-center border rounded px-1 py-0.5 text-sm" @input="(e) => handleQuantityInput(e, product.id)" />
+                                                    <button @click="updateProductQuantity(product.id, 1)" :disabled="(productQuantities[product.id] || 1) >= (product?.stock || 0)" class="px-2 py-1 text-lg text-gray-600 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50">+</button>
                                                     <button @click="addToCart(product)" class="ml-2 bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 flex items-center">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.35 2.7A2 2 0 007.48 19h9.04a2 2 0 001.83-1.3L21 13M7 13V6a1 1 0 011-1h5a1 1 0 011 1v7" /></svg>
                                                         Add to Cart
@@ -1502,10 +1563,10 @@ function focusBarcodeInput() {
                                         <div v-for="item in cart" :key="item.id" class="mb-4 p-4 border rounded-lg">
                                             <div class="flex justify-between items-start mb-2">
                                                 <div class="flex items-center gap-3">
-                                                    <img v-if="item.image_url" :src="`/storage/${item.image_url}`" :alt="item.name" class="h-12 w-12 object-cover rounded" />
+                                                    <img v-if="item?.image_url" :src="`/storage/${item.image_url}`" :alt="item?.name || 'Product'" class="h-12 w-12 object-cover rounded" />
                                                     <div>
-                                                        <h4 class="font-medium text-lg">{{ item.name }}</h4>
-                                                        <p class="text-sm text-gray-500">SKU: {{ item.sku }}</p>
+                                                        <h4 class="font-medium text-lg">{{ item?.name || 'N/A' }}</h4>
+                                                        <p class="text-sm text-gray-500">SKU: {{ item?.sku || 'N/A' }}</p>
                                                     </div>
                                                 </div>
                                                 <Button
@@ -1521,8 +1582,8 @@ function focusBarcodeInput() {
                                                     <div class="flex items-center space-x-2">
                                                         <button
                                                             class="text-gray-600 hover:text-gray-900 px-2 py-1 border rounded"
-                                                            :disabled="item.quantity <= 1"
-                                                            @click="updateQuantity(item.id, item.quantity - 1)"
+                                                            :disabled="(item?.quantity || 0) <= 1"
+                                                            @click="updateQuantity(item.id, (item?.quantity || 0) - 1)"
                                                         >
                                                             -
                                                         </button>
@@ -1531,24 +1592,24 @@ function focusBarcodeInput() {
                                                             v-model="item.quantity"
                                                             @input="(e) => handleQuantityInput(e, item.id)"
                                                             :min="1"
-                                                            :max="item.stock"
+                                                            :max="item?.stock || 0"
                                                             class="w-12 text-center border rounded px-1 py-0.5 text-sm"
                                                         />
                                                         <button
                                                             class="text-gray-600 hover:text-gray-900 px-2 py-1 border rounded"
-                                                            :disabled="item.quantity >= item.stock"
-                                                            @click="updateQuantity(item.id, item.quantity + 1)"
+                                                            :disabled="(item?.quantity || 0) >= (item?.stock || 0)"
+                                                            @click="updateQuantity(item.id, (item?.quantity || 0) + 1)"
                                                         >
                                                             +
                                                         </button>
                                                     </div>
                                                     <span class="text-sm text-gray-600">
-                                                        Available: {{ item.stock }}
+                                                        Available: {{ item?.stock || 0 }}
                                                     </span>
                                                 </div>
                                                 <div class="text-right">
-                                                    <p class="text-sm text-gray-600">KES {{ Number(item.price).toFixed(2) }} each</p>
-                                                    <p class="font-medium">Total: KES {{ (Number(item.price) * item.quantity).toFixed(2) }}</p>
+                                                    <p class="text-sm text-gray-600">KES {{ Number(item?.price || 0).toFixed(2) }} each</p>
+                                                    <p class="font-medium">Total: KES {{ (Number(item?.price || 0) * (item?.quantity || 0)).toFixed(2) }}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -1780,6 +1841,14 @@ function focusBarcodeInput() {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+
+        <div v-if="isBranchInactive" class="mb-4 p-4 bg-red-100 text-red-700 rounded">
+            Your branch is inactive. Sales are disabled. Please contact your administrator.
+        </div>
+        <div :class="{ 'blur-sm pointer-events-none opacity-60': isBranchInactive }">
+            <!-- Cart and selling controls go here -->
+            <!-- ... existing cart/sell UI ... -->
+        </div>
     </AppLayout>
 </template>
 

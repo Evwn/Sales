@@ -40,7 +40,7 @@ class HandleInertiaRequests extends Middleware
 
         $user = $request->user();
         if ($user) {
-            $user->load(['roles.permissions']);
+            $user->load(['roles.permissions', 'permissions']);
         }
 
         return [
@@ -48,7 +48,22 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
-                'user' => $user,
+                'user' => $user ? [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'roles' => $user->roles->map(function ($role) {
+                        return [
+                            'id' => $role->id,
+                            'name' => $role->name,
+                            'permissions' => $role->permissions->pluck('name')->toArray(),
+                        ];
+                    }),
+                    'permissions' => $user->permissions->pluck('name')->toArray(),
+                    'all_permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
+                    'branch_id' => $user->branch_id,
+                    'business_id' => $user->business_id,
+                ] : null,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

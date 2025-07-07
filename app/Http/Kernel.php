@@ -3,6 +3,7 @@
 namespace App\Http;
 
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
+use Spatie\Permission\Middleware\RoleMiddleware;
 
 class Kernel extends HttpKernel
 {
@@ -71,8 +72,9 @@ class Kernel extends HttpKernel
         'business.access' => \App\Http\Middleware\BusinessAccess::class,
         'branch.access' => \App\Http\Middleware\CheckBranchAccess::class,
         'role.access' => \App\Http\Middleware\RoleRouteAccess::class,
-        'role' => \Spatie\Permission\Middlewares\RoleMiddleware::class,
-        'permission' => \Spatie\Permission\Middlewares\PermissionMiddleware::class,
+        'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+        'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+        'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         'update.online.status' => \App\Http\Middleware\UpdateOnlineStatus::class,
     ];
 } 

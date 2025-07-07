@@ -46,38 +46,41 @@
               <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                   <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Name
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Address
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Phone
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Business
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                  <tr v-for="branch in branches" :key="branch.id">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {{ branch.name }}
+                  <tr v-for="branch in branches" :key="branch.id" class="hover:bg-gray-50">
+                    <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ branch.name }}</td>
+                    <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <span :title="branch.address">
+                        {{ branch.address.split(' ').slice(0, 3).join(' ') }}<span v-if="branch.address.split(' ').length > 3">...</span>
+                      </span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {{ branch.address }}
+                    <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ branch.phone }}</td>
+                    <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm">
+                      <span v-if="branch.status === 'active'" class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">Active</span>
+                      <span v-else class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-semibold">Inactive</span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {{ branch.phone }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {{ branch.business && branch.business.name ? branch.business.name : 'No business' }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ branch.business?.name || 'N/A' }}</td>
+                    <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div class="flex space-x-3">
                         <template v-if="isOwner && branch.business && branch.business.id">
                           <Link

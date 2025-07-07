@@ -18,6 +18,24 @@
       <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
           <div class="p-6">
+            <!-- Owner Selection for Admins -->
+            <div v-if="isAdmin" class="mb-6">
+              <InputLabel for="owner_id" value="Select Owner" />
+              <Multiselect
+                id="owner_id"
+                v-model="selectedOwner"
+                :options="props.owners"
+                :searchable="true"
+                :close-on-select="true"
+                :clear-on-select="false"
+                :show-labels="false"
+                placeholder="Select an owner"
+                label="name"
+                track-by="id"
+                :custom-label="owner => `${owner.name} (${owner.email})`"
+              />
+              <InputError :message="form.errors.owner_id" class="mt-2" />
+            </div>
             <!-- Stepper -->
             <div class="mb-8">
               <div class="flex items-center justify-between">
@@ -493,6 +511,18 @@ import Multiselect from 'vue-multiselect';
 import 'vue-multiselect/dist/vue-multiselect.min.css';
 import countiesData from '@/data/counties_wards.json';
 
+// Accept owners prop from Inertia
+const props = defineProps({
+  owners: {
+    type: Array,
+    default: () => []
+  },
+  auth: {
+    type: Object,
+    default: () => {}
+  }
+});
+
 const steps = [
   'Basic Information',
   'Contact Information',
@@ -504,6 +534,7 @@ const steps = [
 const currentStep = ref(0);
 
 const form = useForm({
+  owner_id: null as number | null,
   name: '',
   description: '',
   phone: '',
@@ -728,6 +759,10 @@ const validateStep = (step: number): boolean => {
   
   switch (step) {
     case 0: // Basic Information
+      if (props.auth && props.auth.user && props.auth.user.roles && props.auth.user.roles.some(r => r.name === 'admin') && !form.owner_id) {
+        form.errors.owner_id = 'Please select an owner.';
+        return false;
+      }
       if (!form.name) {
         form.errors.name = 'The name field is required.';
         return false;
@@ -758,10 +793,10 @@ const validateStep = (step: number): boolean => {
       }
       if (!form.country || typeof form.country !== 'string') {
         form.country = form.country?.toString() || '';
-      if (!form.country) {
-        form.errors.country = 'The country field is required.';
-        return false;
-      }
+        if (!form.country) {
+          form.errors.country = 'The country field is required.';
+          return false;
+        }
       }
       break;
     case 3: // Business Details
@@ -933,6 +968,18 @@ const removeTermsDocument = () => {
     showConfirmButton: false
   });
 };
+
+// Helper to check if current user is admin
+const isAdmin = computed(() => {
+  return props.auth && props.auth.user && props.auth.user.roles && props.auth.user.roles.some(r => r.name === 'admin');
+});
+
+// --- Owner selection logic for admin ---
+const selectedOwner = ref(null);
+
+watch(selectedOwner, (val) => {
+  form.owner_id = val ? val.id : null;
+});
 </script> 
 
 <style src="vue-multiselect/dist/vue-multiselect.min.css"></style> 

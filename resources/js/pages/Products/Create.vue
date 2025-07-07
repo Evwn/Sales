@@ -75,6 +75,21 @@
                   </div>
                 </div>
 
+                <div class="mb-4">
+                  <label class="block mb-1">Tax Group</label>
+                  <select v-model="form.tax_group_id" class="border px-2 py-1 w-full">
+                    <option value="">None</option>
+                    <option v-for="tax in taxGroups" :key="tax.id" :value="tax.id">{{ tax.code }} - {{ tax.description }} ({{ tax.rate }}%)</option>
+                  </select>
+                </div>
+
+                <div class="mb-4">
+                  <label class="inline-flex items-center">
+                    <input type="checkbox" v-model="form.tax_enabled" class="mr-2" />
+                    Tax Enabled
+                  </label>
+                </div>
+
                 <div class="flex justify-end space-x-3">
                   <Link
                     :href="`/businesses/${business.id}/products`"
@@ -102,18 +117,24 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { ref } from 'vue';
 
 const props = defineProps({
   business: {
     type: Object,
     required: true
-  }
+  },
+  taxGroups: Array
 });
 
 const form = useForm({
   name: '',
   description: '',
   price: '',
-  barcode: ''
+  barcode: '',
+  tax_group_id: '',
+  tax_enabled: false,
 });
+
+const taxGroups = ref(props.taxGroups || []);
 </script> 

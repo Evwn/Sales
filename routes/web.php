@@ -12,6 +12,7 @@ use App\Http\Controllers\InventoryItemController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AppearanceController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UserController;
 use App\Http\Middleware\BusinessAccess;
 use App\Http\Middleware\CheckBranchAccess;
 use Illuminate\Foundation\Application;
@@ -20,6 +21,8 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\NewPasswordController;
 
 /*
 |--------------------------------------------------------------------------
@@ -41,6 +44,30 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::cla
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // User Management Routes (Admin Only)
+    Route::group([], function () {
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+        Route::patch('/users/{user}/password', [UserController::class, 'updatePassword'])->name('users.updatePassword');
+        Route::patch('/users/{user}/status', [UserController::class, 'toggleStatus'])->name('users.toggleStatus');
+        Route::patch('/users/{user}/email-verification', [UserController::class, 'toggleEmailVerification'])->name('users.toggleEmailVerification');
+        Route::post('/users/{user}/permissions', [UserController::class, 'assignPermissions'])->name('users.assignPermissions');
+        Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
+    });
+
+    // Admin Business & Branch Management Routes (Admin Only)
+    Route::group([], function () {
+        Route::get('/admin/businesses', [BusinessController::class, 'adminIndex'])->name('admin.businesses.index');
+        Route::get('/admin/businesses/{business}', [BusinessController::class, 'adminShow'])->name('admin.businesses.show');
+        Route::get('/admin/businesses/{business}/edit', [BusinessController::class, 'edit'])->name('admin.businesses.edit');
+        Route::post('/admin/businesses/{business}/documents/upload', [BusinessController::class, 'uploadDocument'])->name('admin.businesses.documents.upload');
+        Route::delete('/admin/businesses/{business}/documents/{documentType}', [BusinessController::class, 'deleteDocument'])->name('admin.businesses.documents.delete');
+        Route::get('/admin/branches', [BranchController::class, 'adminIndex'])->name('admin.branches.index');
+        Route::get('/admin/branches/{branch}', [BranchController::class, 'adminShow'])->name('admin.branches.show');
+    });
+
     // Main navigation routes
     Route::get('/branches', [BranchController::class, 'all'])->name('branches.all');
     Route::get('/sellers', [SellerController::class, 'all'])->name('sellers.all');
@@ -49,7 +76,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::cla
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
     Route::get('/discounts', [DiscountController::class, 'index'])->name('discounts.index');
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
+    Route::match(['get', 'post'], '/reports/export', [ReportController::class, 'export'])->name('reports.export');
     Route::get('/chat', function () {
         return Inertia::render('Chat', [
             'auth' => [
@@ -101,6 +128,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::cla
                     Route::get('/{branch}/edit', [BranchController::class, 'edit'])->name('branches.edit');
                     Route::put('/{branch}', [BranchController::class, 'update'])->name('branches.update');
                     Route::delete('/{branch}', [BranchController::class, 'destroy'])->name('branches.destroy');
+                    Route::patch('/{branch}/toggle-status', [BranchController::class, 'toggleStatus'])->name('branches.toggleStatus');
 
                     // Seller routes
                     Route::prefix('{branch}/sellers')->group(function () {
@@ -133,14 +161,13 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::cla
 
     // Branch routes
     Route::resource('businesses.branches', BranchController::class);
-    Route::post('businesses/{business}/branches/{branch}/generate-barcode', [BranchController::class, 'generateBarcode'])->name('branches.generate-barcode');
     Route::get('businesses/{business}/branches/{branch}/download-barcode', [BranchController::class, 'downloadBarcode'])->name('branches.download-barcode');
     Route::get('businesses/{business}/branches/{branch}/print-barcode', [BranchController::class, 'printBarcode'])->name('branches.print-barcode');
 
     // Receipt History (Owner Only)
     Route::get('/sales/receipt-history', [SaleController::class, 'receiptHistory'])
         ->name('sales.receipt-history')
-        ->middleware('role:owner');
+        ->middleware(\Spatie\Permission\Middlewares\RoleMiddleware::class.':owner');
 
     // PDF Export Routes (Owner Only)
     Route::middleware(['auth', 'verified'])->group(function () {
@@ -206,6 +233,18 @@ Route::get('/businesses/{business}/branches/{branch}/sellers', [SellerController
 Route::post('/broadcasting/auth', function (Request $request) {
     return Broadcast::auth($request);
 })->middleware(['auth']);
+
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::resource('tax-groups', App\Http\Controllers\Admin\TaxGroupController::class);
+});
+
+// Password reset routes
+Route::get('/forgot-password', [PasswordResetLinkController::class, 'create'])->middleware('guest')->name('password.request');
+Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])->middleware('guest')->name('password.email');
+Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])->middleware('guest')->name('password.reset');
+Route::post('/reset-password', [NewPasswordController::class, 'store'])->middleware('guest')->name('password.update');
+
+Route::post('/reports/email', [\App\Http\Controllers\ReportController::class, 'email'])->middleware('auth');
 
 require __DIR__.'/auth.php';
 require __DIR__.'/settings.php';

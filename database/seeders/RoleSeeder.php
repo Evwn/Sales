@@ -32,6 +32,12 @@ class RoleSeeder extends Seeder
         $permissions = [
             // Dashboard
             'view_dashboard',
+
+            'manage_users',
+            'view_users',
+            'manage_roles',
+            'manage_permissions',
+            
             
             // Business Management
             'manage_business',
@@ -66,6 +72,10 @@ class RoleSeeder extends Seeder
             'view_orders',
             'manage_deliveries',
             'view_deliveries',
+
+            //sellers
+            'manage_sellers',
+            'view_sellers',
         ];
 
         foreach ($permissions as $permission) {
@@ -78,10 +88,10 @@ class RoleSeeder extends Seeder
         }
 
         // Assign permissions to roles
-        $ownerRole = Role::findByName('owner');
+        $ownerRole = Role::findByName('admin');
         $ownerRole->givePermissionTo($permissions);
 
-        $adminRole = Role::findByName('admin');
+        $adminRole = Role::findByName('owner');
         $adminRole->givePermissionTo([
             'view_dashboard',
             'manage_branches',
@@ -104,18 +114,16 @@ class RoleSeeder extends Seeder
             'view_orders',
             'manage_deliveries',
             'view_deliveries',
+            'manage_settings',
+            'manage_business',
+            'view_sellers',
+
         ]);
 
         $sellerRole = Role::findByName('seller');
         $sellerRole->givePermissionTo([
             'view_dashboard',
-            'view_products',
             'view_inventory',
-            'manage_sales',
-            'view_sales',
-            'view_customers',
-            'view_orders',
-            'view_deliveries',
         ]);
 
         $supplierRole = Role::findByName('supplier');

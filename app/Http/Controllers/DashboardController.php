@@ -21,17 +21,21 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
         
-        // Get all businesses for owner
-        $businesses = [];
-        if ($user->hasRole('owner')) {
-            $businesses = Business::where('owner_id', $user->id)->get();
+        // Get all businesses for owner, admin, seller
+        if ($user->hasRole('admin')) {
+            $businesses = Business::with('owner')->get(); // Always a Collection
+        } elseif ($user->hasRole('owner')) {
+            $businesses = Business::where('owner_id', $user->id)->get(); // Collection
         } elseif ($user->hasRole('seller') && $user->business_id) {
             $businesses = collect([Business::with('owner')->find($user->business_id)]);
         } else if ($user->business) {
             $businesses = collect([$user->business]);
+        } else {
+            $businesses = collect();
         }
 
-        $businessesData = $businesses->map(function ($business) {
+        $businessesData = $businesses->filter()->map(function ($business) {
+            if (!$business) return null;
             $branches = Branch::where('business_id', $business->id)->get();
             $sales = Sale::with(['seller', 'branch.business'])
                 ->whereHas('branch', function ($q) use ($business) {
@@ -49,10 +53,10 @@ class DashboardController extends Controller
                 'total_branches' => $branches->count(),
                 'payment_methods' => PaymentMethod::where('business_id', $business->id)->get(),
             ];
-        });
+        })->filter()->values();
 
         // For backward compatibility, keep the first business as 'business' and 'stats'
-        $business = $businesses->first();
+        $business = $businesses->filter()->first();
         $sales = $business ? Sale::with(['seller', 'branch.business'])
             ->whereHas('branch', function ($q) use ($business) {
                 $q->where('business_id', $business->id);
@@ -100,12 +104,12 @@ class DashboardController extends Controller
         ];
         $businessArray = $business ? $business->toArray() : null;
         if ($business && $business->relationLoaded('owner') && $business->owner) {
-            $businessArray['owner'] = [
-                'name' => $business->owner->name,
-                'email' => $business->owner->email,
-                'phone' => $business->owner->phone ?? null,
-            ];
-        }
+                $businessArray['owner'] = [
+                    'name' => $business->owner->name,
+                    'email' => $business->owner->email,
+                    'phone' => $business->owner->phone ?? null,
+                ];
+            }
         return Inertia::render('Dashboard', [
             'stats' => $stats,
             'name' => $user->name,

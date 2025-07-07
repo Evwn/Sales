@@ -288,12 +288,22 @@
         </form>
       </div>
     </Modal>
+
+    <div class="flex justify-end mb-4">
+      <button
+        v-if="canDeleteBusiness"
+        @click="confirmDeleteBusiness"
+        class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+      >
+        Delete Business
+      </button>
+    </div>
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Head, Link, useForm, router } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
+import { Head, Link, useForm, router, usePage } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
 import AppLayout from '@/layouts/AppLayout.vue';
 import Modal from '@/components/Modal.vue';
@@ -323,6 +333,12 @@ const addBranchForm = useForm({
   name: '',
   address: '',
   phone: ''
+});
+
+const page = usePage();
+const canDeleteBusiness = computed(() => {
+  const user = page.props.auth?.user;
+  return user && (user.roles?.some(r => r.name === 'admin') || user.roles?.some(r => r.name === 'owner'));
 });
 
 const closeAddAdminModal = () => {
@@ -425,4 +441,29 @@ const removeAdmin = (admin) => {
     }
   });
 };
+
+function confirmDeleteBusiness() {
+  Swal.fire({
+    title: 'Are you sure?',
+    text: 'This will delete the business and all its branches. This cannot be undone!',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Yes, delete it!'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      router.delete(`/businesses/${props.business.id}`, {
+        onSuccess: () => {
+          const user = page.props.auth?.user;
+          if (user && user.roles?.some(r => r.name === 'admin')) {
+            router.visit('/admin/businesses');
+          } else {
+            router.visit('/businesses');
+          }
+        }
+      });
+    }
+  });
+}
 </script> 

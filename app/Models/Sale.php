@@ -34,7 +34,7 @@ class Sale extends Model
         'amount' => 'decimal:2',
         'discount' => 'decimal:2',
         'tax' => 'decimal:2',
-        'sale_date' => 'date',
+        'sale_date' => 'datetime',
     ];
 
     protected static function boot()
