@@ -55,25 +55,6 @@ return new class extends Migration
             $table->softDeletes();
         });
 
-        // Manufacturing
-        Schema::create('manufacturing_orders', function (Blueprint $table) {
-            $table->id();
-            $table->string('reference')->unique();
-            $table->enum('status', ['draft', 'in_progress', 'completed', 'cancelled'])->default('draft');
-            $table->dateTime('start_date');
-            $table->dateTime('end_date')->nullable();
-            $table->timestamps();
-            $table->softDeletes();
-        });
-
-        Schema::create('manufacturing_items', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('manufacturing_order_id')->constrained();
-            $table->unsignedBigInteger('product_id');
-            $table->decimal('quantity', 15, 2);
-            $table->timestamps();
-        });
-
         // Enhanced Sales & Purchases
         Schema::create('sales_commission', function (Blueprint $table) {
             $table->id();
@@ -168,8 +149,6 @@ return new class extends Migration
         Schema::dropIfExists('delivery_notes');
         Schema::dropIfExists('quotations');
         Schema::dropIfExists('sales_commission');
-        Schema::dropIfExists('manufacturing_items');
-        Schema::dropIfExists('manufacturing_orders');
         Schema::dropIfExists('mpesa_transactions');
         Schema::dropIfExists('account_transfers');
         Schema::dropIfExists('transactions');

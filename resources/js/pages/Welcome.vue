@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import type { Quote } from '@/types';
+import { ref, onMounted } from 'vue';
+import { router } from '@inertiajs/vue3';
 
 defineOptions({
     name: 'Welcome'
@@ -13,6 +15,22 @@ defineProps<{
 
 const page = usePage();
 const quote = page.props.quote as Quote;
+const showPOS = ref(false);
+
+function getDeviceUUID() {
+  return localStorage.getItem('device_uuid');
+}
+
+onMounted(() => {
+  const uuid = getDeviceUUID();
+  if (uuid) {
+    fetch(`/api/check-device?uuid=${uuid}`)
+      .then(res => res.json())
+      .then(data => {
+        showPOS.value = data.deviceRegistered;
+      });
+  }
+});
 </script>
 
 <template>
@@ -63,11 +81,16 @@ const quote = page.props.quote as Quote;
                                         <Link href="/login" class="font-medium text-primary-600 hover:text-primary-500">
                                             Log in to your account
                                         </Link>
-                                        <span class="mx-2 text-gray-500">or</span>
+                                        <span class="text-gray-500"> to get started.</span>
                                         <Link href="/register" class="font-medium text-primary-600 hover:text-primary-500">
                                             create a new account
                                         </Link>
-                                        <span class="text-gray-500"> to get started.</span>
+                                        <span class="text-gray-500"> to get started</span>
+                                        <span v-if="!showPOS" class="text-gray-500">. </span>
+                                        <span v-if="showPOS" class="text-gray-500"> or go to</span>
+                                        <Link v-if="showPOS" href="/pos" class="font-medium text-primary-600 hover:text-primary-500">
+                                            POS
+                                        </Link>
                                     </div>
                                 </div>
                             </div>
@@ -76,6 +99,7 @@ const quote = page.props.quote as Quote;
                 </div>
             </div>
         </div>
+        <!-- Remove the floating POS button -->
     </div>
 </template>
 

@@ -4,6 +4,9 @@ import { router } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Collapsible } from '@/components/ui/collapsible/Collapsible.vue';
+import CollapsibleTrigger from '@/components/ui/collapsible/CollapsibleTrigger.vue';
+import CollapsibleContent from '@/components/ui/collapsible/CollapsibleContent.vue';
 import type { BreadcrumbItemType } from '@/types';
 import { ref, computed, onUnmounted } from 'vue';
 
@@ -32,6 +35,12 @@ const form = useForm({
     unit: '',
     unit_value: '',
     image: null as File | null,
+    // Add fields for variants, taxes, modifiers, discounts
+    variants: [],
+    is_taxable: true,
+    tax_rate: '',
+    modifiers: [],
+    discounts: [],
 });
 
 const imagePreviewUrl = ref<string | null>(null);
@@ -78,216 +87,169 @@ onUnmounted(() => {
                 Create Inventory Item
             </h2>
         </template>
-
         <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6">
-                        <form @submit.prevent="submit" class="space-y-6">
-                            <!-- Product Information -->
-                            <div>
-                                <h3 class="text-lg font-medium text-gray-900">Product Information</h3>
-                                <div class="mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-                                    <div class="sm:col-span-3 ">
-                                        <label for="name" class="block text-sm font-medium text-gray-700">Product Name</label>
-                                        <div class="mt-1 ">
-                                            <input
-                                                type="text"
-                                                id="name"
-                                                v-model="form.name"
-                                                placeholder="Enter the product name (e.g., iPhone 14, Nike Air Max)"
-                                                class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md "
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-                                    <div class="sm:col-span-3">
-                                        <label for="image" class="block text-sm font-medium text-gray-700">Product Image</label>
-                                        <div class="mt-1">
-                                            <input
-                                                type="file"
-                                                id="image"
-                                                @change="handleImageChange"
-                                                accept="image/*"
-                                                class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                                            />
-                                        </div>
-                                        <div v-if="imagePreviewUrl" class="mt-4">
-                                            <img :src="imagePreviewUrl" alt="Image Preview" class="h-32 w-auto rounded shadow border" />
-                                            <div class="text-xs text-gray-500 mt-1">Preview</div>
-                                        </div>
+            <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
+                <form @submit.prevent="submit" class="space-y-6">
+                    <!-- General Info -->
+                    <Collapsible :default-open="true">
+                        <CollapsibleTrigger>
+                            <div class="flex items-center gap-2 cursor-pointer">
+                                <span class="font-bold text-lg">General Information</span>
+                            </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                                <div>
+                                    <label for="name" class="block text-sm font-medium text-gray-700">Product Name</label>
+                                    <Input id="name" v-model="form.name" placeholder="e.g., iPhone 14, Nike Air Max" required />
+                                </div>
+                                <div>
+                                    <label for="image" class="block text-sm font-medium text-gray-700">Product Image</label>
+                                    <input type="file" id="image" @change="handleImageChange" accept="image/*" class="block w-full" />
+                                    <div v-if="imagePreviewUrl" class="mt-2">
+                                        <img :src="imagePreviewUrl" alt="Image Preview" class="h-24 w-auto rounded shadow border" />
                                     </div>
                                 </div>
+                                <div class="md:col-span-2">
+                                    <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                                    <textarea id="description" v-model="form.description" rows="2" class="block w-full rounded border-gray-300" placeholder="Key features or details"></textarea>
+                                </div>
+                                <div>
+                                    <label for="brand" class="block text-sm font-medium text-gray-700">Brand</label>
+                                    <Input id="brand" v-model="form.brand" placeholder="e.g., Samsung, Nike" />
+                                </div>
+                                <div>
+                                    <label for="model" class="block text-sm font-medium text-gray-700">Model</label>
+                                    <Input id="model" v-model="form.model" placeholder="e.g., Galaxy S21, HP 15-ef2025nr" />
+                                </div>
                             </div>
+                        </CollapsibleContent>
+                    </Collapsible>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <!-- Product Description & Brand -->
-                                <div class="space-y-4">
-                                    <h3 class="text-lg font-medium text-gray-900">Product Description & Brand</h3>
-                                    <div>
-                                        <label for="description" class="block text-sm font-medium text-gray-700">Product Description</label>
-                                        <textarea
-                                            id="description"
-                                            v-model="form.description"
-                                            rows="3"
-                                            placeholder="What the product is, including key features or details."
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                        ></textarea>
-                                        <div v-if="form.errors.description" class="text-red-500 text-sm mt-1">
-                                            {{ form.errors.description }}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label for="brand" class="block text-sm font-medium text-gray-700">Brand Name</label>
-                                        <Input
-                                            id="brand"
-                                            v-model="form.brand"
-                                            type="text"
-                                            placeholder="Manufacturer or company name (e.g., Samsung, Nike)"
-                                            class="mt-1 block w-full"
-                                        />
-                                        <div v-if="form.errors.brand" class="text-red-500 text-sm mt-1">
-                                            {{ form.errors.brand }}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label for="model" class="block text-sm font-medium text-gray-700">Model Number/Name</label>
-                                        <Input
-                                            id="model"
-                                            v-model="form.model"
-                                            type="text"
-                                            placeholder="Product model code or name (e.g., Galaxy S21, HP 15-ef2025nr)"
-                                            class="mt-1 block w-full"
-                                        />
-                                        <div v-if="form.errors.model" class="text-red-500 text-sm mt-1">
-                                            {{ form.errors.model }}
-                                        </div>
-                                    </div>
+                    <!-- Product IDs & Barcodes -->
+                    <Collapsible :default-open="false">
+                        <CollapsibleTrigger>
+                            <div class="flex items-center gap-2 cursor-pointer">
+                                <span class="font-bold text-lg">Product IDs & Barcodes</span>
+                            </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                                <div>
+                                    <label for="sku" class="block text-sm font-medium text-gray-700">SKU</label>
+                                    <Input id="sku" v-model="form.sku" placeholder="Unique code for inventory" />
                                 </div>
-                                <!-- Product ID & Barcodes -->
-                                <div class="space-y-4">
-                                    <h3 class="text-lg font-medium text-gray-900">Product ID & Barcodes</h3>
-                                    <div>
-                                        <label for="sku" class="block text-sm font-medium text-gray-700">Stock Keeping Unit (SKU) <span class='text-gray-400'>(optional)</span></label>
-                                        <Input
-                                            id="sku"
-                                            v-model="form.sku"
-                                            type="text"
-                                            placeholder="Unique code you assign to track inventory."
-                                            class="mt-1 block w-full"
-                                        />
-                                        <div v-if="form.errors.sku" class="text-red-500 text-sm mt-1">
-                                            {{ form.errors.sku }}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label for="barcode" class="block text-sm font-medium text-gray-700">Barcode Number <span class='text-gray-400'>(optional)</span></label>
-                                        <Input
-                                            id="barcode"
-                                            v-model="form.barcode"
-                                            type="text"
-                                            placeholder="Code that can be scanned (can be EAN, UPC, etc.)"
-                                            class="mt-1 block w-full"
-                                        />
-                                        <div v-if="form.errors.barcode" class="text-red-500 text-sm mt-1">
-                                            {{ form.errors.barcode }}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label for="upc" class="block text-sm font-medium text-gray-700">UPC (Barcode Type) <span class='text-gray-400'>(optional)</span></label>
-                                        <Input
-                                            id="upc"
-                                            v-model="form.upc"
-                                            type="text"
-                                            placeholder="Universal Product Code — 12-digit standard used mostly in the USA."
-                                            class="mt-1 block w-full"
-                                        />
-                                        <div v-if="form.errors.upc" class="text-red-500 text-sm mt-1">
-                                            {{ form.errors.upc }}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label for="ean" class="block text-sm font-medium text-gray-700">EAN (Barcode Type) <span class='text-gray-400'>(optional)</span></label>
-                                        <Input
-                                            id="ean"
-                                            v-model="form.ean"
-                                            type="text"
-                                            placeholder="European Article Number — 13-digit barcode used globally."
-                                            class="mt-1 block w-full"
-                                        />
-                                        <div v-if="form.errors.ean" class="text-red-500 text-sm mt-1">
-                                            {{ form.errors.ean }}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label for="isbn" class="block text-sm font-medium text-gray-700">ISBN (for Books) <span class='text-gray-400'>(optional)</span></label>
-                                        <Input
-                                            id="isbn"
-                                            v-model="form.isbn"
-                                            type="text"
-                                            placeholder="Used only for books. International Standard Book Number."
-                                            class="mt-1 block w-full"
-                                        />
-                                        <div v-if="form.errors.isbn" class="text-red-500 text-sm mt-1">
-                                            {{ form.errors.isbn }}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label for="mpn" class="block text-sm font-medium text-gray-700">Manufacturer Part Number <span class='text-gray-400'>(optional)</span></label>
-                                        <Input
-                                            id="mpn"
-                                            v-model="form.mpn"
-                                            type="text"
-                                            placeholder="Code the manufacturer gives the product."
-                                            class="mt-1 block w-full"
-                                        />
-                                        <div v-if="form.errors.mpn" class="text-red-500 text-sm mt-1">
-                                            {{ form.errors.mpn }}
-                                        </div>
-                                    </div>
+                                <div>
+                                    <label for="barcode" class="block text-sm font-medium text-gray-700">Barcode</label>
+                                    <Input id="barcode" v-model="form.barcode" placeholder="e.g., EAN, UPC, etc." />
                                 </div>
-                                <!-- Quantity & Pricing -->
-                                <div class="space-y-4">
-                                    <h3 class="text-lg font-medium text-gray-900">Quantity & Pricing</h3>
-                                    <div>
-                                        <label for="unit" class="block text-sm font-medium text-gray-700">Unit Type <span class='text-gray-400'>(optional)</span></label>
-                                        <Input
-                                            id="unit"
-                                            v-model="form.unit"
-                                            type="text"
-                                            placeholder="The type of unit (e.g., piece, pack, kg, liter)."
-                                            class="mt-1 block w-full"
-                                        />
-                                        <div v-if="form.errors.unit" class="text-red-500 text-sm mt-1">
-                                            {{ form.errors.unit }}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label for="unit_value" class="block text-sm font-medium text-gray-700">Unit Price <span class='text-gray-400'>(optional)</span></label>
-                                        <Input
-                                            id="unit_value"
-                                            v-model="form.unit_value"
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            placeholder="Price per one unit (e.g., KES per item or KES per kg)."
-                                            class="mt-1 block w-full"
-                                        />
-                                        <div v-if="form.errors.unit_value" class="text-red-500 text-sm mt-1">
-                                            {{ form.errors.unit_value }}
-                                        </div>
-                                    </div>
+                                <div>
+                                    <label for="upc" class="block text-sm font-medium text-gray-700">UPC</label>
+                                    <Input id="upc" v-model="form.upc" placeholder="12-digit code (USA)" />
+                                </div>
+                                <div>
+                                    <label for="ean" class="block text-sm font-medium text-gray-700">EAN</label>
+                                    <Input id="ean" v-model="form.ean" placeholder="13-digit code (global)" />
+                                </div>
+                                <div>
+                                    <label for="isbn" class="block text-sm font-medium text-gray-700">ISBN</label>
+                                    <Input id="isbn" v-model="form.isbn" placeholder="For books" />
+                                </div>
+                                <div>
+                                    <label for="mpn" class="block text-sm font-medium text-gray-700">MPN</label>
+                                    <Input id="mpn" v-model="form.mpn" placeholder="Manufacturer part number" />
                                 </div>
                             </div>
+                        </CollapsibleContent>
+                    </Collapsible>
 
-                            <div class="mt-6 flex justify-end">
-                                <Button type="submit" :disabled="form.processing">
-                                    Create Item
-                                </Button>
+                    <!-- Quantity & Pricing -->
+                    <Collapsible :default-open="true">
+                        <CollapsibleTrigger>
+                            <div class="flex items-center gap-2 cursor-pointer">
+                                <span class="font-bold text-lg">Quantity & Pricing</span>
                             </div>
-                        </form>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                                <div>
+                                    <label for="unit" class="block text-sm font-medium text-gray-700">Unit Type</label>
+                                    <Input id="unit" v-model="form.unit" placeholder="e.g., piece, pack, kg, liter" />
+                                </div>
+                                <div>
+                                    <label for="unit_value" class="block text-sm font-medium text-gray-700">Unit Price</label>
+                                    <Input id="unit_value" v-model="form.unit_value" type="number" step="0.01" min="0" placeholder="KES per item or per kg" />
+                                </div>
+                            </div>
+                        </CollapsibleContent>
+                    </Collapsible>
+
+                    <!-- Variants -->
+                    <Collapsible :default-open="false">
+                        <CollapsibleTrigger>
+                            <div class="flex items-center gap-2 cursor-pointer">
+                                <span class="font-bold text-lg">Variants</span>
+                            </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                            <div class="mt-4 text-gray-500">Add color, size, or other variants here. (Coming soon)</div>
+                        </CollapsibleContent>
+                    </Collapsible>
+
+                    <!-- Taxes -->
+                    <Collapsible :default-open="false">
+                        <CollapsibleTrigger>
+                            <div class="flex items-center gap-2 cursor-pointer">
+                                <span class="font-bold text-lg">Taxes</span>
+                            </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Is Taxable?</label>
+                                    <select v-model="form.is_taxable" class="block w-full rounded border-gray-300">
+                                        <option :value="true">Yes</option>
+                                        <option :value="false">No</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="tax_rate" class="block text-sm font-medium text-gray-700">Tax Rate (%)</label>
+                                    <Input id="tax_rate" v-model="form.tax_rate" type="number" step="0.01" min="0" placeholder="e.g., 16" />
+                                </div>
+                            </div>
+                        </CollapsibleContent>
+                    </Collapsible>
+
+                    <!-- Modifiers -->
+                    <Collapsible :default-open="false">
+                        <CollapsibleTrigger>
+                            <div class="flex items-center gap-2 cursor-pointer">
+                                <span class="font-bold text-lg">Modifiers</span>
+                            </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                            <div class="mt-4 text-gray-500">Select or add modifiers (e.g., toppings, add-ons). (Coming soon)</div>
+                        </CollapsibleContent>
+                    </Collapsible>
+
+                    <!-- Discounts -->
+                    <Collapsible :default-open="false">
+                        <CollapsibleTrigger>
+                            <div class="flex items-center gap-2 cursor-pointer">
+                                <span class="font-bold text-lg">Discounts</span>
+                            </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                            <div class="mt-4 text-gray-500">Select or add discounts. (Coming soon)</div>
+                        </CollapsibleContent>
+                    </Collapsible>
+
+                    <div class="mt-6 flex justify-end">
+                        <Button type="submit" :disabled="form.processing">
+                            Create Item
+                        </Button>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
     </AppLayout>

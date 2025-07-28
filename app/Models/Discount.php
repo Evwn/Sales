@@ -9,9 +9,7 @@ class Discount extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'name', 'description', 'amount', 'type', 'status',
-    ];
+    protected $fillable = ['business_id', 'type', 'value', 'starts_at', 'ends_at'];
 
     protected $casts = [
         'starts_at' => 'datetime',
@@ -45,4 +43,6 @@ class Discount extends Model
     {
         return $this->belongsToMany(Sale::class);
     }
+
+    public function items() { return $this->belongsToMany(Item::class, 'item_discounts'); }
 } 

@@ -106,7 +106,7 @@ class BranchController extends Controller
     }
 
     public function store(Request $request, Business $business)
-    {
+    {   $user = Auth::user();
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'address' => 'required|string',
@@ -124,18 +124,87 @@ class BranchController extends Controller
                 'gps_longitude' => $validated['gps_longitude'] ?? null,
                 'phone' => $validated['phone'],
                 'email' => $validated['email'],
-                'status' => 'active', // Set branch as active by default
+                'status' => 'active',
             ]);
 
             // Generate barcode for the new branch
             $branch->generateBarcode();
-            $branch->refresh(); // Refresh to get the updated barcode
+            $branch->refresh();
+
+            // Always create a default store (location) for the branch
+            
+            \App\Models\Location::create([
+                'name' => $branch->name . ' Store',
+                'user_id'=>$user->id,
+                'location_type_id' => 1, // store type
+                'business_id' => $business->id,
+                'branch_id' => $branch->id,
+                'address' => $branch->address,
+                'phone' => $branch->phone,
+                'status' => 1,
+            ]);
 
             return redirect()->route('businesses.branches.index', $business)
-                ->with('success', 'Branch created successfully.')
+                ->with('success', 'Branch and default store created successfully.')
                 ->with('branch', $branch);
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Failed to create branch: ' . $e->getMessage()]);
+        }
+    }
+
+    public function storeWithStore(Request $request, Business $business)
+    {   $user = Auth::user();
+        $branchRules = [
+            'name' => 'required|string|max:255',
+            'address' => 'required|string',
+            'gps_latitude' => 'nullable|numeric|between:-90,90',
+            'gps_longitude' => 'nullable|numeric|between:-180,180',
+            'phone' => 'required|string|max:50',
+            'email' => 'required|email|max:255',
+        ];
+        $storeRules = [
+            'store.name' => 'nullable|string|max:255',
+            'store.address' => 'nullable|string',
+            'store.phone' => 'nullable|string|max:50',
+            'store.status' => 'nullable|in:0,1',
+        ];
+        $rules = array_merge($branchRules, $storeRules);
+        $validated = $request->validate($rules);
+        \DB::beginTransaction();
+        try {
+            $branch = $business->branches()->create([
+                'name' => $validated['name'],
+                'address' => $validated['address'],
+                'gps_latitude' => $validated['gps_latitude'] ?? null,
+                'gps_longitude' => $validated['gps_longitude'] ?? null,
+                'phone' => $validated['phone'],
+                'email' => $validated['email'],
+                'status' => 'active',
+            ]);
+            $branch->generateBarcode();
+            $branch->refresh();
+            // Always create a store (location) for the branch
+            \App\Models\Location::create([
+                'name' => $validated['store']['name'] ?? ($branch->name . ' Store'),
+                'user_id'=>$user->id,
+                'location_type_id' => 1, // store type
+                'business_id' => $business->id,
+                'branch_id' => $branch->id,
+                'address' => $validated['store']['address'] ?? $branch->address,
+                'phone' => $validated['store']['phone'] ?? $branch->phone,
+                'status' => $validated['store']['status'] ?? 1,
+            ]);
+            \DB::commit();
+            return redirect()
+                ->route('businesses.branches.index', $business)
+                ->with('success', 'Branch and store created successfully.');
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            return redirect()->back()
+                ->withErrors([
+                    'error' => 'Failed to create branch and store: ' . $e->getMessage(),
+                ])
+                ->withInput();
         }
     }
 

@@ -392,14 +392,9 @@ const submit = () => {
         }
     });
 
-    // Log form data before submission
-    console.log('Submitting form data:', form.data());
-
     form.post('/businesses', {
         preserveScroll: true,
         onSuccess: (response) => {
-            console.log('Success response:', response);
-            // Show success message
             Swal.fire({
                 icon: 'success',
                 title: 'Business Created!',
@@ -415,8 +410,6 @@ const submit = () => {
             form.reset();
         },
         onError: (errors) => {
-            console.error('Form submission errors:', errors);
-            // Show error message with specific error details
             Swal.fire({
                 icon: 'error',
                 title: 'Oops...',
@@ -433,7 +426,7 @@ const submit = () => {
             });
         },
         onFinish: () => {
-            console.log('Form submission finished');
+            //
         }
     });
 };

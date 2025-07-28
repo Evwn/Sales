@@ -17,4 +17,5 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     // Admin branch details
     Route::get('/admin/branches/{branch}', [BranchController::class, 'adminShowApi']);
+    Route::get('/suppliers/{supplier}/items', [App\Http\Controllers\SupplierController::class, 'items']);
 }); 

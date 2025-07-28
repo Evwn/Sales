@@ -4,6 +4,12 @@ import '../css/app.css';
 import { createApp, h } from 'vue';
 import { createInertiaApp, router } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
+import axios from 'axios';
+
+const token = document.querySelector('meta[name="csrf-token"]');
+if (token) {
+  axios.defaults.headers.common['X-CSRF-TOKEN'] = token.getAttribute('content');
+}
 
 const appName = import.meta.env.VITE_APP_NAME || 'Sales Management System';
 

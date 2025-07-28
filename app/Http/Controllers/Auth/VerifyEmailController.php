@@ -10,17 +10,27 @@ use Illuminate\Http\RedirectResponse;
 class VerifyEmailController extends Controller
 {
     /**
+     * Helper to get the authenticated user from pos or backoffice guard.
+     */
+    protected function getAuthUser()
+    {
+        return auth('pos')->user() ?? auth('backoffice')->user();
+    }
+
+    /**
      * Mark the authenticated user's email address as verified.
      */
     public function __invoke(EmailVerificationRequest $request): RedirectResponse
     {
-        if ($request->user()->hasVerifiedEmail()) {
+        $user = $this->getAuthUser();
+        if (!$user) {
+            return redirect('/login');
+        }
+        if ($user->hasVerifiedEmail()) {
             return redirect()->intended(route('dashboard', absolute: false).'?verified=1');
         }
 
-        if ($request->user()->markEmailAsVerified()) {
-            /** @var \Illuminate\Contracts\Auth\MustVerifyEmail $user */
-            $user = $request->user();
+        if ($user->markEmailAsVerified()) {
             event(new Verified($user));
         }
 

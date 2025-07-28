@@ -78,6 +78,24 @@ class Branch extends Model
         return $this->hasMany(Purchase::class);
     }
 
+    public function stores()
+    {
+        return $this->hasMany(Store::class);
+    }
+
+    public function effectiveStore()
+    {
+        $store = $this->stores()->first();
+        if ($store) return $store;
+        return (object)[
+            'id' => null,
+            'name' => 'Default Store (Branch: ' . $this->name . ')',
+            'branch_id' => $this->id,
+            'business_id' => $this->business_id,
+            'is_virtual' => true,
+        ];
+    }
+
     public function getFullAddressAttribute(): string
     {
         return "{$this->address}, {$this->business->city}, {$this->business->country}";

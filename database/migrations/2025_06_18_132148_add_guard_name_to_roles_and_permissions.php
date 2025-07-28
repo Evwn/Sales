@@ -9,12 +9,18 @@ return new class extends Migration {
     {
         if (!Schema::hasColumn('roles', 'guard_name')) {
             Schema::table('roles', function (Blueprint $table) {
-                $table->string('guard_name')->default('web')->after('name');
+                $table->string('guard_name')->after('name');
             });
         }
         if (Schema::hasTable('permissions') && !Schema::hasColumn('permissions', 'guard_name')) {
             Schema::table('permissions', function (Blueprint $table) {
-                $table->string('guard_name')->default('web')->after('name');
+                $table->string('guard_name')->after('name');
+            });
+        }
+        if (!Schema::hasColumn('roles', 'owner_id')) {
+            Schema::table('roles', function (Blueprint $table) {
+                $table->unsignedBigInteger('owner_id')->nullable()->index()->after('guard_name');
+                $table->foreign('owner_id')->references('id')->on('users')->onDelete('cascade');
             });
         }
     }
@@ -29,6 +35,12 @@ return new class extends Migration {
         if (Schema::hasTable('permissions') && Schema::hasColumn('permissions', 'guard_name')) {
             Schema::table('permissions', function (Blueprint $table) {
                 $table->dropColumn('guard_name');
+            });
+        }
+        if (Schema::hasColumn('roles', 'owner_id')) {
+            Schema::table('roles', function (Blueprint $table) {
+                $table->dropForeign(['owner_id']);
+                $table->dropColumn('owner_id');
             });
         }
     }

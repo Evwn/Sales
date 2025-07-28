@@ -12,7 +12,9 @@ class AdminUserSeeder extends Seeder
     public function run(): void
     {
         // Ensure the admin role exists
-        $adminRole = Role::firstOrCreate(['name' => 'admin'], ['guard_name' => 'web']);
+        $adminRolePos = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'pos']);
+        $adminRoleBackoffice = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'backoffice']);
+        // Assign admin roles to your admin user as needed for both guards.
 
         // Create the admin user
         $user = User::firstOrCreate(

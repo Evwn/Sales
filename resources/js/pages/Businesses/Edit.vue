@@ -452,9 +452,6 @@ const props = defineProps({
   }
 });
 
-// Debug: Log the business data
-console.log('Business data received:', props.business);
-
 const steps = [
   'Basic Information',
   'Contact Information',
@@ -546,8 +543,6 @@ const form = useForm({
 
 // Ensure form is properly initialized when component mounts
 onMounted(() => {
-  console.log('Component mounted, business data:', props.business);
-  console.log('Form data after initialization:', form.data());
   if (form.city) selectedCounty.value = form.city;
   if (form.state) selectedWard.value = form.state;
   if (!form.country) {
@@ -587,8 +582,6 @@ const handleLogoChange = (event: Event) => {
     // Update form data reactively
     form.logo = file;
     selectedLogo.value = file;
-    console.log('Logo selected:', file.name, file.size, file.type);
-    console.log('Form logo after update:', form.logo);
     
     // Show success message
     Swal.fire({
@@ -634,8 +627,6 @@ const handleTaxDocumentChange = (event: Event) => {
     // Update form data reactively
     form.tax_document = file;
     selectedTaxDocument.value = file;
-    console.log('Tax document selected:', file.name, file.size, file.type);
-    console.log('Form tax_document after update:', form.tax_document);
     
     // Show success message
     Swal.fire({
@@ -681,8 +672,6 @@ const handleRegistrationDocumentChange = (event: Event) => {
     // Update form data reactively
     form.registration_document = file;
     selectedRegistrationDocument.value = file;
-    console.log('Registration document selected:', file.name, file.size, file.type);
-    console.log('Form registration_document after update:', form.registration_document);
     
     // Show success message
     Swal.fire({
@@ -728,8 +717,6 @@ const handleTermsDocumentChange = (event: Event) => {
     // Update form data reactively
     form.terms_and_conditions = file;
     selectedTermsDocument.value = file;
-    console.log('Terms document selected:', file.name, file.size, file.type);
-    console.log('Form terms_and_conditions after update:', form.terms_and_conditions);
     
     // Show success message
     Swal.fire({
@@ -748,40 +735,18 @@ const handleSubmit = () => {
     form.postal_code = 'N/A';
   }
   // Log the actual form data object
-  console.log('Raw form data:', form.data());
-  console.log('Form logo object:', form.logo);
-  console.log('Form tax_document object:', form.tax_document);
-  console.log('Form registration_document object:', form.registration_document);
   
   // Log form data before submission
-  console.log('Form data before submission:', {
-    name: form.name,
-    phone: form.phone,
-    email: form.email,
-    address: form.address,
-    city: form.city,
-    state: form.state,
-    country: form.country,
-    postal_code: form.postal_code,
-    description: form.description,
-    industry: form.industry,
-    website: form.website,
-    tax_number: form.tax_number,
-    logo: form.logo ? `${form.logo.name} (${form.logo.size} bytes)` : 'No logo selected',
-    tax_document: form.tax_document ? `${form.tax_document.name} (${form.tax_document.size} bytes)` : 'No tax document selected',
-    registration_document: form.registration_document ? `${form.registration_document.name} (${form.registration_document.size} bytes)` : 'No registration document selected',
-    terms_and_conditions: form.terms_and_conditions ? `${form.terms_and_conditions.name} (${form.terms_and_conditions.size} bytes)` : 'No terms and conditions document selected'
+  
+  // Show loading state
+  Swal.fire({
+    title: 'Updating Business...',
+  text: 'Please wait while we update your business information.',
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    }
   });
-
-    // Show loading state
-    Swal.fire({
-      title: 'Updating Business...',
-    text: 'Please wait while we update your business information.',
-      allowOutsideClick: false,
-      didOpen: () => {
-        Swal.showLoading();
-      }
-    });
 
   // Create a FormData object manually to ensure all data is included
   const formData = new FormData();
@@ -821,11 +786,7 @@ const handleSubmit = () => {
   }
 
   // Log what we're about to send
-  console.log('FormData entries:');
-  for (let [key, value] of formData.entries()) {
-    console.log(`${key}:`, value);
-  }
-
+  
   // Use Inertia router to send the FormData
   router.post(`/businesses/${props.business.id}`, formData, {
     preserveScroll: true,

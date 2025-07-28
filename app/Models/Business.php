@@ -115,6 +115,11 @@ class Business extends Model
         return $this->hasMany(BusinessAdmin::class);
     }
 
+    public function stores()
+    {
+        return $this->hasMany(Store::class);
+    }
+
     public function getLogoUrlAttribute()
     {
         return $this->logo_path ? Storage::url($this->logo_path) : null;

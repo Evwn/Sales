@@ -72,9 +72,18 @@ class Kernel extends HttpKernel
         'business.access' => \App\Http\Middleware\BusinessAccess::class,
         'branch.access' => \App\Http\Middleware\CheckBranchAccess::class,
         'role.access' => \App\Http\Middleware\RoleRouteAccess::class,
-        'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
-        'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
-        'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+        'role' => \Spatie\Permission\Middlewares\RoleMiddleware::class,
+        'permission' => \Spatie\Permission\Middlewares\PermissionMiddleware::class,
+        'role_or_permission' => \Spatie\Permission\Middlewares\RoleOrPermissionMiddleware::class,
         'update.online.status' => \App\Http\Middleware\UpdateOnlineStatus::class,
     ];
+
+    public function __construct(
+        \Illuminate\Contracts\Foundation\Application $app,
+        \Illuminate\Routing\Router $router
+    ) {
+        file_put_contents(__DIR__.'/../../storage/logs/kernel-test.log', 'Kernel loaded at '.date('c').PHP_EOL, FILE_APPEND);
+        \Log::info('App\\Http\\Kernel constructor called');
+        parent::__construct($app, $router);
+    }
 } 

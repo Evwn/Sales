@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { Head, Link, usePage, router } from "@inertiajs/vue3";
 import type { BreadcrumbItemType } from "@/types";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -56,9 +56,26 @@ const isAdmin = computed(() =>
     page.props.auth?.user?.roles?.some(role => role.name === 'admin')
 );
 
+// Update permission checks to match RoleSeeder permissions
 const hasPermission = (permission: string) => {
     return page.props.auth?.user?.all_permissions?.includes(permission) ?? false;
 };
+
+// Update nav link permission checks to match RoleSeeder
+const canViewDashboard = computed(() => hasPermission('view shift report') || isOwner.value || isAdmin.value);
+const canViewSales = computed(() => hasPermission('view all receipts') || isOwner.value || isAdmin.value);
+const canViewBusinesses = computed(() => hasPermission('manage feature settings') || isOwner.value || isAdmin.value);
+const canViewBranches = computed(() => hasPermission('manage POS devices') || isOwner.value || isAdmin.value);
+const canViewEmployers = computed(() => hasPermission('manage employees') || isOwner.value || isAdmin.value);
+const canViewInventory = computed(() => hasPermission('manage items') || isOwner.value || isAdmin.value);
+const canViewPurchases = computed(() => hasPermission('view cost of items') || isOwner.value || isAdmin.value);
+const canViewStockTransfers = computed(() => hasPermission('manage items') || isOwner.value || isAdmin.value);
+const canViewItems = computed(() => hasPermission('manage items') || isOwner.value || isAdmin.value);
+const canViewCategories = computed(() => hasPermission('manage items') || isOwner.value || isAdmin.value);
+const canViewModifiers = computed(() => hasPermission('manage items') || isOwner.value || isAdmin.value);
+const canViewDiscounts = computed(() => hasPermission('apply discounts with restricted access') || isOwner.value || isAdmin.value);
+const canViewReports = computed(() => hasPermission('view sales reports') || isOwner.value || isAdmin.value);
+const canViewSuppliers = computed(() => hasPermission('manage suppliers') || isOwner.value || isAdmin.value);
 
 const canAccessInventory = computed(() => {
     return isOwner.value || isAdmin.value || isSeller.value || hasPermission('manage_inventory');
@@ -72,6 +89,10 @@ const canAccessDiscounts = computed(() => {
 const canAccessReports = computed(() => {
     // Only owner, admin, or users with 'view_reports' permission can access reports
     return isOwner.value || isAdmin.value || hasPermission('view_reports');
+});
+
+const canManageDevices = computed(() => {
+    return isOwner.value || isAdmin.value || hasPermission('manage devices');
 });
 
 const isCurrentRoute = (route: string) => {
@@ -194,16 +215,46 @@ const fetchUnreadCount = async () => {
   }
 };
 
+// Global toast logic for Inertia flash messages
+function handleGlobalFlash() {
+  if (page.props.flash) {
+    if (page.props.flash.success) {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: page.props.flash.success,
+        showConfirmButton: false,
+        timer: 4000,
+      });
+    }
+    if (page.props.flash.error) {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'error',
+        title: page.props.flash.error,
+        showConfirmButton: false,
+        timer: 4000,
+      });
+    }
+  }
+}
+
 onMounted(() => {
   fetchUnreadCount();
   // Poll for unread count every 30 seconds
   setInterval(fetchUnreadCount, 30000);
+  handleGlobalFlash();
+});
+
+watch(() => page.props.flash, () => {
+  handleGlobalFlash();
 });
 </script>
 
 <template>
     <div>
-        <!-- Online/Offline Dot (bottom right, just above mobile nav, not attached to AI button) -->
         <span
             v-if="isOwner"
             :class="['fixed z-50 rounded-full border-2 border-white transition-colors', isOffline ? 'bg-red-500' : 'bg-green-500']"
@@ -236,21 +287,102 @@ onMounted(() => {
 
                             <div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex sm:items-center">
                                 <template v-if="isOwner || isSeller">
-                                    <NavLink v-if="hasPermission('view_dashboard')" href="/dashboard" :active="isCurrentRoute('/dashboard')" class="text-gray-900 hover:text-gray-700">
-                                        Dashboard
+                                    <NavLink v-if="canViewDashboard" href="/dashboard">
+                                        <Link href="/dashboard" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/dashboard') ? 'text-blue-600' : 'text-gray-500'">
+                                            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M13 5v6h6m-6 0H7m6 0v6m0 0H7m6 0h6" /></svg>
+                                            <span class="text-xs leading-tight font-medium">Dashboard</span>
+                                        </Link>
                                     </NavLink>
-                                    <NavLink v-if="hasPermission('view_sales')" href="/sales" :active="isCurrentRoute('/sales')">Sales</NavLink>
-                                    <NavLink v-if="hasPermission('manage_business')" href="/businesses" :active="isCurrentRoute('/businesses')">Businesses</NavLink>
-                                    <NavLink v-if="hasPermission('manage_branches')" href="/branches" :active="isCurrentRoute('/branches')">Branches</NavLink>
-                                    <NavLink v-if="hasPermission('view_sellers')" href="/sellers" :active="isCurrentRoute('/sellers')">Sellers</NavLink>
-                                    <NavLink v-if="hasPermission('view_inventory')" href="/products" :active="isCurrentRoute('/products')" class="text-gray-900 hover:text-gray-700">
-                                        Inventory
+                                    <NavLink v-if="canViewBusinesses" href="/businesses">
+                                        <Link href="/businesses" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/businesses') ? 'text-blue-600' : 'text-gray-500'">
+                                            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                                            <span class="text-xs leading-tight font-medium">Businesses</span>
+                                        </Link>
                                     </NavLink>
-                                    <NavLink v-if="hasPermission('view_products')" href="/inventory-items" :active="isCurrentRoute('/inventory-items')" class="text-gray-900 hover:text-gray-700">
-                                        Products
+                                    <NavLink v-if="canViewBranches" href="/branches">
+                                        <Link href="/branches" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/branches') ? 'text-blue-600' : 'text-gray-500'">
+                                            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                            <span class="text-xs leading-tight font-medium">Branches</span>
+                                        </Link>
+
                                     </NavLink>
-                                    <NavLink v-if="hasPermission('view_reports')" href="/reports" :active="isCurrentRoute('/reports')" class="text-gray-900 hover:text-gray-700">
-                                        Reports
+                                    <DropdownMenu v-if="canViewInventory" class="ml-2">
+                                        <DropdownMenuTrigger as-child>
+                                            <Button variant="ghost" class="flex items-center gap-1 text-gray-900 hover:text-gray-700">
+                                                <span class="text-xs leading-tight font-medium">Employers</span>
+                                                <ChevronDown class="size-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent :align="dropdownAlign" class="w-48">
+                                            <DropdownMenuItem as-child>
+                                                <Link href="/employers" :class="{'font-bold text-blue-600': isCurrentRoute('/employers')}">Employers</Link>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem as-child>
+                                                <Link href="/employers/access-control" :class="{'font-bold text-blue-600': isCurrentRoute('/employers/access-control')}">Access Control</Link>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                    <DropdownMenu v-if="canViewInventory" class="ml-2">
+                                        <DropdownMenuTrigger as-child>
+                                            <Button variant="ghost" class="flex items-center gap-1 text-gray-900 hover:text-gray-700">
+                                                <span class="text-xs leading-tight font-medium">Inventory</span>
+                                                <ChevronDown class="size-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent :align="dropdownAlign" class="w-48">
+                                            <DropdownMenuItem as-child>
+                                                <Link href="/products" :class="{'font-bold text-blue-600': isCurrentRoute('/products')}">Products</Link>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem as-child>
+                                                <Link href="/purchases" :class="{'font-bold text-blue-600': isCurrentRoute('/purchases')}">Purchases</Link>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem as-child>
+                                                <Link href="/purchase-items" :class="{'font-bold text-blue-600': isCurrentRoute('/purchase-items')}">Items</Link>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem as-child>
+                                                <Link href="/stock-transfers" :class="{'font-bold text-blue-600': isCurrentRoute('/stock-transfers')}">Stock Transfers</Link>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                    <DropdownMenu v-if="canViewInventory" class="ml-2">
+                                        <DropdownMenuTrigger as-child>
+                                            <Button variant="ghost" class="flex items-center gap-1 text-gray-900 hover:text-gray-700">
+                                                <span class="text-xs leading-tight font-medium">Items</span>
+                                                <ChevronDown class="size-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent :align="dropdownAlign" class="w-48">
+                                            <DropdownMenuItem as-child>
+                                                <Link href="/items" :class="{'font-bold text-blue-600': isCurrentRoute('/items')}">Items</Link>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem as-child>
+                                                <Link href="/categories" :class="{'font-bold text-blue-600': isCurrentRoute('/categories')}">Categories</Link>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem as-child>
+                                                <Link href="/modifiers" :class="{'font-bold text-blue-600': isCurrentRoute('/modifiers')}">Modifiers</Link>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem as-child>
+                                                <Link href="/discounts" :class="{'font-bold text-blue-600': isCurrentRoute('/discounts')}">Discounts</Link>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                    <NavLink v-if="canViewReports" href="/devices">
+                                      <Link href="/reports" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/reports') ? 'text-blue-600' : 'text-gray-500'">
+                                        <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M16 3v4M8 3v4"/></svg>
+                                            <span class="text-xs leading-tight font-medium">Reports</span>
+                                        </Link>
+                                    </NavLink>
+                                    <NavLink v-if="canViewSuppliers" href="/suppliers">
+                                      <Link href="/suppliers" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/suppliers') ? 'text-blue-600' : 'text-gray-500'">
+                                        <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M16 3v4M8 3v4"/></svg>
+                                            <span class="text-xs leading-tight font-medium">Suppliers</span>
+                                        </Link>
+                                    </NavLink>
+                                    <NavLink v-if="canManageDevices" href="/devices">
+                                      <Link href="/devices" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/devices') ? 'text-blue-600' : 'text-gray-500'">
+                                        <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M16 3v4M8 3v4"/></svg>
+                                            <span class="text-xs leading-tight font-medium">Devices</span>
+                                        </Link>
                                     </NavLink>
                                     </template>
                                     <!-- Admin-specific links -->
@@ -264,17 +396,14 @@ onMounted(() => {
                                         <NavLink  href="/admin/branches" :active="isCurrentRoute('/admin/branches')" class="text-gray-900 hover:text-gray-700">
                                             All Branches
                                         </NavLink>
-                                        <NavLink v-if="hasPermission('view_inventory')" href="/products" :active="isCurrentRoute('/products')" class="text-gray-900 hover:text-gray-700">
-                                        Inventory
-                                        </NavLink>
-                                        <NavLink v-if="hasPermission('view_products')" href="/inventory-items" :active="isCurrentRoute('/inventory-items')" class="text-gray-900 hover:text-gray-700">
-                                            Products
-                                        </NavLink>
                                         <NavLink v-if="hasPermission('view_reports')" href="/reports" :active="isCurrentRoute('/reports')" class="text-gray-900 hover:text-gray-700">
                                             Reports
                                         </NavLink>
-                                        <NavLink v-if="hasPermission('not_active')" href="/admin/tax-groups" :active="isCurrentRoute('/admin/tax-groups')" class="text-gray-900 hover:text-gray-700">
+                                        <NavLink href="/admin/tax-groups" :active="isCurrentRoute('/admin/tax-groups')" class="text-gray-900 hover:text-gray-700">
                                           Tax Codes
+                                        </NavLink>
+                                        <NavLink href="/test" :active="isCurrentRoute('/test')" class="text-gray-900 hover:text-gray-700">
+                                            Flutterwave Test
                                         </NavLink>
                                     </template>
                                 
@@ -299,6 +428,12 @@ onMounted(() => {
                                                 <Link href="/settings/profile" class="flex items-center gap-2">
                                                     <UserIcon class="size-4" />
                                                     <span>Profile</span>
+                                                </Link>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem as-child>
+                                                <Link href="/settings" class="flex items-center gap-2">
+                                                    <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                                    <span>Settings</span>
                                                 </Link>
                                             </DropdownMenuItem>
                                             <DropdownMenuSeparator />
@@ -350,6 +485,12 @@ onMounted(() => {
 
                             <div class="p-4 border-t border-gray-200">
                                 <div class="flex flex-col space-y-3">
+                                    <Link href="/settings/profile" class="w-full block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
+                                        Profile
+                                    </Link>
+                                    <Link href="/settings" class="w-full block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
+                                        Settings
+                                    </Link>
                                     <Link href="/chat" class="w-full block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg relative">
                                         Chat
                                         <span v-if="unreadCount > 0" class="absolute top-2 right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
@@ -420,9 +561,9 @@ onMounted(() => {
                     <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                     <span class="text-xs leading-tight font-medium">Branches</span>
                 </Link>
-                <Link href="/sellers" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/sellers') ? 'text-blue-600' : 'text-gray-500'">
+                <Link v-if="isOwner" href="/employers" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/employers') ? 'text-blue-600' : 'text-gray-500'">
                     <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M8 3.13a4 4 0 010 7.75" /></svg>
-                    <span class="text-xs leading-tight font-medium">Sellers</span>
+                    <span class="text-xs leading-tight font-medium">Employers</span>
                 </Link>
                 <Link href="/products" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/products') ? 'text-blue-600' : 'text-gray-500'">
                     <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6m16 0v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6m16 0H4" /></svg>

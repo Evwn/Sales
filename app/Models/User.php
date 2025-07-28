@@ -18,7 +18,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     protected $fillable = [
         'name', 'email', 'password', 'business_id', 'branch_id', 'logo_path', 'logo_url', 'theme',
-        'is_online', 'last_seen_at', 'typing_in_chat_id', 'email_verified_at'
+        'is_online', 'last_seen_at', 'typing_in_chat_id', 'email_verified_at', 'pin_code'
     ];
 
     protected $hidden = [
@@ -235,5 +235,68 @@ class User extends Authenticatable implements MustVerifyEmail
         }
         
         return 'offline';
+    }
+
+    public function allStores()
+    {
+        return Store::whereIn('business_id', $this->ownedBusinesses()->pluck('id'))->get();
+    }
+    public function allStoreIds()
+    {
+        return $this->allStores()->pluck('id');
+    }
+
+    /**
+     * Businesses owned by this user (owner)
+     */
+    public function ownerBusinesses(): HasMany
+    {
+        return $this->hasMany(Business::class, 'owner_id');
+    }
+
+    /**
+     * Employees (users) of this owner's businesses
+     */
+    public function employees()
+    {
+        return User::whereIn('business_id', $this->ownerBusinesses()->pluck('id'));
+    }
+
+    /**
+     * Is this user an owner? (no business_id)
+     */
+    public function isOwner(): bool
+    {
+        return is_null($this->business_id);
+    }
+
+    /**
+     * Is this user an employee/cashier? (has business_id)
+     */
+    public function isEmployee(): bool
+    {
+        return !is_null($this->business_id);
+    }
+
+    /**
+     * Get the owner user for this employee (via business)
+     */
+    public function owner()
+    {
+        if ($this->business) {
+            return $this->business->owner;
+        }
+        return null;
+    }
+
+    /**
+     * Get the owner user for this employee via branch's business
+     */
+    public function ownerForBranch()
+    {
+        if ($this->branch && $this->branch->business) {
+            return $this->branch->business->owner;
+        }
+        return null;
     }
 }

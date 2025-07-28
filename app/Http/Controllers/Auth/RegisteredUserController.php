@@ -50,8 +50,9 @@ class RegisteredUserController extends Controller
             'password.regex' => 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one symbol.'
         ]);
 
-        // Get the owner role
-        $ownerRole = Role::findByName('owner');
+        // Assign the owner role for both guards (lowercase)
+        $ownerRolePos = \Spatie\Permission\Models\Role::where('name', 'owner')->where('guard_name', 'pos')->first();
+        $ownerRoleBackoffice = \Spatie\Permission\Models\Role::where('name', 'owner')->where('guard_name', 'backoffice')->first();
 
         $user = User::create([
             'name' => $request->name,
@@ -59,8 +60,19 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        // Assign the owner role
-        $user->assignRole($ownerRole);
+        // Assign the owner role for both guards
+        if ($ownerRolePos) {
+            $user->assignRole($ownerRolePos);
+        }
+        if ($ownerRoleBackoffice) {
+            $user->assignRole($ownerRoleBackoffice);
+        }
+
+        // Remove these lines to avoid errors if permissions are missing
+        // $posPermissions = \Spatie\Permission\Models\Permission::where('guard_name', 'pos')->pluck('name')->toArray();
+        // $backofficePermissions = \Spatie\Permission\Models\Permission::where('guard_name', 'backoffice')->pluck('name')->toArray();
+        // $user->syncPermissions($posPermissions, 'pos');
+        // $user->syncPermissions($backofficePermissions, 'backoffice');
 
         event(new Registered($user));
 

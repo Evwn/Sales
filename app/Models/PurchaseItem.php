@@ -11,12 +11,7 @@ class PurchaseItem extends Model
     use HasFactory;
 
     protected $fillable = [
-        'purchase_id',
-        'product_id',
-        'quantity',
-        'unit_price',
-        'discount',
-        'tax',
+        'purchase_id', 'stock_item_id', 'item_id', 'variant_id', 'quantity_ordered', 'quantity_received', 'purchase_cost', 'proportional_additional_cost', 'status', 'unit_price', 'discount', 'tax'
     ];
 
     protected $casts = [
@@ -31,9 +26,19 @@ class PurchaseItem extends Model
         return $this->belongsTo(Purchase::class);
     }
 
-    public function product(): BelongsTo
+    public function item(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Item::class);
+    }
+
+    public function stockItem()
+    {
+        return $this->belongsTo(StockItem::class);
+    }
+
+    public function variant()
+    {
+        return $this->belongsTo(\App\Models\ItemVariant::class, 'variant_id');
     }
 
     public function getSubtotalAttribute(): float

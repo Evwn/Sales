@@ -40,6 +40,9 @@ class AuthenticatedSessionController extends Controller
         if ($user && $user->hasRole('admin')) {
             return redirect()->intended(route('users.index'));
         }
+        if ($user && $user->hasRole('cashier')) {
+            return redirect()->intended('/pos/dashboard');
+        }
         return redirect()->intended('/dashboard');
     }
 
@@ -48,7 +51,8 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        Auth::guard('web')->logout();
+        // Use the default guard or a dynamic guard instead of hardcoded 'web'
+        Auth::guard()->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

@@ -10,137 +10,85 @@ class RoleSeeder extends Seeder
 {
     public function run(): void
     {
-        // Create roles
-        $roles = [
-            'owner' => 'Business Owner',
-            'admin' => 'Business Admin',
-            'seller' => 'Sales Person',
-            'supplier' => 'Supplier',
-            'customer' => 'Customer',
+        $guards = ['pos', 'backoffice'];
+        $roles = ['owner', 'administrator', 'manager', 'cashier', 'admin'];
+
+        // Permissions
+        $posPermissions = [
+            'accept payments',
+            'apply discounts with restricted access',
+            'change taxes in a sale',
+            'manage all open tickets',
+            'void saved items in open tickets',
+            'open cash drawer without making a sale',
+            'view all receipts',
+            'perform refunds',
+            'reprint and resend receipts',
+            'view shift report',
+            'manage items',
+            'view cost of items',
+            'change settings',
+            'access to live chat support',
+        ];
+        $backOfficePermissions = [
+            'view sales reports',
+            'cancel receipts',
+            'manage items',
+            'view cost of items',
+            'manage employees',
+            'manage customers',
+            'manage feature settings',
+            'manage billing',
+            'manage payment types',
+            'manage loyalty program',
+            'manage taxes',
+            'manage kitchen printers',
+            'manage dining options',
+            'manage POS devices',
+            'sign into POS using email and password',
+            'access to live chat support',
         ];
 
-        foreach ($roles as $name => $description) {
-            if (!Role::where('name', $name)->exists()) {
-                Role::create([
-                    'name' => $name,
-                    'guard_name' => 'web'
+        foreach ($guards as $guard) {
+            // Create roles for each guard
+            foreach ($roles as $role) {
+                if ($role === 'cashier' && $guard !== 'pos') continue; // Only create cashier for POS
+                Role::firstOrCreate([
+                    'name' => $role,
+                    'guard_name' => $guard
                 ]);
             }
-        }
-
-        // Create permissions
-        $permissions = [
-            // Dashboard
-            'view_dashboard',
-
-            'manage_users',
-            'view_users',
-            'manage_roles',
-            'manage_permissions',
-            
-            
-            // Business Management
-            'manage_business',
-            'manage_branches',
-            'manage_sellers',
-            'manage_settings',
-            
-            // Product & Inventory
-            'manage_products',
-            'view_products',
-            'manage_inventory',
-            'view_inventory',
-            
-            // Sales & Purchases
-            'manage_sales',
-            'view_sales',
-            'manage_purchases',
-            'view_purchases',
-            
-            // Reports
-            'view_reports',
-            'generate_reports',
-            
-            // Customer & Supplier
-            'manage_customers',
-            'view_customers',
-            'manage_suppliers',
-            'view_suppliers',
-            
-            // Orders & Deliveries
-            'manage_orders',
-            'view_orders',
-            'manage_deliveries',
-            'view_deliveries',
-
-            //sellers
-            'manage_sellers',
-            'view_sellers',
-        ];
-
-        foreach ($permissions as $permission) {
-            if (!Permission::where('name', $permission)->exists()) {
-                Permission::create([
+            // Create permissions for each guard
+            $perms = $guard === 'pos' ? $posPermissions : $backOfficePermissions;
+            foreach ($perms as $permission) {
+                Permission::firstOrCreate([
                     'name' => $permission,
-                    'guard_name' => 'web'
+                    'guard_name' => $guard
                 ]);
             }
         }
 
-        // Assign permissions to roles
-        $ownerRole = Role::findByName('admin');
-        $ownerRole->givePermissionTo($permissions);
+        // Assign permissions to roles for each guard
+        foreach ($guards as $guard) {
+            $ownerRole = Role::where('name', 'owner')->where('guard_name', $guard)->first();
+            $adminRole = Role::where('name', 'admin')->where('guard_name', $guard)->first();
+            $administratorRole = Role::where('name', 'administrator')->where('guard_name', $guard)->first();
+            $managerRole = Role::where('name', 'manager')->where('guard_name', $guard)->first();
+            $cashierRole = Role::where('name', 'cashier')->where('guard_name', $guard)->first();
+            $perms = Permission::where('guard_name', $guard)->pluck('name')->toArray();
 
-        $adminRole = Role::findByName('owner');
-        $adminRole->givePermissionTo([
-            'view_dashboard',
-            'manage_branches',
-            'manage_sellers',
-            'manage_products',
-            'view_products',
-            'manage_inventory',
-            'view_inventory',
-            'manage_sales',
-            'view_sales',
-            'manage_purchases',
-            'view_purchases',
-            'view_reports',
-            'generate_reports',
-            'manage_customers',
-            'view_customers',
-            'manage_suppliers',
-            'view_suppliers',
-            'manage_orders',
-            'view_orders',
-            'manage_deliveries',
-            'view_deliveries',
-            'manage_settings',
-            'manage_business',
-            'view_sellers',
-
-        ]);
-
-        $sellerRole = Role::findByName('seller');
-        $sellerRole->givePermissionTo([
-            'view_dashboard',
-            'view_inventory',
-        ]);
-
-        $supplierRole = Role::findByName('supplier');
-        $supplierRole->givePermissionTo([
-            'view_dashboard',
-            'view_products',
-            'view_inventory',
-            'view_purchases',
-            'view_deliveries',
-        ]);
-
-        $customerRole = Role::findByName('customer');
-        $customerRole->givePermissionTo([
-            'view_dashboard',
-            'view_products',
-            'view_orders',
-            'view_deliveries',
-        ]);
+            // Owner/Admin: all permissions for the guard
+            $ownerRole?->syncPermissions($perms);
+            $adminRole?->syncPermissions($perms);
+            // Administrator/Manager: all for the guard
+            $administratorRole?->syncPermissions($perms);
+            $managerRole?->syncPermissions($perms);
+            // Cashier: only POS permissions in 'pos', none in 'backoffice'
+            if ($guard === 'pos') {
+                $cashierRole?->syncPermissions($perms);
+            } else {
+                $cashierRole?->syncPermissions([]);
+            }
+        }
     }
 } 

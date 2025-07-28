@@ -23,6 +23,21 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\StoreController;
+use App\Http\Controllers\StockTransferController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\PurchaseItemController;
+use App\Http\Controllers\ItemController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ModifierController;
+use App\Http\Controllers\DeviceController;
+use App\Http\Controllers\POSController;
+use App\Http\Controllers\UnitController;
+use App\Http\Controllers\ShiftController;
+use App\Http\Controllers\CashDrawerMovementController;
+use App\Http\Controllers\TimeClockController;
+use App\Http\Controllers\CustomerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,11 +53,14 @@ Route::get('/', function () {
 });
 
 Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::class])->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    
+    // Customer routes
+    Route::post('/customers', [CustomerController::class, 'store'])->name('customers.store');
+    
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // User Management Routes (Admin Only)
     Route::group([], function () {
@@ -156,6 +174,8 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::cla
         });
     });
 
+    Route::post('/businesses/{business}/branches-with-store', [\App\Http\Controllers\BranchController::class, 'storeWithStore'])->name('branches.storeWithStore');
+
     Route::get('/settings/appearance', [AppearanceController::class, 'edit'])->name('settings.appearance');
     Route::post('/settings/appearance', [AppearanceController::class, 'update'])->name('settings.appearance.update');
 
@@ -196,6 +216,22 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::cla
         Route::get('/chat/{chatId}/online-status', [App\Http\Controllers\SellerChatController::class, 'getOnlineStatus']);
         Route::get('/chat/unread-count', [App\Http\Controllers\SellerChatController::class, 'getUnreadCount']);
     });
+
+    Route::get('/purchases/location-stock', [\App\Http\Controllers\PurchaseController::class, 'getLocationStock'])->name('purchases.locationStock');
+    Route::get('/purchases/supplier-items', [\App\Http\Controllers\PurchaseController::class, 'getSupplierItems'])->name('purchases.supplierItems');
+    Route::get('/purchases/low-stock-items', [\App\Http\Controllers\PurchaseController::class, 'getLowStockItems'])->name('purchases.lowStockItems');
+    Route::resource('purchases', PurchaseController::class);
+    Route::post('/purchases/{purchase}/approve', [\App\Http\Controllers\PurchaseController::class, 'approve'])->name('purchases.approve');
+    Route::resource('purchase-items', PurchaseItemController::class);
+    Route::resource('items', ItemController::class);
+    Route::resource('categories', CategoryController::class);
+    Route::post('/categories', [\App\Http\Controllers\CategoryController::class, 'store']);
+    Route::resource('modifiers', ModifierController::class);
+    Route::resource('discounts', DiscountController::class);
+    Route::post('/tax-groups', [\App\Http\Controllers\TaxGroupController::class, 'store'])->name('tax-groups.store');
+    Route::post('/purchases/{purchase}/send-email', [\App\Http\Controllers\PurchaseController::class, 'sendEmail'])->name('purchases.sendEmail');
+    Route::get('/purchases/{purchase}/receive', [\App\Http\Controllers\PurchaseController::class, 'showReceiveForm'])->name('purchases.receiveForm');
+    Route::post('/purchases/{purchase}/receive', [\App\Http\Controllers\PurchaseController::class, 'receive'])->name('purchases.receive');
 });
 
 // Inventory Items
@@ -221,6 +257,12 @@ Route::get('/sales/{sale}/print-receipt', [SaleController::class, 'printReceipt'
 Route::post('/test-low-stock-notification', [App\Http\Controllers\SaleController::class, 'testLowStockNotification'])
     ->name('test.low.stock.notification');
 
+Route::get('/test-mpesa', [\App\Http\Controllers\PaymentTestController::class, 'testMpesa']);
+
+Route::get('/test', function () {
+    return inertia('FlutterwaveTest');
+})->middleware(['auth']); // Add 'admin' if you have it
+
 Route::get('/settings/profile', function() {
     return redirect('/profile');
 });
@@ -236,6 +278,7 @@ Route::post('/broadcasting/auth', function (Request $request) {
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::resource('tax-groups', App\Http\Controllers\Admin\TaxGroupController::class);
+    Route::post('/tax-groups', [\App\Http\Controllers\Admin\TaxGroupController::class, 'store']);
 });
 
 // Password reset routes
@@ -248,3 +291,80 @@ Route::post('/reports/email', [\App\Http\Controllers\ReportController::class, 'e
 
 require __DIR__.'/auth.php';
 require __DIR__.'/settings.php';
+
+Route::middleware(['auth', 'role:owner'])->group(function () {
+    Route::resource('stores', StoreController::class);
+    Route::resource('stock-transfers', StockTransferController::class);
+    Route::post('stock-transfers/{stockTransfer}/receive', [StockTransferController::class, 'receive'])->name('stock-transfers.receive');
+    Route::resource('suppliers', SupplierController::class);
+    Route::post('/employers/roles', [\App\Http\Controllers\EmployerController::class, 'storeRole'])->name('employers.roles.store');
+    Route::get('/employers/roles/{role}/edit', [\App\Http\Controllers\EmployerController::class, 'editRole'])->name('employers.roles.edit');
+    Route::post('/employers/roles/{role}/update', [\App\Http\Controllers\EmployerController::class, 'updateRole'])->name('employers.roles.update');
+});
+
+// Supplier routes
+Route::middleware(['auth', 'role:owner'])->group(function () {
+    Route::get('/suppliers/create', [SupplierController::class, 'create'])->name('suppliers.create');
+    Route::post('/suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
+    Route::get('/suppliers/{supplier}/edit', [SupplierController::class, 'edit'])->name('suppliers.edit');
+    Route::put('/suppliers/{supplier}', [SupplierController::class, 'update'])->name('suppliers.update');
+});
+
+// Public or shared supplier routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
+    Route::get('/suppliers/{supplier}', [SupplierController::class, 'show'])->name('suppliers.show');
+});
+
+Route::get('/api/items/search', [\App\Http\Controllers\ItemController::class, 'search'])->name('items.search');
+
+Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::class])->group(function () {
+    Route::get('/employers', [\App\Http\Controllers\EmployerController::class, 'index'])->name('employers.index');
+    Route::get('/employers/create', [\App\Http\Controllers\EmployerController::class, 'create'])->name('employers.create');
+    Route::post('/employers', [\App\Http\Controllers\EmployerController::class, 'store'])->name('employers.store');
+    Route::get('/employers/access-control', [\App\Http\Controllers\EmployerController::class, 'accessControl'])->name('employers.accessControl');
+    Route::get('/employers/roles/create', [\App\Http\Controllers\EmployerController::class, 'createRole'])->name('employers.roles.create');
+});
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/pos', [\App\Http\Controllers\POSController::class, 'index'])->name('pos.index');
+});
+Route::get('/pos', function () {
+    return Inertia::render('POS/Login');
+})->name('pos.login');
+Route::post('/pos/login', [\App\Http\Controllers\POSController::class, 'loginWithPin'])->name('pos.loginWithPin');
+Route::post('/pos/verify-pin', [\App\Http\Controllers\POSController::class, 'verifyPin']);
+
+Route::middleware(['auth', 'verified'])->get('/pos/dashboard', [POSController::class, 'index'])->name('pos.dashboard');
+
+Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::class])->group(function () {
+    Route::get('/devices', [DeviceController::class, 'index'])->name('devices.index');
+    Route::post('/devices', [DeviceController::class, 'store'])->name('devices.store');
+    Route::delete('/devices/{device}', [DeviceController::class, 'destroy'])->name('devices.destroy');
+});
+
+Route::get('/api/check-device', function (\Illuminate\Http\Request $request) {
+    $uuid = $request->query('uuid');
+    $exists = \App\Models\PosDevice::where('device_uuid', $uuid)
+        ->where('is_disabled', false)
+        ->exists();
+    return response()->json(['deviceRegistered' => $exists]);
+});
+
+Route::get('/api/pos-device-status', function (\Illuminate\Http\Request $request) {
+    $uuid = $request->query('uuid');
+    $device = \App\Models\PosDevice::where('device_uuid', $uuid)->first();
+    return response()->json([
+        'is_disabled' => $device ? (bool)$device->is_disabled : null,
+    ]);
+});
+
+Route::post('/units', [UnitController::class, 'store']);
+
+Route::middleware(['auth'])->group(function () {
+    Route::post('/shifts/open', [ShiftController::class, 'open']);
+    Route::post('/shifts/close', [ShiftController::class, 'close']);
+    Route::post('/cash-drawer-movements', [CashDrawerMovementController::class, 'store']);
+    Route::post('/time-clock/clock-in', [TimeClockController::class, 'clockIn']);
+    Route::post('/time-clock/clock-out', [TimeClockController::class, 'clockOut']);
+});

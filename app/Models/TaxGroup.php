@@ -9,9 +9,9 @@ class TaxGroup extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = [
-        'code',
-        'description',
-        'rate',
-    ];
+    protected $fillable = ['code', 'description', 'rate', 'user_id'];
+
+    public function user() {
+        return $this->belongsTo(User::class);
+    }
 } 

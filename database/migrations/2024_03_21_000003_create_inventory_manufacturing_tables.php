@@ -21,8 +21,10 @@ return new class extends Migration
         if (!Schema::hasTable('units')) {
             Schema::create('units', function (Blueprint $table) {
                 $table->id();
-                $table->string('name');
-                $table->string('symbol');
+                $table->string('name', 50);
+                $table->string('short_code', 10);
+                $table->string('description', 255)->nullable();
+                $table->boolean('is_active')->default(true);
                 $table->timestamps();
             });
         }
@@ -57,34 +59,10 @@ return new class extends Migration
                 $table->softDeletes();
             });
         }
-
-        if (!Schema::hasTable('manufacturing_orders')) {
-            Schema::create('manufacturing_orders', function (Blueprint $table) {
-                $table->id();
-                $table->string('reference')->unique();
-                $table->enum('status', ['draft', 'in_progress', 'completed', 'cancelled'])->default('draft');
-                $table->dateTime('start_date');
-                $table->dateTime('end_date')->nullable();
-                $table->timestamps();
-                $table->softDeletes();
-            });
-        }
-
-        if (!Schema::hasTable('manufacturing_items')) {
-            Schema::create('manufacturing_items', function (Blueprint $table) {
-                $table->id();
-                $table->foreignId('manufacturing_order_id')->constrained();
-                $table->unsignedBigInteger('product_id');
-                $table->decimal('quantity', 15, 2);
-                $table->timestamps();
-            });
-        }
     }
 
     public function down()
     {
-        Schema::dropIfExists('manufacturing_items');
-        Schema::dropIfExists('manufacturing_orders');
         Schema::dropIfExists('stock_movements');
         Schema::dropIfExists('products');
         Schema::dropIfExists('units');
