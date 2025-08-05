@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
+import PageHeader from '@/components/ui/PageHeader.vue';
 import { 
   MapPin, 
   Building, 
@@ -102,18 +103,7 @@ const getStatusColor = (status: string) => {
   <AppLayout>
     <Head title="Admin - All Branches" />
 
-    <template #header>
-      <div class="flex justify-between items-center">
-        <div>
-          <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            All Branches
-          </h2>
-          <p class="text-sm text-gray-600 mt-1">
-            View and manage all branches in the system
-          </p>
-        </div>
-      </div>
-    </template>
+    <PageHeader title="All Branches" />
 
     <div class="py-12">
       <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">

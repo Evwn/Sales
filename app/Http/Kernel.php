@@ -76,6 +76,8 @@ class Kernel extends HttpKernel
         'permission' => \Spatie\Permission\Middlewares\PermissionMiddleware::class,
         'role_or_permission' => \Spatie\Permission\Middlewares\RoleOrPermissionMiddleware::class,
         'update.online.status' => \App\Http\Middleware\UpdateOnlineStatus::class,
+        'pos.only' => \App\Http\Middleware\PosOnly::class,
+        'backoffice.only' => \App\Http\Middleware\BackofficeOnly::class,
     ];
 
     public function __construct(

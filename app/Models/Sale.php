@@ -25,7 +25,7 @@ class Sale extends Model
         'tax',
         'status',
         'payment_status',
-        'payment_method',
+        'payment_methods',
         'sale_date',
         'barcode',
     ];
@@ -35,6 +35,7 @@ class Sale extends Model
         'discount' => 'decimal:2',
         'tax' => 'decimal:2',
         'sale_date' => 'datetime',
+        'payment_methods' => 'array',
     ];
 
     protected static function boot()

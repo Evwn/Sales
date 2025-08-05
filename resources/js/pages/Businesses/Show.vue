@@ -1,26 +1,21 @@
 <template>
   <AppLayout>
-    <template #header>
-      <div class="flex justify-between items-center">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-          {{ business.name }}
-        </h2>
-        <div class="flex space-x-4">
-          <Link
-            :href="`/businesses/${business.id}/branches/create`"
-            class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
-          >
-            Add Branch
-          </Link>
-          <Link
-            :href="`/businesses/${business.id}/edit`"
-            class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
-          >
-            Edit Business
-          </Link>
-        </div>
-      </div>
-    </template>
+    <PageHeader :title="business.name">
+      <template #actions>
+        <Link
+          :href="`/businesses/${business.id}/branches/create`"
+          class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
+        >
+          Add Branch
+        </Link>
+        <Link
+          :href="`/businesses/${business.id}/edit`"
+          class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
+        >
+          Edit Business
+        </Link>
+      </template>
+    </PageHeader>
 
     <div class="py-12">
       <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -306,6 +301,7 @@ import { ref, computed } from 'vue';
 import { Head, Link, useForm, router, usePage } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
 import AppLayout from '@/layouts/AppLayout.vue';
+import PageHeader from '@/components/ui/PageHeader.vue';
 import Modal from '@/components/Modal.vue';
 import InputLabel from '@/components/InputLabel.vue';
 import TextInput from '@/components/TextInput.vue';

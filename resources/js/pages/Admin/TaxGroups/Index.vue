@@ -1,18 +1,13 @@
 <template>
 <AppLayout :breadcrumbs="breadcrumbs">
-        <template #header>
-            <div class="flex justify-between items-center">
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                    Tax Codes
-                </h2>
-                <Link
-                    href="/admin/tax-groups/create"
-                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                >
-                    Add Tax Group
-                </Link>
-            </div>
-        </template>
+        <PageHeader 
+            title="Tax Codes"
+            :button="{
+                text: 'Add Tax Group',
+                link: '/admin/tax-groups/create',
+                show: true
+            }"
+        />
   <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
       <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -47,6 +42,7 @@
 import { Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
+import PageHeader from '@/components/ui/PageHeader.vue';
 const props = defineProps({ taxGroups: Array });
 
 function deleteTaxGroup(id) {

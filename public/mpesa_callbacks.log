@@ -1,0 +1,48 @@
+[2025-07-30 23:17:41] M-PESA CALLBACK RECEIVED
+Method: POST
+URL: http://8b3f0f9bf8d5.ngrok-free.app/api/mpesa/callback
+Headers: {"host":["8b3f0f9bf8d5.ngrok-free.app"],"user-agent":["ReactorNetty\/1.2.7"],"content-length":["193"],"accept":["*\/*"],"content-type":["application\/json;charset=UTF-8"],"x-forwarded-for":["196.201.212.69"],"x-forwarded-host":["8b3f0f9bf8d5.ngrok-free.app"],"x-forwarded-proto":["https"],"accept-encoding":["gzip"]}
+Query Params: []
+Body: {"Body":{"stkCallback":{"MerchantRequestID":"c7e4-42c0-b476-32053384902b25451","CheckoutRequestID":"ws_CO_310720250217259111383064","ResultCode":1032,"ResultDesc":"Request Cancelled by user"}}}
+Raw Body: {"Body":{"stkCallback":{"MerchantRequestID":"c7e4-42c0-b476-32053384902b25451","CheckoutRequestID":"ws_CO_310720250217259111383064","ResultCode":1032,"ResultDesc":"Request Cancelled by user"}}}
+---
+[2025-07-30 23:22:29] M-PESA CALLBACK RECEIVED
+Method: POST
+URL: http://8b3f0f9bf8d5.ngrok-free.app/api/mpesa/callback
+Headers: {"host":["8b3f0f9bf8d5.ngrok-free.app"],"user-agent":["ReactorNetty\/1.2.7"],"content-length":["200"],"accept":["*\/*"],"content-type":["application\/json;charset=UTF-8"],"x-forwarded-for":["196.201.212.69"],"x-forwarded-host":["8b3f0f9bf8d5.ngrok-free.app"],"x-forwarded-proto":["https"],"accept-encoding":["gzip"]}
+Query Params: []
+Body: {"Body":{"stkCallback":{"MerchantRequestID":"df2b-4546-bd46-7ed17f22e0b56163","CheckoutRequestID":"ws_CO_310720250222113708374149","ResultCode":1037,"ResultDesc":"DS timeout user cannot be reached"}}}
+Raw Body: {"Body":{"stkCallback":{"MerchantRequestID":"df2b-4546-bd46-7ed17f22e0b56163","CheckoutRequestID":"ws_CO_310720250222113708374149","ResultCode":1037,"ResultDesc":"DS timeout user cannot be reached"}}}
+---
+[2025-07-30 23:23:16] M-PESA CALLBACK RECEIVED
+Method: POST
+URL: http://8b3f0f9bf8d5.ngrok-free.app/api/mpesa/callback
+Headers: {"host":["8b3f0f9bf8d5.ngrok-free.app"],"user-agent":["ReactorNetty\/1.2.7"],"content-length":["201"],"accept":["*\/*"],"content-type":["application\/json;charset=UTF-8"],"x-forwarded-for":["196.201.212.69"],"x-forwarded-host":["8b3f0f9bf8d5.ngrok-free.app"],"x-forwarded-proto":["https"],"accept-encoding":["gzip"]}
+Query Params: []
+Body: {"Body":{"stkCallback":{"MerchantRequestID":"c7e4-42c0-b476-32053384902b25505","CheckoutRequestID":"ws_CO_310720250222590708374149","ResultCode":1037,"ResultDesc":"DS timeout user cannot be reached"}}}
+Raw Body: {"Body":{"stkCallback":{"MerchantRequestID":"c7e4-42c0-b476-32053384902b25505","CheckoutRequestID":"ws_CO_310720250222590708374149","ResultCode":1037,"ResultDesc":"DS timeout user cannot be reached"}}}
+---
+[2025-07-30 23:23:45] M-PESA CALLBACK RECEIVED
+Method: POST
+URL: http://8b3f0f9bf8d5.ngrok-free.app/api/mpesa/callback
+Headers: {"host":["8b3f0f9bf8d5.ngrok-free.app"],"user-agent":["ReactorNetty\/1.2.7"],"content-length":["192"],"accept":["*\/*"],"content-type":["application\/json;charset=UTF-8"],"x-forwarded-for":["196.201.212.138"],"x-forwarded-host":["8b3f0f9bf8d5.ngrok-free.app"],"x-forwarded-proto":["https"],"accept-encoding":["gzip"]}
+Query Params: []
+Body: {"Body":{"stkCallback":{"MerchantRequestID":"df2b-4546-bd46-7ed17f22e0b56172","CheckoutRequestID":"ws_CO_310720250223279111383064","ResultCode":1032,"ResultDesc":"Request Cancelled by user"}}}
+Raw Body: {"Body":{"stkCallback":{"MerchantRequestID":"df2b-4546-bd46-7ed17f22e0b56172","CheckoutRequestID":"ws_CO_310720250223279111383064","ResultCode":1032,"ResultDesc":"Request Cancelled by user"}}}
+---
+[2025-07-31 00:28:10] M-PESA CALLBACK RECEIVED
+Method: POST
+URL: http://8b3f0f9bf8d5.ngrok-free.app/api/mpesa/callback
+Headers: {"host":["8b3f0f9bf8d5.ngrok-free.app"],"user-agent":["ReactorNetty\/1.2.7"],"content-length":["192"],"accept":["*\/*"],"content-type":["application\/json;charset=UTF-8"],"x-forwarded-for":["196.201.212.69"],"x-forwarded-host":["8b3f0f9bf8d5.ngrok-free.app"],"x-forwarded-proto":["https"],"accept-encoding":["gzip"]}
+Query Params: []
+Body: {"Body":{"stkCallback":{"MerchantRequestID":"c673-495c-a417-9fe538db51924253","CheckoutRequestID":"ws_CO_310720250327566111383064","ResultCode":1032,"ResultDesc":"Request Cancelled by user"}}}
+Raw Body: {"Body":{"stkCallback":{"MerchantRequestID":"c673-495c-a417-9fe538db51924253","CheckoutRequestID":"ws_CO_310720250327566111383064","ResultCode":1032,"ResultDesc":"Request Cancelled by user"}}}
+---
+[2025-07-31 00:29:27] M-PESA CALLBACK RECEIVED
+Method: POST
+URL: http://8b3f0f9bf8d5.ngrok-free.app/api/mpesa/callback
+Headers: {"host":["8b3f0f9bf8d5.ngrok-free.app"],"user-agent":["ReactorNetty\/1.2.7"],"content-length":["192"],"accept":["*\/*"],"content-type":["application\/json;charset=UTF-8"],"x-forwarded-for":["196.201.212.69"],"x-forwarded-host":["8b3f0f9bf8d5.ngrok-free.app"],"x-forwarded-proto":["https"],"accept-encoding":["gzip"]}
+Query Params: []
+Body: {"Body":{"stkCallback":{"MerchantRequestID":"c9aa-485e-a88a-be3f936aa2bc6686","CheckoutRequestID":"ws_CO_310720250329138111383064","ResultCode":1032,"ResultDesc":"Request Cancelled by user"}}}
+Raw Body: {"Body":{"stkCallback":{"MerchantRequestID":"c9aa-485e-a88a-be3f936aa2bc6686","CheckoutRequestID":"ws_CO_310720250329138111383064","ResultCode":1032,"ResultDesc":"Request Cancelled by user"}}}
+---

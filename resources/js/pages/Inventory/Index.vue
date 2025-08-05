@@ -4,6 +4,7 @@ import { ref, computed, onMounted } from 'vue';
 import Swal from 'sweetalert2';
 
 import AppLayout from '@/layouts/AppLayout.vue';
+import PageHeader from '@/components/ui/PageHeader.vue';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -126,20 +127,14 @@ const handleDelete = async (id: number) => {
 
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
-        <template #header>
-            <div class="flex justify-between items-center">
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                    Inventory
-                </h2>
-                <Link
-                    v-if="isAdmin || isOwner"
-                    :href="'/inventory/create'"
-                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                >
-                    Add Inventory
-                </Link>
-            </div>
-        </template>
+        <PageHeader 
+            title="Inventory"
+            :button="{
+                text: 'Add Inventory',
+                link: '/inventory/create',
+                show: isAdmin || isOwner
+            }"
+        />
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">

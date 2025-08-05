@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { Head, Link, useForm, router, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
+import PageHeader from '@/components/ui/PageHeader.vue';
 import { 
   Plus, 
   Search, 
@@ -693,16 +694,16 @@ watch(
   <AppLayout>
     <Head title="User Management" />
 
-    <template #header>
-      <div class="flex justify-between items-center">
-        <div>
-          <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            User Management
-          </h2>
-          <p class="text-sm text-gray-600 mt-1">
-            Manage system users, roles, and permissions
-          </p>
-        </div>
+    <PageHeader 
+      title="User Management"
+      :button="{
+        text: 'Add User',
+        link: '#',
+        icon: Plus,
+        show: true
+      }"
+    >
+      <template #actions>
         <button
           @click="openCreateModal"
           class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
@@ -710,8 +711,8 @@ watch(
           <Plus class="w-4 h-4 mr-2" />
           Add User
         </button>
-      </div>
-    </template>
+      </template>
+    </PageHeader>
 
     <div class="py-12">
       <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">

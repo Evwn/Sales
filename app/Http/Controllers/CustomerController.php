@@ -13,12 +13,21 @@ class CustomerController extends Controller
     {
         \Log::info('Customer creation request received', $request->all());
         
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'required|string|max:255',
-            'address' => 'nullable|string',
-        ]);
+        try {
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'nullable|email|max:255',
+                'phone' => 'required|string|max:255',
+                'address' => 'nullable|string',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Validation failed', ['errors' => $e->errors()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        }
 
         $user = Auth::user();
         \Log::info('User authenticated', ['user_id' => $user->id, 'business_id' => $user->business_id, 'branch_id' => $user->branch_id]);
@@ -42,7 +51,11 @@ class CustomerController extends Controller
                 'customer' => $customer
             ]);
         } catch (\Exception $e) {
-            \Log::error('Failed to create customer', ['error' => $e->getMessage()]);
+            \Log::error('Failed to create customer', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create customer. Please try again.',

@@ -64,7 +64,7 @@ class SaleController extends Controller
                         'reference' => $sale->reference,
                         'total_amount' => $sale->amount,
                         'created_at' => $sale->sale_date ? $sale->sale_date->format('Y-m-d H:i:s') : $sale->created_at->format('Y-m-d H:i:s'),
-                        'payment_method' => $sale->payment_method,
+                        'payment_methods' => $sale->payment_methods,
                         'seller' => [
                             'id' => $sale->seller?->id,
                             'name' => $sale->seller?->name
@@ -104,7 +104,8 @@ class SaleController extends Controller
             'business_id' => 'required|exists:businesses,id',
             'branch_id' => 'required|exists:branches,id',
             'total_amount' => 'required|numeric|min:0',
-            'payment_method' => 'required|string|in:cash,card,mpesa',
+            'payment_methods' => 'required|array',
+            'payment_methods.*' => 'required|string|in:cash,card,mpesa',
             'items' => 'required|array',
             'items.*.product.id' => 'required|exists:products,id',
             'items.*.product.name' => 'required|string',
@@ -157,7 +158,7 @@ class SaleController extends Controller
                 'receipt_barcode' => $receipt->barcode,
                 'created_at' => $sale->created_at,
                 'total_amount' => $sale->amount,
-                'payment_method' => $sale->payment_method,
+                'payment_methods' => $sale->payment_methods,
                 'status' => $sale->status,
                 'seller' => [
                     'id' => $sale->seller->id,
@@ -233,7 +234,7 @@ class SaleController extends Controller
                 'reference' => $sale->reference,
                 'created_at' => $sale->created_at,
                 'total_amount' => $sale->amount,
-                'payment_method' => $sale->payment_method,
+                'payment_methods' => $sale->payment_methods,
                 'status' => $sale->status,
                 'seller' => [
                     'id' => $sale->seller->id,
@@ -306,13 +307,14 @@ class SaleController extends Controller
             'products.*.id' => 'required|exists:products,id',
             'products.*.quantity' => 'required|integer|min:1',
             'total_amount' => 'required|numeric|min:0',
-            'payment_method' => 'required|string|in:cash,card',
+            'payment_methods' => 'required|array',
+            'payment_methods.*' => 'required|string|in:cash,card',
             'notes' => 'nullable|string',
         ]);
 
         $sale->update([
             'total_amount' => $validated['total_amount'],
-            'payment_method' => $validated['payment_method'],
+            'payment_methods' => $validated['payment_methods'],
             'notes' => $validated['notes'] ?? null,
         ]);
 
@@ -372,7 +374,7 @@ class SaleController extends Controller
                         'reference' => $sale->reference,
                         'total_amount' => $sale->amount,
                         'created_at' => $sale->sale_date ? $sale->sale_date->format('Y-m-d H:i:s') : $sale->created_at->format('Y-m-d H:i:s'),
-                        'payment_method' => $sale->payment_method,
+                        'payment_methods' => $sale->payment_methods,
                         'seller' => $sale->seller ? [
                             'id' => $sale->seller->id,
                             'name' => $sale->seller->name
@@ -699,7 +701,7 @@ class SaleController extends Controller
                 'reference' => $sale->reference,
                 'created_at' => $sale->created_at,
                 'total_amount' => $sale->amount,
-                'payment_method' => $sale->payment_method,
+                'payment_methods' => $sale->payment_methods,
                 'status' => $sale->status,
                 'seller' => $sale->seller ? [
                     'id' => $sale->seller->id,

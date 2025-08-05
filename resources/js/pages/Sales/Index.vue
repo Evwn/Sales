@@ -2,6 +2,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
+import PageHeader from '@/components/ui/PageHeader.vue';
 import { Button } from '@/components/ui/button';
 import Pagination from '@/components/Pagination.vue';
 import type { BreadcrumbItemType } from '@/types';
@@ -114,11 +115,7 @@ const handleView = (sale) => {
 
 <template>
     <AppLayout title="Sales">
-        <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    Sales
-                </h2>
-        </template>
+        <PageHeader title="Sales" />
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">

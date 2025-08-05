@@ -56,10 +56,17 @@ class Handler extends ExceptionHandler
             ? $exception->getStatusCode()
             : 500;
 
+        // For 403 errors, return a proper Inertia response
+        if ($status === 403) {
+            return Inertia::render('Error/Forbidden', [
+                'status' => 403,
+                'message' => $exception->getMessage() ?: 'Access denied',
+            ], $status);
+        }
+
         $errorPages = [
             400 => 'Error/BadRequest',
             401 => 'Error/Unauthorized',
-            403 => 'Error/Forbidden',
             404 => 'Error/NotFound',
             405 => 'Error/BadRequest',
             419 => 'Error/Expired',
@@ -77,13 +84,15 @@ class Handler extends ExceptionHandler
             ], $status);
         }
 
+        // For all other errors, return proper Inertia responses
         if (isset($errorPages[$status])) {
             return Inertia::render($errorPages[$status], [
                 'status' => $status,
                 'message' => $exception->getMessage(),
-            ])->toResponse($request)->setStatusCode($status);
+            ], $status);
         }
 
+        // Fallback to parent render for unhandled errors
         return parent::render($request, $exception);
     }
 } 

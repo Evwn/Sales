@@ -1,6 +1,5 @@
 <template>
-  <AppLayout>
-    <div class="p-6">
+  <AppLayout title="Purchases">
       <PageHeader title="Purchases" :button="{ text: 'Add Purchase', link: '/purchases/create' }" />
       <div class="flex flex-wrap gap-4 mb-6">
         <div class="flex-1">
@@ -58,7 +57,6 @@
           </tbody>
         </table>
       </div>
-    </div>
   </AppLayout>
 </template>
 <script setup>

@@ -1,25 +1,9 @@
 <template>
   <AppLayout title="Businesses">
-    <template #header>
-      <div class="flex justify-between items-center px-4 sm:px-6 lg:px-8">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-          Businesses
-        </h2>
-        <Link
-          href="/businesses/create"
-          class="inline-flex items-center px-4 py-2 bg-gray-800 dark:bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-white dark:text-gray-800 uppercase tracking-widest hover:bg-gray-700 dark:hover:bg-white focus:bg-gray-700 dark:focus:bg-white active:bg-gray-900 dark:active:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150"
-          >
-          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          Create Business
-        </Link>
-      </div>
-    </template>
-
+    <PageHeader title="Businesses" :button="{ text: 'Create Business', link: '/businesses/create',icon:AddIcon }" />
     <div class="py-12">
       <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+        <div class="bg-[#B76E79]/80 backdrop-blur-md dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
           <div class="p-6">
             <div v-if="businesses.length === 0" class="text-center py-12">
               <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -41,7 +25,7 @@
               <div
                 v-for="business in businesses"
                 :key="business.id"
-                class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg"
+                class="bg-white/60 backdrop-blur-sm dark:bg-gray-800 overflow-hidden shadow rounded-lg"
               >
                 <div class="p-6">
                   <div class="flex items-center">
@@ -92,7 +76,7 @@
                     </Link>
                     <Link
                       :href="`/businesses/${business.id}`"
-                      class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                      class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-grey-800 bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                     >
                       View Details
                     </Link>
@@ -110,6 +94,9 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
+import PageHeader from '@/components/ui/PageHeader.vue';
+import AddIcon from '@/components/AddIcon.vue';
+import Show from './Show.vue';
 
 defineProps({
   businesses: {

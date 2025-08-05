@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
+import PageHeader from '@/components/ui/PageHeader.vue';
 import type { BreadcrumbItemType } from '@/types';
 
 const breadcrumbs: BreadcrumbItemType[] = [
@@ -13,11 +14,7 @@ const breadcrumbs: BreadcrumbItemType[] = [
 
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
-        <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Branches
-            </h2>
-        </template>
+        <PageHeader title="Branches" />
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">

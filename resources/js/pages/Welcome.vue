@@ -34,9 +34,10 @@ onMounted(() => {
 </script>
 
 <template>
-    <Head title="Welcome" />
-
-    <div class="relative min-h-screen bg-gray-100 dark:bg-gray-900">
+    <div class="background min-h-screen bg-cover bg-center bg-white/40 backdrop-blur-md overflow-hidden">
+        <Head title="Welcome" />
+        <div class=" min-h-screen flex items">
+    <div class="relative min-h-screen bg-white/40 backdrop-blur-sm p-4 rounded text-white">
         <div v-if="canLogin" class="p-6 text-center">
             <template>
                 <Link href="/login"
@@ -70,7 +71,7 @@ onMounted(() => {
 
                 <div class="mt-16">
                     <div class="grid grid-cols-1 gap-6 lg:gap-8">
-                        <div class="scale-100 p-6 bg-white dark:bg-gray-800/50 dark:bg-gradient-to-bl from-gray-700/50 via-transparent dark:ring-1 dark:ring-inset dark:ring-white/5 rounded-lg shadow-2xl shadow-gray-500/20 dark:shadow-none flex">
+                        <div class="scale-100 p-6 bg-white/80 backdrop-blur-sm rounded text-white dark:bg-gray-800/50 ">
                             <div>
                                 <h2 class="mt-6 text-xl font-semibold text-gray-900 dark:text-white">Welcome to Sales Management</h2>
                                 <p class="mt-4 text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
@@ -78,17 +79,17 @@ onMounted(() => {
                                 </p>
                                 <div class="mt-4 flex items-center">
                                     <div class="text-sm">
-                                        <Link href="/login" class="font-medium text-primary-600 hover:text-primary-500">
+                                        <Link href="/login" class="font-bold text-black hover:text-primary-500">
                                             Log in to your account
                                         </Link>
                                         <span class="text-gray-500"> to get started.</span>
-                                        <Link href="/register" class="font-medium text-primary-600 hover:text-primary-500">
+                                        <Link href="/register" class="font-bold text-black hover:text-primary-500">
                                             create a new account
                                         </Link>
                                         <span class="text-gray-500"> to get started</span>
                                         <span v-if="!showPOS" class="text-gray-500">. </span>
                                         <span v-if="showPOS" class="text-gray-500"> or go to</span>
-                                        <Link v-if="showPOS" href="/pos" class="font-medium text-primary-600 hover:text-primary-500">
+                                        <Link v-if="showPOS" href="/pos" class="font-bold text-black hover:text-primary-500">
                                             POS
                                         </Link>
                                     </div>
@@ -101,8 +102,24 @@ onMounted(() => {
         </div>
         <!-- Remove the floating POS button -->
     </div>
+        </div>
+    </div>
 </template>
+<style scoped>
+.background{
+    background-image: url('/images/Background.png');
+    background-size: cover;
+    background-position: center;
+    height: 100vb;
+    color: rgb(12, 2, 2);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
 
+}
+</style>
 <script lang="ts">
 export default {};
 </script>

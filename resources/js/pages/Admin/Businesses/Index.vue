@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
+import PageHeader from '@/components/ui/PageHeader.vue';
 import { 
   Building, 
   MapPin, 
@@ -109,16 +110,15 @@ const getStatusColor = (business: Business) => {
   <AppLayout>
     <Head title="Admin - All Businesses" />
 
-    <template #header>
-      <div class="flex justify-between items-center">
-        <div>
-          <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            All Businesses
-          </h2>
-          <p class="text-sm text-gray-600 mt-1">
-            View and manage all businesses in the system
-          </p>
-        </div>
+    <PageHeader 
+      title="All Businesses"
+      :button="{
+        text: 'Create Business',
+        link: '/businesses/create',
+        show: true
+      }"
+    >
+      <template #actions>
         <Link
           href="/businesses/create"
           class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
@@ -126,8 +126,8 @@ const getStatusColor = (business: Business) => {
           <span class="mr-2">+</span>
           Create Business
         </Link>
-      </div>
-    </template>
+      </template>
+    </PageHeader>
 
     <div class="py-12">
       <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">

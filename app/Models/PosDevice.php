@@ -18,6 +18,8 @@ class PosDevice extends Model
         'registered_by',
         'registered_at',
         'last_seen_at',
+        'attempts',
+        'is_disabled',
     ];
 
     public $timestamps = false;
@@ -25,6 +27,11 @@ class PosDevice extends Model
     protected $dates = [
         'registered_at',
         'last_seen_at',
+    ];
+
+    protected $casts = [
+        'is_disabled' => 'boolean',
+        'attempts' => 'integer',
     ];
 
     public function business()

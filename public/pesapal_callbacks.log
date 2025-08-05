@@ -1,0 +1,70 @@
+[2025-07-30 15:21:28] API CALLBACK RECEIVED (GET)
+Method: GET
+URL: http://e388a15b56b3.ngrok-free.app/api/pesapal/callback?OrderMerchantReference=test-merchant-ref-456&OrderNotificationType=IPNCHANGE&OrderTrackingId=test-tracking-id-123
+Headers: {"host":["e388a15b56b3.ngrok-free.app"],"accept":["*\/*"],"x-forwarded-for":["154.155.193.80"],"x-forwarded-host":["e388a15b56b3.ngrok-free.app"],"x-forwarded-proto":["https"],"accept-encoding":["gzip"]}
+Query Params: {"OrderTrackingId":"test-tracking-id-123","OrderMerchantReference":"test-merchant-ref-456","OrderNotificationType":"IPNCHANGE"}
+---
+[2025-07-30 15:21:30] API CALLBACK RECEIVED
+Method: POST
+URL: http://e388a15b56b3.ngrok-free.app/api/pesapal/callback
+Headers: {"host":["e388a15b56b3.ngrok-free.app"],"content-length":["155"],"accept":["application\/json"],"content-type":["application\/json"],"x-forwarded-for":["154.155.193.80"],"x-forwarded-host":["e388a15b56b3.ngrok-free.app"],"x-forwarded-proto":["https"],"accept-encoding":["gzip"]}
+Query Params: []
+Body: {"OrderTrackingId":"test-tracking-id-789","OrderMerchantReference":"test-merchant-ref-012","OrderNotificationType":"IPNCHANGE","PaymentStatus":"COMPLETED"}
+Raw Body: {"OrderTrackingId":"test-tracking-id-789","OrderMerchantReference":"test-merchant-ref-012","OrderNotificationType":"IPNCHANGE","PaymentStatus":"COMPLETED"}
+---
+[2025-07-30 15:23:38] API CALLBACK RECEIVED (GET)
+Method: GET
+URL: http://e388a15b56b3.ngrok-free.app/api/pesapal/callback?OrderMerchantReference=test-merchant-ref-456&OrderNotificationType=IPNCHANGE&OrderTrackingId=test-tracking-id-123
+Headers: {"host":["e388a15b56b3.ngrok-free.app"],"accept":["*\/*"],"x-forwarded-for":["154.155.193.80"],"x-forwarded-host":["e388a15b56b3.ngrok-free.app"],"x-forwarded-proto":["https"],"accept-encoding":["gzip"]}
+Query Params: {"OrderTrackingId":"test-tracking-id-123","OrderMerchantReference":"test-merchant-ref-456","OrderNotificationType":"IPNCHANGE"}
+---
+[2025-07-30 15:23:40] API CALLBACK RECEIVED
+Method: POST
+URL: http://e388a15b56b3.ngrok-free.app/api/pesapal/callback
+Headers: {"host":["e388a15b56b3.ngrok-free.app"],"content-length":["155"],"accept":["application\/json"],"content-type":["application\/json"],"x-forwarded-for":["154.155.193.80"],"x-forwarded-host":["e388a15b56b3.ngrok-free.app"],"x-forwarded-proto":["https"],"accept-encoding":["gzip"]}
+Query Params: []
+Body: {"OrderTrackingId":"test-tracking-id-789","OrderMerchantReference":"test-merchant-ref-012","OrderNotificationType":"IPNCHANGE","PaymentStatus":"COMPLETED"}
+Raw Body: {"OrderTrackingId":"test-tracking-id-789","OrderMerchantReference":"test-merchant-ref-012","OrderNotificationType":"IPNCHANGE","PaymentStatus":"COMPLETED"}
+---
+[2025-07-30 15:25:37] API CALLBACK RECEIVED (GET)
+Method: GET
+URL: http://e388a15b56b3.ngrok-free.app/api/pesapal/callback?OrderMerchantReference=test-merchant-ref-456&OrderNotificationType=IPNCHANGE&OrderTrackingId=test-tracking-id-123
+Headers: {"host":["e388a15b56b3.ngrok-free.app"],"accept":["*\/*"],"x-forwarded-for":["154.155.193.80"],"x-forwarded-host":["e388a15b56b3.ngrok-free.app"],"x-forwarded-proto":["https"],"accept-encoding":["gzip"]}
+Query Params: {"OrderTrackingId":"test-tracking-id-123","OrderMerchantReference":"test-merchant-ref-456","OrderNotificationType":"IPNCHANGE"}
+---
+[2025-07-30 15:25:39] API CALLBACK RECEIVED
+Method: POST
+URL: http://e388a15b56b3.ngrok-free.app/api/pesapal/callback
+Headers: {"host":["e388a15b56b3.ngrok-free.app"],"content-length":["155"],"accept":["application\/json"],"content-type":["application\/json"],"x-forwarded-for":["154.155.193.80"],"x-forwarded-host":["e388a15b56b3.ngrok-free.app"],"x-forwarded-proto":["https"],"accept-encoding":["gzip"]}
+Query Params: []
+Body: {"OrderTrackingId":"test-tracking-id-789","OrderMerchantReference":"test-merchant-ref-012","OrderNotificationType":"IPNCHANGE","PaymentStatus":"COMPLETED"}
+Raw Body: {"OrderTrackingId":"test-tracking-id-789","OrderMerchantReference":"test-merchant-ref-012","OrderNotificationType":"IPNCHANGE","PaymentStatus":"COMPLETED"}
+---
+[2025-07-30 15:27:34] API CALLBACK RECEIVED (GET)
+Method: GET
+URL: http://e388a15b56b3.ngrok-free.app/api/pesapal/callback?OrderMerchantReference=test-merchant-ref-456&OrderNotificationType=IPNCHANGE&OrderTrackingId=test-tracking-id-123
+Headers: {"host":["e388a15b56b3.ngrok-free.app"],"accept":["*\/*"],"x-forwarded-for":["154.155.193.80"],"x-forwarded-host":["e388a15b56b3.ngrok-free.app"],"x-forwarded-proto":["https"],"accept-encoding":["gzip"]}
+Query Params: {"OrderTrackingId":"test-tracking-id-123","OrderMerchantReference":"test-merchant-ref-456","OrderNotificationType":"IPNCHANGE"}
+---
+[2025-07-30 15:27:36] API CALLBACK RECEIVED
+Method: POST
+URL: http://e388a15b56b3.ngrok-free.app/api/pesapal/callback
+Headers: {"host":["e388a15b56b3.ngrok-free.app"],"content-length":["155"],"accept":["application\/json"],"content-type":["application\/json"],"x-forwarded-for":["154.155.193.80"],"x-forwarded-host":["e388a15b56b3.ngrok-free.app"],"x-forwarded-proto":["https"],"accept-encoding":["gzip"]}
+Query Params: []
+Body: {"OrderTrackingId":"test-tracking-id-789","OrderMerchantReference":"test-merchant-ref-012","OrderNotificationType":"IPNCHANGE","PaymentStatus":"COMPLETED"}
+Raw Body: {"OrderTrackingId":"test-tracking-id-789","OrderMerchantReference":"test-merchant-ref-012","OrderNotificationType":"IPNCHANGE","PaymentStatus":"COMPLETED"}
+---
+[2025-07-30 15:29:19] API CALLBACK RECEIVED (GET)
+Method: GET
+URL: http://e388a15b56b3.ngrok-free.app/api/pesapal/callback?OrderMerchantReference=test-merchant-ref-456&OrderNotificationType=IPNCHANGE&OrderTrackingId=test-tracking-id-123
+Headers: {"host":["e388a15b56b3.ngrok-free.app"],"accept":["*\/*"],"x-forwarded-for":["154.155.193.80"],"x-forwarded-host":["e388a15b56b3.ngrok-free.app"],"x-forwarded-proto":["https"],"accept-encoding":["gzip"]}
+Query Params: {"OrderTrackingId":"test-tracking-id-123","OrderMerchantReference":"test-merchant-ref-456","OrderNotificationType":"IPNCHANGE"}
+---
+[2025-07-30 15:29:21] API CALLBACK RECEIVED
+Method: POST
+URL: http://e388a15b56b3.ngrok-free.app/api/pesapal/callback
+Headers: {"host":["e388a15b56b3.ngrok-free.app"],"content-length":["155"],"accept":["application\/json"],"content-type":["application\/json"],"x-forwarded-for":["154.155.193.80"],"x-forwarded-host":["e388a15b56b3.ngrok-free.app"],"x-forwarded-proto":["https"],"accept-encoding":["gzip"]}
+Query Params: []
+Body: {"OrderTrackingId":"test-tracking-id-789","OrderMerchantReference":"test-merchant-ref-012","OrderNotificationType":"IPNCHANGE","PaymentStatus":"COMPLETED"}
+Raw Body: {"OrderTrackingId":"test-tracking-id-789","OrderMerchantReference":"test-merchant-ref-012","OrderNotificationType":"IPNCHANGE","PaymentStatus":"COMPLETED"}
+---

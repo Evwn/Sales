@@ -22,4 +22,16 @@ class ItemComponent extends Model
     {
         return $this->belongsTo(ItemVariant::class, 'component_variant_id');
     }
+    public function stockItem($locationId)
+    {
+        return StockItem::where('location_id', $locationId)
+            ->where('item_id', $this->component_item_id)
+            ->where(function ($query) {
+                if ($this->component_variant_id) {
+                    $query->where('variant_id', $this->component_variant_id);
+                } else {
+                    $query->whereNull('variant_id');
+                }
+            })->first();
+    }
 } 

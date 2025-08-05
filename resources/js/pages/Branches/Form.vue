@@ -1,5 +1,5 @@
 <template>
-  <form @submit.prevent="submit" class="space-y-6">
+  <form @submit.prevent="submit" class="space-y-6 bg-[#B76E79]/10 backdrop-blur-md">
     <div>
       <InputLabel for="name" value="Branch Name" />
       <TextInput

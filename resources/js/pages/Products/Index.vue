@@ -4,6 +4,7 @@ import { computed } from 'vue';
 import Swal from 'sweetalert2';
 
 import AppLayout from '@/layouts';
+import PageHeader from '@/components/ui/PageHeader.vue';
 import {
     Table,
     TableBody,
@@ -93,13 +94,7 @@ const removeProduct = (product) => {
     <AppLayout>
         <Head title="Inventory" />
 
-        <template #header>
-            <div class="flex justify-between items-center">
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                    Inventory
-                </h2>
-            </div>
-        </template>
+        <PageHeader title="Inventory" />
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">

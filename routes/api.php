@@ -1,21 +1,64 @@
 <?php
 
-use App\Http\Controllers\AIAssistantController;
-use App\Http\Middleware\AIQueryScope;
-use App\Http\Controllers\AIChatController;
-use App\Http\Controllers\SellerChatController;
-use App\Http\Controllers\BranchController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth:sanctum', AIQueryScope::class])->post('/ai-assistant', [AIAssistantController::class, 'handle']);
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "api" middleware group. Make something great!
+|
+*/
 
-Route::middleware(['auth:sanctum'])->group(function () {
-    Route::get('/ai-chat/history', [AIChatController::class, 'history']);
-    Route::post('/ai-chat/send', [AIChatController::class, 'send']);
-    // Seller chat endpoints
-    Route::get('/seller-chat/{sellerId}/history', [SellerChatController::class, 'history']);
-    Route::post('/seller-chat/{sellerId}/send', [SellerChatController::class, 'send']);
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return $request->user();
+});
+
+// PesaPal API routes (no CSRF protection)
+Route::prefix('pesapal')->group(function () {
+    Route::post('/callback', function(Request $request) {
+        $timestamp = date('Y-m-d H:i:s');
+        $log_entry = "[{$timestamp}] API CALLBACK RECEIVED\n";
+        $log_entry .= "Method: " . $request->method() . "\n";
+        $log_entry .= "URL: " . $request->fullUrl() . "\n";
+        $log_entry .= "Headers: " . json_encode($request->headers->all()) . "\n";
+        $log_entry .= "Query Params: " . json_encode($request->query->all()) . "\n";
+        $log_entry .= "Body: " . json_encode($request->all()) . "\n";
+        $log_entry .= "Raw Body: " . $request->getContent() . "\n";
+        $log_entry .= "---\n";
+        
+        file_put_contents('pesapal_callbacks.log', $log_entry, FILE_APPEND);
+        
+        return response()->json(['status' => 'success', 'message' => 'Callback received']);
+    });
     
-    // Admin branch details
-    Route::get('/admin/branches/{branch}', [BranchController::class, 'adminShowApi']);
-    Route::get('/suppliers/{supplier}/items', [App\Http\Controllers\SupplierController::class, 'items']);
-}); 
+    Route::get('/callback', function(Request $request) {
+        $timestamp = date('Y-m-d H:i:s');
+        $log_entry = "[{$timestamp}] API CALLBACK RECEIVED (GET)\n";
+        $log_entry .= "Method: " . $request->method() . "\n";
+        $log_entry .= "URL: " . $request->fullUrl() . "\n";
+        $log_entry .= "Headers: " . json_encode($request->headers->all()) . "\n";
+        $log_entry .= "Query Params: " . json_encode($request->query->all()) . "\n";
+        $log_entry .= "---\n";
+        
+        file_put_contents('pesapal_callbacks.log', $log_entry, FILE_APPEND);
+        
+        return response()->json(['status' => 'success', 'message' => 'Callback received']);
+    });
+});
+
+// M-PESA API routes (no CSRF protection)
+Route::prefix('mpesa')->group(function () {
+    Route::post('/callback', [\App\Http\Controllers\Settings\PaymentTypesController::class, 'callback']);
+Route::get('/callback', function(Request $request) {
+    return response()->json(['status' => 'success', 'message' => 'M-PESA callback endpoint is working']);
+});
+
+  // POS M-PESA Callback Routes
+  Route::post('/pos/mpesa/callback', [\App\Http\Controllers\POSMpesaController::class, 'handleCallback']);
+  Route::post('/pos/mpesa/callback/business-{businessId}-branch-{branchId}', [\App\Http\Controllers\POSMpesaController::class, 'handleCallback']);
+  });

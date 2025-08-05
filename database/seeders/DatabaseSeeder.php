@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             LocationTypeSeeder::class,
             DefaultCustomerSeeder::class,
+            BranchMpesaCredentialSeeder::class,
         ]);
     }
 } 

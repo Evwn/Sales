@@ -39,10 +39,26 @@ Route::redirect('settings/profile', '/settings/profile');
     })->name('settings.billing');
 
     // Payment Types
-    Route::get('settings/payment-types', function () {
-        return Inertia::render('settings/PaymentTypes');
-    })->name('settings.payment-types');
+    Route::get('settings/payment-types', [\App\Http\Controllers\Settings\PaymentTypesController::class, 'index'])->name('settings.payment-types');
+    Route::post('settings/payment-types', [\App\Http\Controllers\Settings\PaymentTypesController::class, 'store'])->name('settings.payment-types.store');
+    Route::post('settings/payment-types/test-mpesa', [\App\Http\Controllers\Settings\PaymentTypesController::class, 'testMpesaCredentials'])->name('settings.payment-types.test-mpesa');
+    Route::post('settings/payment-types/save-mpesa', [\App\Http\Controllers\Settings\PaymentTypesController::class, 'saveMpesaCredentials'])->name('settings.payment-types.save-mpesa');
+    Route::post('settings/payment-types/get-branches', [\App\Http\Controllers\Settings\PaymentTypesController::class, 'getBranches'])->name('settings.payment-types.get-branches');
+    Route::post('settings/payment-types/select-business', [\App\Http\Controllers\Settings\PaymentTypesController::class, 'selectBusiness'])->name('settings.payment-types.select-business');
+    Route::post('settings/payment-types/select-branch', [\App\Http\Controllers\Settings\PaymentTypesController::class, 'selectBranch'])->name('settings.payment-types.select-branch');
+Route::post('settings/payment-types/get-credentials', [\App\Http\Controllers\Settings\PaymentTypesController::class, 'getCredentials'])->name('settings.payment-types.get-credentials');
 
+Route::get('settings/payment-types/callback-urls', [\App\Http\Controllers\Settings\PaymentTypesController::class, 'getCallbackUrls'])->name('settings.payment-types.callback-urls');
+Route::put('settings/payment-types/callback-urls/{id}', [\App\Http\Controllers\Settings\PaymentTypesController::class, 'updateCallbackUrl'])->name('settings.payment-types.update-callback-url');
+Route::get('settings/payment-types/callback-responses', [\App\Http\Controllers\Settings\PaymentTypesController::class, 'getCallbackResponses'])->name('settings.payment-types.callback-responses');
+Route::post('settings/payment-types/query-payment-status', [\App\Http\Controllers\Settings\PaymentTypesController::class, 'queryPaymentStatus'])->name('settings.payment-types.query-payment-status');
+Route::post('settings/payment-types/clear-callback-cache', [\App\Http\Controllers\Settings\PaymentTypesController::class, 'clearCallbackCache'])->name('settings.payment-types.clear-callback-cache');
+});
+
+// M-PESA Callback Route (outside auth middleware - external webhook)
+Route::post('settings/payment-types/callback', [\App\Http\Controllers\Settings\PaymentTypesController::class, 'callback'])->name('settings.payment-types.callback');
+
+Route::middleware('auth')->group(function () {
     // Loyalty
     Route::get('settings/loyalty', function () {
         return Inertia::render('settings/Loyalty');

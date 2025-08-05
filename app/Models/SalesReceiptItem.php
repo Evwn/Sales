@@ -13,9 +13,7 @@ class SalesReceiptItem extends Model
 
     protected $fillable = [
         'sales_receipt_id',
-        'product_id',
-        'product_name',
-        'product_barcode',
+        'stock_item_id',
         'quantity',
         'unit_price',
         'subtotal',
@@ -50,8 +48,8 @@ class SalesReceiptItem extends Model
         return $this->belongsTo(SalesReceipt::class);
     }
 
-    public function product(): BelongsTo
+    public function stockItem(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(StockItem::class);
     }
 } 

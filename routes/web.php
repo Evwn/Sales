@@ -38,6 +38,7 @@ use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\CashDrawerMovementController;
 use App\Http\Controllers\TimeClockController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\Auth\PosLoginController;
 
 /*
 |--------------------------------------------------------------------------
@@ -326,16 +327,37 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::cla
     Route::get('/employers/roles/create', [\App\Http\Controllers\EmployerController::class, 'createRole'])->name('employers.roles.create');
 });
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/pos', [\App\Http\Controllers\POSController::class, 'index'])->name('pos.index');
-});
+// POS routes - handle authentication redirects
 Route::get('/pos', function () {
+    // If user is authenticated and has POS access, redirect to dashboard
+    if (Auth::check() && session('pos_login')) {
+        return redirect('/pos/dashboard');
+    }
+    // Otherwise show login page
     return Inertia::render('POS/Login');
 })->name('pos.login');
-Route::post('/pos/login', [\App\Http\Controllers\POSController::class, 'loginWithPin'])->name('pos.loginWithPin');
-Route::post('/pos/verify-pin', [\App\Http\Controllers\POSController::class, 'verifyPin']);
 
-Route::middleware(['auth', 'verified'])->get('/pos/dashboard', [POSController::class, 'index'])->name('pos.dashboard');
+// POS login routes (for unauthenticated users)
+Route::post('/pos/login', [PosLoginController::class, 'login']);
+Route::post('/pos/logout', [PosLoginController::class, 'logout'])->name('pos.logout');
+
+// POS area (requires POS login)
+Route::prefix('pos')->middleware(['auth', 'pos.only'])->group(function () {
+    Route::get('/dashboard', [\App\Http\Controllers\POSController::class, 'index']);
+    Route::post('/verify-pin', [\App\Http\Controllers\POSController::class, 'verifyPin']);
+    Route::post('/ticket/store', [\App\Http\Controllers\POSController::class, 'storeTicket'])->name('pos.ticket.store');
+    Route::get('/ticket/{id}', [\App\Http\Controllers\POSController::class, 'getTicket'])->name('pos.ticket.get');
+    Route::post('/ticket/{id}/update-payment', [\App\Http\Controllers\POSController::class, 'updateTicketPayment'])->name('pos.ticket.update-payment');
+    Route::post('/ticket/{id}/update', [\App\Http\Controllers\POSController::class, 'updateTicket'])->name('pos.ticket.update');
+    Route::get('/tickets/active', [\App\Http\Controllers\POSController::class, 'listActiveTickets'])->name('pos.tickets.active');
+    Route::post('/ticket/{id}/convert-to-sale', [\App\Http\Controllers\POSController::class, 'convertTicketToSale'])->name('pos.ticket.convert-to-sale');
+
+// POS M-PESA Routes
+Route::post('/mpesa/initiate', [\App\Http\Controllers\POSMpesaController::class, 'initiateStkPush'])->name('pos.mpesa.initiate');
+Route::post('/mpesa/check-status', [\App\Http\Controllers\POSMpesaController::class, 'checkPaymentStatus'])->name('pos.mpesa.check-status');
+Route::get('/mpesa/credentials', [\App\Http\Controllers\POSMpesaController::class, 'getCredentials'])->name('pos.mpesa.credentials');
+Route::get('/mpesa/test-session', [\App\Http\Controllers\POSMpesaController::class, 'testSession'])->name('pos.mpesa.test-session');
+});
 
 Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::class])->group(function () {
     Route::get('/devices', [DeviceController::class, 'index'])->name('devices.index');
@@ -367,4 +389,27 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/cash-drawer-movements', [CashDrawerMovementController::class, 'store']);
     Route::post('/time-clock/clock-in', [TimeClockController::class, 'clockIn']);
     Route::post('/time-clock/clock-out', [TimeClockController::class, 'clockOut']);
+});
+
+Route::get('/pos/purchase/{id}', function ($id) {
+    return Inertia::render('POS/Purchase', ['id' => $id]);
+})->middleware(['auth', 'verified']);
+
+// PesaPal Payment Routes - Commented out until controller is created
+// Route::prefix('pesapal')->group(function () {
+//     Route::post('/initiate-payment', [\App\Http\Controllers\PesaPalController::class, 'initiatePayment'])->name('pesapal.initiate');
+//     Route::post('/check-status', [\App\Http\Controllers\PesaPalController::class, 'checkStatus'])->name('pesapal.check-status');
+//     Route::post('/callback', [\App\Http\Controllers\PesaPalController::class, 'callback'])->name('pesapal.callback');
+//     Route::get('/test', [\App\Http\Controllers\PesaPalController::class, 'test'])->name('pesapal.test');
+    
+//     // Simple test route for CSRF debugging
+//     Route::post('/test-csrf', function() {
+//         return response()->json(['message' => 'CSRF test successful', 'timestamp' => now()]);
+//     });
+// });
+
+// Backoffice area (requires password login)
+Route::middleware(['auth', 'backoffice.only'])->group(function () {
+    Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index']);
+    // ...other backoffice routes
 });

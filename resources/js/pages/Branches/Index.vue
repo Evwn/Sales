@@ -1,37 +1,30 @@
 <template>
-  <AppLayout>
-    <Head title="Branches" />
-
-    <template #header>
-      <div class="flex justify-between items-center">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-          Branches
-        </h2>
-        <div class="flex items-center space-x-4">
-          <select
-            v-model="selectedBusinessId"
-            @change="handleBusinessChange"
-            class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base py-2"
-          >
-            <option value="">All Businesses</option>
-            <option v-for="b in businesses" :key="b.id" :value="b.id">
-              {{ b.name }}
-            </option>
-          </select>
-          <Link
-            v-if="business"
-            :href="`/businesses/${business.id}/branches/create`"
-            class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
-          >
-            Add Branch
-          </Link>
-        </div>
-      </div>
-    </template>
+  <AppLayout title="Branches">
+    <PageHeader title="Branches">
+      <template #actions>
+        <select
+          v-model="selectedBusinessId"
+          @change="handleBusinessChange"
+          class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base py-2 ml-2"
+        >
+          <option value="">All Businesses</option>
+          <option v-for="b in businesses" :key="b.id" :value="b.id">
+            {{ b.name }}
+          </option>
+        </select>
+        <Link
+          v-if="business"
+          :href="`/businesses/${business.id}/branches/create`"
+          class="inline-flex items-center px-4 py-2 bg-gray-800 dark:bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-white dark:text-gray-800 uppercase tracking-widest hover:bg-gray-700 dark:hover:bg-white focus:bg-gray-700 dark:focus:bg-white active:bg-gray-900 dark:active:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150"
+        >
+          Add Branch
+        </Link>
+      </template>
+    </PageHeader>
 
     <div class="py-12">
       <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
+        <div class="bg-[#B76E79]/80 backdrop-blur-md overflow-hidden shadow-xl sm:rounded-lg">
           <div class="p-6 lg:p-8">
             <div v-if="!businesses.length" class="text-center">
               <p class="text-gray-500">No business found. Please create a business first.</p>
@@ -42,31 +35,31 @@
                 Create Business
               </Link>
             </div>
-            <div v-else class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+            <div v-else class="overflow-x-auto ">
+              <table class="min-w-full divide-y divide-gray-200 overflow-hidden rounded-lg shadow ">
+                <thead class="bg-[#B76E79]/80 backdrop-blur-md">
                   <tr>
-                    <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                       Name
                     </th>
-                    <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-650 uppercase tracking-wider">
                       Address
                     </th>
-                    <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Phone
                     </th>
-                    <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-750 uppercase tracking-wider">
                       Status
                     </th>
-                    <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
                       Business
                     </th>
-                    <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody class="backdrop-blur-sm bg-white/60 divide-y divide-gray-200">
                   <tr v-for="branch in branches" :key="branch.id" class="hover:bg-gray-50">
                     <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ branch.name }}</td>
                     <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -130,6 +123,7 @@ import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { ref, computed } from 'vue';
 import Swal from 'sweetalert2';
+import PageHeader from '@/components/ui/PageHeader.vue';
 
 const props = defineProps({
   business: {

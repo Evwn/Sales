@@ -22,6 +22,10 @@ module.exports = {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },
             colors: {
+                m:'#800000',
+                ml:'#B76E79',
+                mlm:'#A0525A',
+                mpm:'#985F6F',
                 border: "hsl(var(--border))",
                 input: "hsl(var(--input))",
                 ring: "hsl(var(--ring))",

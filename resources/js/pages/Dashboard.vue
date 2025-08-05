@@ -2,6 +2,7 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed, onMounted, watch } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
+import PageHeader from '@/components/ui/PageHeader.vue';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowDown, ArrowUp } from 'lucide-vue-next';
 import Swal from 'sweetalert2';
@@ -731,15 +732,10 @@ const filteredBranches = computed(() => {
 </script>
 
 <template>
-    <AppLayout>
-        <template #header>
-            <h2 v-if="isSeller" class="font-semibold text-xl text-gray-800 leading-tight">
-                Welcome to {{ props.user.business?.name || 'the business' }}
-            </h2>
-            <h2 v-else class="font-semibold text-xl text-gray-800 leading-tight">
-                Dashboard
-            </h2>
-        </template>
+    <AppLayout title="Dashboard">
+        <PageHeader 
+            :title="isSeller ? `Welcome to ${props.user.business?.name || 'the business'}` : 'Dashboard'"
+        />
         <div v-if="isSeller" class="max-w-2xl mx-auto mt-12">
           <div class="bg-white shadow-lg rounded-2xl p-8 flex flex-col items-center">
             <img
@@ -1059,3 +1055,17 @@ const filteredBranches = computed(() => {
         </div>
     </AppLayout>
 </template>
+<style scoped>
+.background{
+    background-image: url('/images/Background.png');
+    background-size: cover;
+    background-position: center;
+    height: 100vb;
+    color: rgb(12, 2, 2);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+</style>

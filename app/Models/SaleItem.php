@@ -12,7 +12,7 @@ class SaleItem extends Model
 
     protected $fillable = [
         'sale_id',
-        'product_id',
+        'stock_item_id',
         'quantity',
         'unit_price',
         'discount',
@@ -31,9 +31,9 @@ class SaleItem extends Model
         return $this->belongsTo(Sale::class);
     }
 
-    public function product(): BelongsTo
+    public function stockItem(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(StockItem::class);
     }
 
     public function getSubtotalAttribute(): float
