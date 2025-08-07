@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class StockItem extends Model
 {
     protected $fillable = [
-        'location_id', 'item_id', 'variant_id', 'quantity', 'min_stock_level', 'max_stock_level', 'price'
+        'location_id', 'item_id', 'variant_id', 'quantity', 'min_stock_level', 'max_stock_level', 'price','cost'
     ];
 
     public function location()

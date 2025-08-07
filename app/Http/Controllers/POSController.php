@@ -262,6 +262,16 @@ class POSController extends Controller
                     ->count();
             }
         }
+                                            // Debug logging
+        \Log::info('stock items', [
+            'shiftIsOpen' => $shiftIsOpen,
+            'shiftId' => $shiftId,
+            'openShift' => $openShift,
+            'shiftNumber' => $shiftNumber,
+            'cashDrawerData' => $cashDrawerData,
+            'userBranchId' => $user->branch_id,
+            'userId' => $user->id,
+        ]);
         return Inertia::render('POS/Index', [
             'stockItems' => $stockItems,
             'categories' => $categories,
@@ -296,10 +306,6 @@ class POSController extends Controller
             'amount_paid' => 'required|numeric',
             'amount_due' => 'required|numeric',
         ]);
-                                    // Debug logging
-        \Log::info('stock items', [
-            'stock_item_ids' => $request->items,
-        ]);
 
         $user = auth()->user();
         $branch_id = $user->branch_id;
@@ -318,14 +324,6 @@ class POSController extends Controller
         // Save items
         foreach ($request->items as $item) {
             $stockItem = \App\Models\StockItem::find($item['stock_item_id']);
-                \Log::info('StockItem DB record', [
-                    'id' => $stockItem->id,
-                    'location_id' => $stockItem->location_id,
-                    'item_id' => $stockItem->item_id,
-                    'variant_id' => $stockItem->variant_id,
-                    'quantity' => $stockItem->quantity,
-                    'price' => $stockItem->price,
-                ]);
 
             PosTicketItem::create([
                 'ticket_id' => $ticket->id,
@@ -376,6 +374,7 @@ class POSController extends Controller
                     'id' => $item->id,
                     'item_id' => $item->item_id,
                     'variant_id' => $item->variant_id,
+                    'stock_item_id' => $item->stock_item_id,
                     'name' => $itemName,
                     'qty' => $item->qty,
                     'price' => $item->price,
@@ -427,16 +426,7 @@ class POSController extends Controller
         $totalPaid = $ticket->payments()->where('status', 'completed')->sum('amount');
         $amountDue = $ticket->total_amount - $totalPaid;
         $status = $amountDue <= 0 ? 'completed' : 'active';
-        
-        // Debug logging
-        \Log::info('Updating ticket payment', [
-            'ticket_id' => $ticket->id,
-            'total_amount' => $ticket->total_amount,
-            'total_paid' => $totalPaid,
-            'amount_due' => $amountDue,
-            'new_status' => $status,
-            'payments' => $request->payments
-        ]);
+    
         
         $ticket->update([
             'amount_paid' => $totalPaid,
@@ -478,20 +468,6 @@ class POSController extends Controller
         foreach ($request->items as $item) {
                         
             $stockItem = \App\Models\StockItem::find($item['stock_item_id']);
-            if (!$stockItem) {
-                \Log::info('StockItem DB record', [
-                    'id' => $stockItem->id,
-                    'location_id' => $stockItem->location_id,
-                    'item_id' => $stockItem->item_id,
-                    'variant_id' => $stockItem->variant_id,
-                    'quantity' => $stockItem->quantity,
-                    'price' => $stockItem->price,
-                ]);
-            } else {
-                \Log::info('StockItem not found', [
-                    'stock_item_id' => $item['stock_item_id'],
-                ]);
-            }
 
             PosTicketItem::create([
                 'ticket_id' => $ticket->id,
@@ -523,7 +499,7 @@ class POSController extends Controller
      */
     public function listActiveTickets()
     {
-        $tickets = \App\Models\PosTicket::with(['items', 'payments'])
+        $tickets = PosTicket::with(['items', 'payments'])
             ->where('status', 'active')
             ->orderBy('created_at', 'desc')
             ->get();
@@ -555,7 +531,16 @@ class POSController extends Controller
         return redirect('/pos/login');
     }
 
-    /**
+    public function cancelTicket($ticketId)
+    {
+        $ticket = PosTicket::findOrFail($ticketId);
+        $ticket->status = 'cancelled';
+        $ticket->save();
+
+        return redirect()->route('pos.index')->with('success', 'Ticket cancelled successfully');
+    }
+
+        /**
      * Convert a completed POS ticket into a sale record
      */
     public function convertTicketToSale(Request $request, $ticketId)
@@ -566,18 +551,7 @@ class POSController extends Controller
             ]);
 
             $ticket = PosTicket::with(['items.item', 'items.variant', 'payments'])->findOrFail($ticketId);
-            
-            // Debug logging
-            \Log::info('Converting ticket to sale', [
-                'ticket_id' => $ticketId,
-                'ticket_status' => $ticket->status,
-                'total_amount' => $ticket->total_amount,
-                'amount_paid' => $ticket->amount_paid,
-                'amount_due' => $ticket->amount_due,
-                'payments_count' => $ticket->payments->count(),
-                'payments' => $ticket->payments->toArray()
-            ]);
-            
+
             // Only allow conversion of completed tickets
             if ($ticket->status !== 'completed') {
                 return response()->json([
@@ -596,8 +570,8 @@ class POSController extends Controller
             'business_id' => $user->business_id,
             'branch_id' => $user->branch_id,
             'amount' => $ticket->total_amount,
-            'discount' => 0, // You can add discount logic if needed
-            'tax' => 0, // You can add tax logic if needed
+            'discount' => 0, 
+            'tax' => 0,
             'status' => 'completed',
             'payment_status' => 'paid',
             'payment_methods' => $ticket->payments->groupBy('method')->map(function($payments) {
@@ -609,15 +583,11 @@ class POSController extends Controller
         // Create sale items
         $saleItemsCreated = 0;
         foreach ($ticket->items as $ticketItem) {
-            // Find the corresponding stock item for this item and location
-            $stockItem = StockItem::where('item_id', $ticketItem->item_id)
-                ->where('location_id', $user->branch_id) // Assuming branch_id corresponds to location_id
-                ->first();
-            
+            $stockItem = \App\Models\StockItem::find($ticketItem->stock_item_id);
             if ($stockItem) {
                 SaleItem::create([
                     'sale_id' => $sale->id,
-                    'stock_item_id' => $stockItem->id,
+                    'stock_item_id' => $ticketItem->stock_item_id,
                     'quantity' => $ticketItem->qty,
                     'unit_price' => $ticketItem->price,
                     'discount' => 0, // You can add discount logic if needed
@@ -629,12 +599,6 @@ class POSController extends Controller
                 \Log::error('Stock item not found for item_id: ' . $ticketItem->item_id . ' and location_id: ' . $user->branch_id);
             }
         }
-        
-        \Log::info('Sale items created', [
-            'sale_id' => $sale->id,
-            'items_created' => $saleItemsCreated,
-            'total_ticket_items' => $ticket->items->count()
-        ]);
 
         // Create payment records
         $paymentsCreated = 0;
@@ -652,12 +616,6 @@ class POSController extends Controller
             ]);
             $paymentsCreated++;
         }
-        
-        \Log::info('Payments created', [
-            'sale_id' => $sale->id,
-            'payments_created' => $paymentsCreated,
-            'total_ticket_payments' => $ticket->payments->count()
-        ]);
 
         // Create sales receipt
         $receipt = SalesReceipt::create([
@@ -679,15 +637,12 @@ class POSController extends Controller
         // Create sales receipt items
         $receiptItemsCreated = 0;
         foreach ($ticket->items as $ticketItem) {
-            // Find the corresponding stock item for this item and location
-            $stockItem = StockItem::where('item_id', $ticketItem->item_id)
-                ->where('location_id', $user->branch_id) // Assuming branch_id corresponds to location_id
-                ->first();
-            
+  
+            $stockItem = \App\Models\StockItem::find($ticketItem->stock_item_id);
             if ($stockItem) {
                 SalesReceiptItem::create([
                     'sales_receipt_id' => $receipt->id,
-                    'stock_item_id' => $stockItem->id,
+                    'stock_item_id' =>$ticketItem->stock_item_id,
                     'quantity' => $ticketItem->qty,
                     'unit_price' => $ticketItem->price,
                     'subtotal' => $ticketItem->subtotal,
@@ -701,24 +656,9 @@ class POSController extends Controller
                 \Log::error('Stock item not found for receipt item_id: ' . $ticketItem->item_id . ' and location_id: ' . $user->branch_id);
             }
         }
-        
-        \Log::info('Sales receipt items created', [
-            'receipt_id' => $receipt->id,
-            'items_created' => $receiptItemsCreated,
-            'total_ticket_items' => $ticket->items->count()
-        ]);
 
         // Mark the ticket as converted
-        $ticket->update(['status' => 'converted']);
-
-        \Log::info('Ticket successfully converted to sale', [
-            'ticket_id' => $ticketId,
-            'sale_id' => $sale->id,
-            'receipt_id' => $receipt->id,
-            'sale_items_count' => $saleItemsCreated,
-            'payments_count' => $paymentsCreated,
-            'receipt_items_count' => $receiptItemsCreated
-        ]);
+        $ticket->update(['status' => 'completed']);
 
         return response()->json([
             'success' => true,

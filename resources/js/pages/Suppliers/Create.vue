@@ -39,6 +39,20 @@
               <option :value="0">Inactive</option>
             </select>
           </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Business</label>
+            <select v-model="form.business_id" required class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              <option value="" disabled>Select business</option>
+              <option v-for="b in props.businesses" :key="b.id" :value="b.id">{{ b.name }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Branch</label>
+            <select v-model="form.branch_id" required class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              <option value="" disabled>Select branch</option>
+              <option v-for="br in props.branches.filter(br => br.business_id === form.business_id)" :key="br.id" :value="br.id">{{ br.name }}</option>
+            </select>
+          </div>
         </div>
         <div class="flex-1 space-y-6">
           <div>
@@ -114,6 +128,10 @@ const bankOptions = [
   { label: 'RBC Royal Bank (Canada) - ROYCCAT2', swift: 'ROYCCAT2' },
   { label: 'Scotiabank (Canada) - NOSCCATT', swift: 'NOSCCATT' },
 ];
+const props = defineProps({
+  businesses: Array,
+  branches: Array,
+});
 
 const form = ref({
   name: '',
@@ -126,7 +144,10 @@ const form = ref({
   account_name: '',
   account_number: '',
   bank_name: '',
-  bank_code: ''
+  bank_code: '',
+  business:'',
+  branch_id:'',
+
 });
 
 function submit() {

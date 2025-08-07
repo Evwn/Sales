@@ -69,7 +69,9 @@ class ShiftController extends Controller
     }
 
     public function close(Request $request)
-    {
+    {   \Log::info('stock items', [
+            'stock_item_ids' => $request,
+        ]);
         $request->validate([
             'shift_id' => 'required|exists:shifts,id',
             'closing_balance' => 'required|numeric|min:0',

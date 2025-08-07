@@ -352,6 +352,16 @@
         <button @click="completeTransaction" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg text-lg">DONE</button>
       </div>
     </div>
+
+    <!-- Cancel Order Button -->
+    <div class="mt-6">
+      <button
+        @click="cancelOrder"
+        class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg text-lg"
+      >
+        CANCEL ORDER
+      </button>
+    </div>
   </div>
 </template>
 <script setup>
@@ -365,6 +375,16 @@ const props = defineProps({
   initialSplits: { type: Array, default: () => [] },
   ticketId: { type: Number, default: null }, // New prop for ticket ID
 });
+async function cancelOrder() {
+  if (!props.ticketId) return;
+  try {
+    await axios.post(`/pos/ticket/${props.ticketId}/cancel`);
+    emit('complete', { cancelled: true });
+  } catch (error) {
+    console.error('Error cancelling order:', error);
+    alert('Failed to cancel order. Please try again.');
+  }
+}
 const emit = defineEmits(['complete', 'back', 'partial-update']);
 
 // Get page context for user data
@@ -1031,7 +1051,7 @@ function handleMpesaWaiting(split, dialog) {
     }
   });
   
-  // Start polling for callback response (like in settings)
+  // Start polling for callback response (similar to settings page)
   pollForCallbackResponse(split, dialog);
 }
 
@@ -1733,4 +1753,4 @@ watch(
   overflow-y: auto;
   padding-right: 4px;
 }
-</style> 
+</style>

@@ -1,5 +1,8 @@
 <?php
-
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\ConfirmablePasswordController;
+use App\Http\Controllers\Auth\EmailVerificationNotificationController;
+use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\ProductController;
@@ -343,7 +346,8 @@ Route::post('/pos/logout', [PosLoginController::class, 'logout'])->name('pos.log
 
 // POS area (requires POS login)
 Route::prefix('pos')->middleware(['auth', 'pos.only'])->group(function () {
-    Route::get('/dashboard', [\App\Http\Controllers\POSController::class, 'index']);
+    Route::post('/ticket/{ticket}/cancel', [POSController::class, 'cancelTicket']);
+    Route::get('/dashboard', [\App\Http\Controllers\POSController::class, 'index'])->name('pos.index');
     Route::post('/verify-pin', [\App\Http\Controllers\POSController::class, 'verifyPin']);
     Route::post('/ticket/store', [\App\Http\Controllers\POSController::class, 'storeTicket'])->name('pos.ticket.store');
     Route::get('/ticket/{id}', [\App\Http\Controllers\POSController::class, 'getTicket'])->name('pos.ticket.get');

@@ -51,7 +51,7 @@
               <div class="text-sm opacity-90">Main POS</div>
               <div class="text-sm opacity-90">{{ business?.name || 'Business' }}</div>
             </div>
-            <button @click="clockOut" class="p-2 bg-white bg-opacity-20 rounded-full hover:bg-opacity-30 transition-all">
+            <button @click="logout" class="p-2 bg-white bg-opacity-20 rounded-full hover:bg-opacity-30 transition-all">
               <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
@@ -1095,6 +1095,7 @@ async function confirmCloseShift() {
     closingError.value = 'Enter a valid amount in KES.';
     return;
   }
+  closingCash.value = realCash.value;
   await axios.post('/shifts/close', {
     shift_id: shiftId.value,
     closing_balance: closingCash.value,
@@ -1109,17 +1110,13 @@ async function confirmCloseShift() {
 }
 async function clockOut() {
   await axios.post('/pos/logout');
-  window.location.href = '/pos/login';
+  window.location.href = '/pos';
 }
 
 function logout() {
-  router.post('/logout').then(() => {
-    // Perform a full page reload after logout
-    window.location.reload();
-  }).catch(() => {
-    // Even if the logout request fails, still reload the page
-    window.location.reload();
-  });
+  router.post('/logout');
+  window.location.href = '/pos';
+  
 }
 
 // Helper functions for shift view
@@ -1295,6 +1292,7 @@ async function loadTicketItemsToCart() {
     cart.value = ticket.items.map(item => ({
       item_id: item.item_id,
       variant_id: item.variant_id,
+      stock_item_id: item.stock_item_id,
       name: item.name,
       price: parseFloat(item.price),
       qty: item.qty,
@@ -1412,20 +1410,24 @@ function handlePartialUpdate(paymentData) {
 
 async function handlePaymentComplete(paymentData) {
   console.log('Payment complete received from PaymentPanel', paymentData);
+    if (paymentData.cancelled) {
+      showToaster('Order cancelled.', 'success');
+      showPaymentView.value = false;
+      currentTicketId.value = null;
+      cart.value = [];
+      return;
+    }
+
   
   try {
-    // Convert the completed ticket to a sale
     const response = await axios.post(`/pos/ticket/${currentTicketId.value}/convert-to-sale`, {
       customer_id: selectedCustomer.value?.id || null
     });
     
     if (response.data.success) {
       console.log('Sale created successfully:', response.data.sale);
-      
-      // Show success message
       showToaster('Sale completed successfully!', 'success');
-      
-      // Close payment view and reset cart
+
       showPaymentView.value = false;
       currentTicketId.value = null;
       cart.value = [];

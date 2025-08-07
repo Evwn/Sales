@@ -15,14 +15,24 @@ class SupplierController extends Controller
     }
 
     public function create()
-    {
-        return Inertia::render('Suppliers/Create');
+    {       $userId = Auth()->id();
+            $businesses = \App\Models\Business::where('owner_id', $userId)
+                ->select('id', 'name')
+                ->get();
+            $branches = \App\Models\Branch::whereIn('business_id', $businesses->pluck('id'))
+                ->select('id', 'name', 'business_id')
+                ->get();
+
+            return Inertia::render('Suppliers/Create', [
+                'businesses' => $businesses,
+                'branches' => $branches,
+            ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'unique:suppliers|required|string|max:255',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:255',
             'address' => 'nullable|string',
@@ -34,6 +44,8 @@ class SupplierController extends Controller
             'account_number' => 'nullable|string|max:255',
             'bank_name' => 'nullable|string|max:255',
             'bank_code' => 'nullable|string|max:255',
+            'business_id' => 'required|exists:businesses,id',
+            'branch_id' => 'nullable|exists:branches,id',
         ]);
         $validated['business_id'] = auth()->user()->business_id;
         Supplier::create($validated);
@@ -60,6 +72,8 @@ class SupplierController extends Controller
             'account_number' => 'nullable|string|max:255',
             'bank_name' => 'nullable|string|max:255',
             'bank_code' => 'nullable|string|max:255',
+            'business_id' => 'required|exists:businesses,id',
+            'branch_id' => 'nullable|exists:branches,id',
         ]);
         $supplier->update($validated);
         return redirect()->route('suppliers.index')->with('success', 'Supplier updated.');
@@ -67,7 +81,7 @@ class SupplierController extends Controller
 
     public function items($supplierId)
     {
-        // Fetch items for this supplier (customize as needed)
+        // Fetch items for this supplier
         $items = \App\Models\Item::with('variants')
             ->where('supplier_id', $supplierId)
             ->get();

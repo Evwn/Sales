@@ -332,9 +332,6 @@ watch(() => page.props.flash, () => {
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent :align="dropdownAlign" class="w-48 backdrop-blur-sm bg-white/1">
                                             <DropdownMenuItem as-child>
-                                                <Link href="/products" :class="{'font-bold text-blue-600': isCurrentRoute('/products')}">Products</Link>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem as-child>
                                                 <Link href="/purchases" :class="{'font-bold text-blue-600': isCurrentRoute('/purchases')}">Purchases</Link>
                                             </DropdownMenuItem>
                                             <DropdownMenuItem as-child>
