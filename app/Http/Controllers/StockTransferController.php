@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\StockTransfer;
+use App\Models\StockTransferItem;
 use App\Models\Location;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
 
 class StockTransferController extends Controller
 {
@@ -16,8 +18,8 @@ class StockTransferController extends Controller
         $businesses = $user->ownedBusinesses()->with('branches')->get();
         $branches = $businesses->flatMap->branches;
         $locations = Location::whereHas('locationType', function($q) { $q->where('name', 'store'); })->get();
-        $transfers = StockTransfer::whereIn('from_store_id', $locations->pluck('id'))
-            ->orWhereIn('to_store_id', $locations->pluck('id'))
+        $transfers = StockTransfer::whereIn('from_location_id', $locations->pluck('id'))
+            ->orWhereIn('to_location_id', $locations->pluck('id'))
             ->with(['fromStore', 'toStore'])
             ->get();
         return Inertia::render('StockTransfers/Index', [
@@ -29,7 +31,7 @@ class StockTransferController extends Controller
     }
 
     public function create()
-    {
+    {   $user = auth()->user();
         $locations = Location::with('locationType')->whereHas('locationType', function($q) { $q->where('name', 'store'); })->get();
         $items = \App\Models\Item::with('variants')->get();
         $itemData = collect();
@@ -86,31 +88,58 @@ class StockTransferController extends Controller
     }
 
     public function store(Request $request)
-    {
+    {    \Log::info('Stock Transfer', [
+            'Store from' => $request->from_store_id,
+            'Store to' => $request->to_store_id,
+            'notes' => $request->notes,
+            'items' => $request->items,
+        ]);
         $validated = $request->validate([
             'from_store_id' => 'required|exists:locations,id',
             'to_store_id' => 'required|exists:locations,id|different:from_store_id',
-            'reference' => 'required|string|max:255',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.item_id' => 'required|exists:items,id',
             'items.*.quantity' => 'required|numeric|min:1',
         ]);
+        \Log::info('Stock Transfer', [
+            'Validation' => $validated,
+        ]);
+        $reference=StockTransfer::generateReference();
+
+        
+    DB::beginTransaction();
+
+    try {
         $transfer = StockTransfer::create([
-            'from_store_id' => $validated['from_store_id'],
-            'to_store_id' => $validated['to_store_id'],
-            'reference' => $validated['reference'],
+            'from_location_id' => $validated['from_store_id'],
+            'to_location_id' => $validated['to_store_id'],
+            'reference' => $reference,
             'notes' => $validated['notes'] ?? null,
             'status' => 'pending',
         ]);
+         \Log::info('Stock Transfer', [
+            'Reference' => $reference,
+        ]);
         foreach ($validated['items'] as $item) {
             $transfer->items()->create([
-                'product_id' => $item['product_id'],
+                'stock_item_id' => $item['item_id'],
                 'quantity' => $item['quantity'],
             ]);
         }
+            DB::commit();
         return redirect()->route('stock-transfers.index')->with('success', 'Stock transfer created.');
+            } catch (\Exception $e) {
+        DB::rollBack();
+
+        \Log::error('Failed to create stock transfer', [
+            'error' => $e->getMessage(),
+        ]);
+
+         return back()->withErrors(['error' => 'Failed to create stock transfer: ' . $e->getMessage()]);
     }
+    }
+
 
     public function receive(Request $request, StockTransfer $stockTransfer)
     {

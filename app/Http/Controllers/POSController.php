@@ -21,7 +21,9 @@ use App\Models\Payment;
 class POSController extends Controller
 {
     public function loginWithPin(Request $request)
-    {
+    {   \Log::info('PosController', [
+            'Login with pin ' => $request,
+        ]);
         $request->validate([
             'pin_code' => 'required|digits:4',
             'device_uuid' => 'required|string',
@@ -73,7 +75,9 @@ class POSController extends Controller
     }
 
     public function verifyPin(Request $request)
-    {
+    {   \Log::info('PosController', [
+            'verify pin' => $request,
+        ]);
         $request->validate([
             'pin_code' => 'required|digits:4',
             'device_uuid' => 'required|string',
@@ -507,7 +511,9 @@ class POSController extends Controller
     }
 
     public function logout(Request $request)
-    {
+    {   \Log::info('PosController', [
+            'logout' => $request,
+        ]);
         // Clock out the user if they have an open time clock entry
         $user = Auth::user();
         if ($user && $user->branch_id) {

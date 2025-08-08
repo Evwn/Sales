@@ -51,7 +51,7 @@
               <div class="text-sm opacity-90">Main POS</div>
               <div class="text-sm opacity-90">{{ business?.name || 'Business' }}</div>
             </div>
-            <button @click="logout" class="p-2 bg-white bg-opacity-20 rounded-full hover:bg-opacity-30 transition-all">
+            <button @click="clockOut" class="p-2 bg-white bg-opacity-20 rounded-full hover:bg-opacity-30 transition-all">
               <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
@@ -308,7 +308,7 @@
         <div class="px-4 py-4 border-t border-gray-200">
           <div class="text-sm text-gray-600 mb-3">{{ user?.email || 'user@example.com' }}</div>
           <button
-            @click="logout"
+            @click="clockOut"
             class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-colors"
           >
             SIGN OUT
