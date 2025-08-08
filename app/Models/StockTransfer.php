@@ -38,6 +38,6 @@ class StockTransfer extends Model
     public function toStore()
     {
         return $this->belongsTo(Location::class, 'to_location_id');
-    }
+    }    
 
 } 

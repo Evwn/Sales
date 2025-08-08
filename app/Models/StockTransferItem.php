@@ -16,4 +16,15 @@ class StockTransferItem extends Model
     {
         return $this->belongsTo(StockTransfer::class);
     }
+    public function product()
+{
+    return $this->belongsTo(StockItem::class, 'stock_item_id'); 
+}
+// StockTransferItem.php
+public function stockItem()
+{
+    return $this->belongsTo(StockItem::class, 'stock_item_id');
+}
+
+
 }

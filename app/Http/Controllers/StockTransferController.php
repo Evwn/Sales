@@ -17,7 +17,13 @@ class StockTransferController extends Controller
         $user = auth()->user();
         $businesses = $user->ownedBusinesses()->with('branches')->get();
         $branches = $businesses->flatMap->branches;
-        $locations = Location::whereHas('locationType', function($q) { $q->where('name', 'store'); })->get();
+        $locations = Location::whereHas('locationType', function ($q) {
+            $q->where(function ($q2) {
+                $q2->where('user_id', auth()->id())
+                ->orWhereNull('user_id');
+            })->where('name', 'store');
+        })->get();
+
         $transfers = StockTransfer::whereIn('from_location_id', $locations->pluck('id'))
             ->orWhereIn('to_location_id', $locations->pluck('id'))
             ->with(['fromStore', 'toStore'])
@@ -32,7 +38,13 @@ class StockTransferController extends Controller
 
     public function create()
     {   $user = auth()->user();
-        $locations = Location::with('locationType')->whereHas('locationType', function($q) { $q->where('name', 'store'); })->get();
+        $locations = Location::whereIn('business_id', auth()->user()->ownedBusinesses()->pluck('id'))->get();
+
+        \Log::info('Stock Transfer', [
+            'Location' => $locations,
+
+        ]);
+        
         $items = \App\Models\Item::with('variants')->get();
         $itemData = collect();
         $itemIds = [];
@@ -139,24 +151,99 @@ class StockTransferController extends Controller
          return back()->withErrors(['error' => 'Failed to create stock transfer: ' . $e->getMessage()]);
     }
     }
-
-
     public function receive(Request $request, StockTransfer $stockTransfer)
     {
         $user = auth()->user();
-        // Add a policy for receive if needed
+
         $validated = $request->validate([
             'items' => 'required|array|min:1',
             'items.*.id' => 'required|exists:stock_transfer_items,id',
             'items.*.received_quantity' => 'required|numeric|min:0',
         ]);
-        foreach ($validated['items'] as $item) {
-            $transferItem = $stockTransfer->items()->find($item['id']);
-            $transferItem->update(['received_quantity' => $item['received_quantity']]);
-            // Update stock logic here...
+
+        \Log::info('recieve save', [
+            'recieve save' => $validated,
+            'Stock being updated' => $stockTransfer
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            foreach ($validated['items'] as $itemData) {
+                $transferItem = $stockTransfer->items()->findOrFail($itemData['id']);
+
+                // Update received quantity
+                $transferItem->update(['received_quantity' => $itemData['received_quantity']]);
+
+                $itemId = $transferItem->stockItem->item_id;
+                $variantId = $transferItem->stockItem->variant_id;
+                $receivedQty = $itemData['received_quantity'];
+
+                // ✅ Deduct from FROM location
+                $fromStock = \App\Models\StockItem::where([
+                    'location_id' => $stockTransfer->from_location_id,
+                    'item_id'     => $itemId,
+                    'variant_id'  => $variantId,
+                ])->first();
+
+                if ($fromStock) {
+                    $newQty = max(0, $fromStock->quantity - $receivedQty);
+                    $fromStock->update(['quantity' => $newQty]);
+                } else {
+                    \Log::warning("Stock not found at from_location", [
+                        'item_id' => $itemId,
+                        'variant_id' => $variantId,
+                        'from_location' => $stockTransfer->from_location_id,
+                    ]);
+                }
+
+                // ✅ Add to TO location
+                $toStock = \App\Models\StockItem::where([
+                    'location_id' => $stockTransfer->to_location_id,
+                    'item_id'     => $itemId,
+                    'variant_id'  => $variantId,
+                ])->first();
+
+                if ($toStock) {
+                    $toStock->increment('quantity', $receivedQty);
+                } else {
+                    \App\Models\StockItem::create([
+                        'location_id' => $stockTransfer->to_location_id,
+                        'item_id'     => $itemId,
+                        'variant_id'  => $variantId,
+                        'quantity'    => $receivedQty,
+                        'min_stock_level' => 0,
+                        'max_stock_level' => 0,
+                    ]);
+                }
+            }
+
+            $stockTransfer->update(['status' => 'completed']);
+
+            DB::commit();
+
+            return redirect()->route('stock-transfers.index')->with('success', 'Stock transfer received.');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            \Log::error('Failed to receive stock transfer', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return redirect()->back()->with('error', 'Failed to receive stock transfer. Please try again.');
         }
-        $stockTransfer->status = 'completed';
-        $stockTransfer->save();
-        return redirect()->route('stock-transfers.index')->with('success', 'Stock transfer received.');
     }
-} 
+
+
+    public function receiveForm(StockTransfer $stockTransfer)
+    { 
+            $stockTransfer->load(['items.product', 'fromStore', 'toStore']);
+        \Log::Info('recieve form',[
+            'recieve form'=>$stockTransfer]);
+
+        return Inertia::render('StockTransfers/Receive', [
+            'transfer' => $stockTransfer,
+        ]);
+    }
+}

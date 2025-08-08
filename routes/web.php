@@ -298,6 +298,7 @@ require __DIR__.'/settings.php';
 
 Route::middleware(['auth', 'role:owner'])->group(function () {
     Route::resource('stores', StoreController::class);
+    Route::get('/stock-transfers/{stockTransfer}/receive', [StockTransferController::class, 'receiveForm'])->name('stock-transfers.receiveForm');
     Route::resource('stock-transfers', StockTransferController::class);
     Route::post('/stock-transfers', [StockTransferController::class, 'store']);
     Route::post('stock-transfers/{stockTransfer}/receive', [StockTransferController::class, 'receive'])->name('stock-transfers.receive');

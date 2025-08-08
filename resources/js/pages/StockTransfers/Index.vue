@@ -8,30 +8,38 @@
         </div>
         <!-- Add more filters here if needed -->
       </div>
-      <table>
-        <thead>
+      <div class="overflow-x-auto ">
+      <table class="min-w-full divide-y divide-gray-200 overflow-hidden rounded-lg shadow ">
+        <thead class="bg-[#B76E79]/80 backdrop-blur-md">
           <tr>
-            <th>Reference</th>
-            <th>From Store</th>
-            <th>To Store</th>
-            <th>Status</th>
-            <th>Notes</th>
-            <th>Actions</th>
+           <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+            Reference</th>
+            <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+              From Store</th>
+            <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+              To Store</th>
+            <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+              Status</th>
+            <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+              Notes</th>
+            <th scope="col" class="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+              Actions</th>
           </tr>
         </thead>
-        <tbody>
-          <tr v-for="transfer in filteredTransfers" :key="transfer.id">
-            <td>{{ transfer.reference }}</td>
-            <td>{{ transfer.from_store?.name }}</td>
-            <td>{{ transfer.to_store?.name }}</td>
-            <td>{{ transfer.status }}</td>
-            <td>{{ transfer.notes }}</td>
-            <td>
+        <tbody class="backdrop-blur-sm bg-white/60 divide-y divide-gray-200">
+          <tr v-for="transfer in filteredTransfers" :key="transfer.id" class="hover:bg-gray-50">
+            <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ transfer.reference }}</td> 
+            <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ transfer.from_store?.name }}</td>
+            <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ transfer.to_store?.name }}</td>
+            <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ transfer.status }}</td>
+            <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ transfer.notes }}</td>
+            <td class="w-1/8 px-6 py-4 whitespace-nowrap text-sm text-gray-500">
               <button @click="goToReceive(transfer.id)" v-if="transfer.status === 'pending'">Receive</button>
             </td>
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
   </AppLayout>
 </template>
