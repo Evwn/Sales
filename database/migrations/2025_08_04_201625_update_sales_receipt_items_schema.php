@@ -9,32 +9,29 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+   public function up(): void
     {
         Schema::table('sales_receipt_items', function (Blueprint $table) {
-            // First, remove the columns that are no longer needed
+            // Drop the foreign key constraint first
+            $table->dropForeign(['product_id']);
+
+            // Then drop the product-related columns
             if (Schema::hasColumn('sales_receipt_items', 'product_name')) {
                 $table->dropColumn('product_name');
             }
             if (Schema::hasColumn('sales_receipt_items', 'product_barcode')) {
                 $table->dropColumn('product_barcode');
             }
-            
-            // Add the new stock_item_id column
+
+            // Add the new column
             $table->unsignedBigInteger('stock_item_id')->nullable()->after('sales_receipt_id');
-            
-            // Add foreign key constraint for stock_item_id
             $table->foreign('stock_item_id')->references('id')->on('stock_items')->onDelete('cascade');
             $table->index('stock_item_id');
             $table->index(['sales_receipt_id', 'stock_item_id']);
         });
-        
-        // Now copy data from product_id to stock_item_id (if needed)
-        // This would require additional logic to map products to stock items
-        
-        // Finally, drop the old product_id column and its constraints
+
+        // Drop product_id column in a separate statement (after the FK is gone)
         Schema::table('sales_receipt_items', function (Blueprint $table) {
-            // Drop the old column (this will automatically drop the foreign key constraint)
             $table->dropColumn('product_id');
         });
     }
