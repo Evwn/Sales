@@ -4,7 +4,7 @@ import { router } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Collapsible } from '@/components/ui/collapsible/Collapsible.vue';
+import Collapsible from '@/components/ui/collapsible/Collapsible.vue';
 import CollapsibleTrigger from '@/components/ui/collapsible/CollapsibleTrigger.vue';
 import CollapsibleContent from '@/components/ui/collapsible/CollapsibleContent.vue';
 import type { BreadcrumbItemType } from '@/types';
