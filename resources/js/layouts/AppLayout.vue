@@ -262,7 +262,7 @@ watch(() => page.props.flash, () => {
             style="width: 16px; height: 16px; bottom: 4.5rem; right: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"
             title="{{ isOffline ? 'Offline' : 'Online' }}"
         ></span>
-        <div class="min-h-screen bg-[url('images/reading.png')] bg-cover bg-center">
+        <div class="min-h-screen bg-[url('images/reading.png')] background bg-cover bg-center">
             <nav class="bg-white/1 border-b border-gray-100 backdrop-blur-sm overflow-hidden">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="flex justify-between h-16">
@@ -643,16 +643,9 @@ export default {
   border: 1px solid #2563eb !important;
 }
 .background{
-    background-image: url('/images/Background.png');
+    background-image: url('/images/reading.png');
     background-size: cover;
     background-position: center;
-    height: 100vb;
-    color: rgb(12, 2, 2);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
 }
 
 </style>
