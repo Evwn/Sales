@@ -9,21 +9,20 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('sale_items', function (Blueprint $table) {
-
+            // Drop foreign key and index using correct name
+            $table->dropForeign(['product_id']);
             $table->dropIndex('sale_items_product_id_index');
 
-            // Drop the column
+            // Drop product_id column
             $table->dropColumn('product_id');
 
             // Add stock_item_id
-            $table->foreignId('stock_item_id')
-                ->after('sale_id')
+            $table->foreignId('stock_item_id')->after('sale_id')
                 ->constrained('stock_items')
                 ->cascadeOnUpdate()
                 ->restrictOnDelete();
         });
     }
-
 
 
     public function down(): void
