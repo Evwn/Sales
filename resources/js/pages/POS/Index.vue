@@ -41,7 +41,7 @@
     
     <!-- Left Sidebar -->
     <div v-if="showSidebar" class="fixed inset-0 z-50 flex">
-      <div class="fixed inset-0 bg-black bg-opacity-50" @click="showSidebar = false"></div>
+      <div class="fixed inset-0 bg-white/40 bg-opacity-50" @click="showSidebar = false"></div>
       <div class="relative w-80 bg-white shadow-xl">
         <!-- Header -->
         <div class="bg-green-600 px-6 py-4">
@@ -533,7 +533,7 @@
   </div>
 
   <!-- Active Tickets Modal -->
-  <div v-if="showTopMenu" class="fixed inset-0 bg-transparent backdrop-blur-sm flex items-center justify-center z-50">
+  <div v-if="showTopMenu" class="fixed inset-0 bg-white/40 flex items-center justify-center z-50">
     <div class="bg-white rounded-lg w-96 max-h-[80vh] overflow-hidden shadow-2xl border border-gray-200">
       <!-- Modal Header -->
       <div class="flex items-center justify-between px-6 py-4 border-b">
