@@ -9,8 +9,30 @@ use Inertia\Inertia;
 class PurchaseItemController extends Controller
 {
     public function index()
-    {
-        $items = PurchaseItem::all();
+    {   
+        $user = auth()->user();
+
+         $items = PurchaseItem::with(['purchase', 'item', 'stockItem.location'])
+            ->whereHas('item', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+            ->get();
+
+        foreach ($items as $item) {
+            \Log::info('Purchase items', [
+                'logged in user id'   => $user->id,
+                'User id'             => $item->item?->user_id,
+                'Item_id'             => $item->id,
+                'purchase_ref'        => $item->purchase?->reference,
+                'Item name'           => $item->item?->name,
+                'Location name'       => $item->stockItem?->location?->name,
+                'quantity_ordered'    => $item->quantity_ordered,
+                'quantity_received'   => $item->quantity_received,
+                'purchase_cost'       => $item->purchase_cost,
+                'Additional_cost'     => $item->proportional_additional_cost,
+                'status'              => $item->status,
+            ]);
+        }
         return Inertia::render('PurchaseItems/Index', ['items' => $items]);
     }
 

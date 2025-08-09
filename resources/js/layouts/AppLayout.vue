@@ -335,7 +335,7 @@ watch(() => page.props.flash, () => {
                                                 <Link href="/purchases" :class="{'font-bold text-blue-600': isCurrentRoute('/purchases')}">Purchases</Link>
                                             </DropdownMenuItem>
                                             <DropdownMenuItem as-child>
-                                                <Link href="/purchase-items" :class="{'font-bold text-blue-600': isCurrentRoute('/purchase-items')}">Items</Link>
+                                                <Link href="/purchase-items" :class="{'font-bold text-blue-600': isCurrentRoute('/purchase-items')}">Purchase Items</Link>
                                             </DropdownMenuItem>
                                             <DropdownMenuItem as-child>
                                                 <Link href="/stock-transfers" :class="{'font-bold text-blue-600': isCurrentRoute('/stock-transfers')}">Stock Transfers</Link>
@@ -594,7 +594,7 @@ watch(() => page.props.flash, () => {
                                                 <Link href="/purchases" :class="{'font-bold text-blue-600': isCurrentRoute('/purchases')}">Purchases</Link>
                                             </DropdownMenuItem>
                                             <DropdownMenuItem as-child>
-                                                <Link href="/purchase-items" :class="{'font-bold text-blue-600': isCurrentRoute('/purchase-items')}">Items</Link>
+                                                <Link href="/purchase-items" :class="{'font-bold text-blue-600': isCurrentRoute('/purchase-items')}">Purchase Items</Link>
                                             </DropdownMenuItem>
                                             <DropdownMenuItem as-child>
                                                 <Link href="/stock-transfers" :class="{'font-bold text-blue-600': isCurrentRoute('/stock-transfers')}">Stock Transfers</Link>

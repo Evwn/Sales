@@ -6,6 +6,7 @@ use App\Models\StockTransfer;
 use App\Models\StockTransferItem;
 use App\Models\Location;
 use App\Models\Product;
+use App\Models\StockItem;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -138,6 +139,19 @@ class StockTransferController extends Controller
                 'stock_item_id' => $item['item_id'],
                 'quantity' => $item['quantity'],
             ]);
+             $stockItem = StockItem::where('location_id', $validated['from_store_id'])
+            ->where('item_id', $item['item_id'])
+            ->first();
+
+        if (!$stockItem) {
+            throw new \Exception("Item ID {$item['item_id']} not found in the source location.");
+        }
+
+        if ($stockItem->quantity < $item['quantity']) {
+            throw new \Exception("Not enough stock for Item ID {$item['item_id']} at source location.");
+        }
+
+        $stockItem->decrement('quantity', $item['quantity']);
         }
             DB::commit();
         return redirect()->route('stock-transfers.index')->with('success', 'Stock transfer created.');
@@ -151,7 +165,7 @@ class StockTransferController extends Controller
          return back()->withErrors(['error' => 'Failed to create stock transfer: ' . $e->getMessage()]);
     }
     }
-    public function receive(Request $request, StockTransfer $stockTransfer)
+   public function receive(Request $request, StockTransfer $stockTransfer)
     {
         $user = auth()->user();
 
@@ -161,43 +175,34 @@ class StockTransferController extends Controller
             'items.*.received_quantity' => 'required|numeric|min:0',
         ]);
 
-        \Log::info('recieve save', [
-            'recieve save' => $validated,
+        \Log::info('receive save', [
+            'receive save' => $validated,
             'Stock being updated' => $stockTransfer
         ]);
 
         DB::beginTransaction();
 
         try {
+            $allReceived = true; // Flag to track if all items are fully received
+
             foreach ($validated['items'] as $itemData) {
                 $transferItem = $stockTransfer->items()->findOrFail($itemData['id']);
 
-                // Update received quantity
-                $transferItem->update(['received_quantity' => $itemData['received_quantity']]);
+               $remainingQty = $transferItem->quantity - $transferItem->quantity_received;
+                $qtyToAdd = min($itemData['received_quantity'], $remainingQty);
 
+                $transferItem->increment('quantity_received', $qtyToAdd);
+
+                // Check if this item is fully received
+                if ($transferItem->quantity_received < $transferItem->quantity) {
+                    $allReceived = false;
+                }
+
+                // Update destination stock
                 $itemId = $transferItem->stockItem->item_id;
                 $variantId = $transferItem->stockItem->variant_id;
                 $receivedQty = $itemData['received_quantity'];
 
-                // ✅ Deduct from FROM location
-                $fromStock = \App\Models\StockItem::where([
-                    'location_id' => $stockTransfer->from_location_id,
-                    'item_id'     => $itemId,
-                    'variant_id'  => $variantId,
-                ])->first();
-
-                if ($fromStock) {
-                    $newQty = max(0, $fromStock->quantity - $receivedQty);
-                    $fromStock->update(['quantity' => $newQty]);
-                } else {
-                    \Log::warning("Stock not found at from_location", [
-                        'item_id' => $itemId,
-                        'variant_id' => $variantId,
-                        'from_location' => $stockTransfer->from_location_id,
-                    ]);
-                }
-
-                // ✅ Add to TO location
                 $toStock = \App\Models\StockItem::where([
                     'location_id' => $stockTransfer->to_location_id,
                     'item_id'     => $itemId,
@@ -218,7 +223,9 @@ class StockTransferController extends Controller
                 }
             }
 
-            $stockTransfer->update(['status' => 'completed']);
+            // Update stock transfer status
+            $status = $allReceived ? 'completed' : 'partially_received';
+            $stockTransfer->update(['status' => $status]);
 
             DB::commit();
 
@@ -236,14 +243,29 @@ class StockTransferController extends Controller
     }
 
 
+
     public function receiveForm(StockTransfer $stockTransfer)
-    { 
-            $stockTransfer->load(['items.product', 'fromStore', 'toStore']);
-        \Log::Info('recieve form',[
-            'recieve form'=>$stockTransfer]);
+    {
+        $stockTransfer->load(['items.product', 'fromStore', 'toStore']);
+
+        $filteredItems = $stockTransfer->items->filter(function ($item) {
+            return ($item->quantity - $item->quantity_received) > 0;
+        })->map(function ($item) {
+            $remaining = $item->quantity - $item->quantity_received;
+            $item->quantity = $remaining;
+            return $item;
+        })->values();
+
+        $stockTransfer->setRelation('items', $filteredItems);
+
+        \Log::info('receive form', [
+            'transfer' => $stockTransfer,
+        ]);
 
         return Inertia::render('StockTransfers/Receive', [
             'transfer' => $stockTransfer,
         ]);
     }
+
+
 }

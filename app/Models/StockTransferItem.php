@@ -11,6 +11,7 @@ class StockTransferItem extends Model
 	'stock_transfer_id',
 	'stock_item_id',
 	'quantity',
+    'quantity_received',
     ];
         public function transfer()
     {
