@@ -451,18 +451,22 @@ class SaleController extends Controller
     /**
      * Print a sale receipt
      */
-    public function printReceipt(Sale $sale)
-    {
-        $sale->load(['customer', 'seller', 'business', 'branch', 'items.product']);
+public function printReceipt($reference)
+{
+    $sale = Sale::with(['customer', 'seller', 'business', 'branch', 'items.stockItem','items.stockItem.item'])
+        ->where('reference', $reference)
+        ->firstOrFail();
 
-        return Inertia::render('Sales/PrintReceipt', [
-            'sale' => $sale
-        ]);
-    }
+    return Inertia::render('Sales/PrintReceipt', [
+        'sale' => $sale
+    ]);
+}
+
+
 
     public function receiptHistory(Request $request)
     {
-        $query = Sale::with(['branch', 'seller', 'items.product'])
+        $query = Sale::with(['branch', 'seller', 'items.stockItem'])
             ->where('business_id', auth()->user()->business_id);
 
         // Apply search filters
@@ -684,14 +688,15 @@ class SaleController extends Controller
     public function publicReceipt($reference)
     {
         // Find the receipt by reference
-        $receipt = \App\Models\SalesReceipt::where('reference', $reference)
-            ->with([
-                'sale.seller',
-                'sale.items.product.inventoryItem',
-                'sale.branch.business',
-                'sale.customer',
-                'items'
-            ])->firstOrFail();
+    $receipt = \App\Models\SalesReceipt::where('reference', $reference)
+        ->with([
+            'sale.seller',
+            'sale.items.stockItem.item',
+            'sale.branch.business',
+            'sale.customer',
+            'items.stockItem.item'
+        ])->firstOrFail();
+
 
         $sale = $receipt->sale;
 
@@ -723,9 +728,9 @@ class SaleController extends Controller
                     return [
                         'id' => $item->id,
                         'product' => [
-                            'id' => $item->product->id,
-                            'name' => $item->product->inventoryItem->name,
-                            'barcode' => $item->product->inventoryItem->barcode
+                            'id' => $item->stockItem->id,
+                            'name' => $item->stockItem->item->name,
+                            'barcode' => $item->stockItem->item->barcode
                         ],
                         'quantity' => $item->quantity,
                         'unit_price' => $item->unit_price,

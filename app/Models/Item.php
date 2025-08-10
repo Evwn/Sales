@@ -39,4 +39,11 @@ class Item extends Model
         return $this->hasMany(StockItem::class);
     }
     public function purchaseItems() { return $this->hasMany(PurchaseItem::class); }
+    public function sales() { return $this->hasMany(SaleItem::class); }
+    public function stockTransfers() { return $this->hasMany(StockTransferItem::class); }
+    public function purchaseReturns() { return $this->hasMany(PurchaseReturnItem::class); }
+    public function saleReturns() { return $this->hasMany(SaleReturnItem::class); }
+    public function inventoryAdjustments() { return $this->hasMany(InventoryAdjustmentItem::class); }
+    
+
 } 

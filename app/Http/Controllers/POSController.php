@@ -117,6 +117,7 @@ class POSController extends Controller
             // Get all stock items for the branch including composite items and variants
             $stockItems = \App\Models\StockItem::with([
                 'item.category', 
+                'item.taxGroup',
                 'item.components.componentItem',
                 'item.components.componentVariant',
                 'variant'
@@ -665,13 +666,27 @@ class POSController extends Controller
 
         // Mark the ticket as converted
         $ticket->update(['status' => 'completed']);
+        \Log::info('Ticket converted to sale', [
+            'sale' => $sale->load(['items', 'payments', 'customer', 'seller', 'business', 'branch'])->toArray(),
+            'receipt' => $receipt->load(['items'])->toArray(),
+        ]);
 
         return response()->json([
             'success' => true,
-            'sale' => $sale->load(['items', 'payments', 'customer', 'seller', 'business', 'branch']),
-            'receipt' => $receipt->load(['items']),
+            'sale' => $sale->load([
+                'items.stockItem.item',
+                'payments',
+                'customer',
+                'seller',
+                'business',
+                'branch'
+            ]),
+            'receipt' => $receipt->load([
+                'items.stockItem.item:id,name'
+            ]),
             'message' => 'Ticket successfully converted to sale'
         ]);
+
         
         } catch (\Exception $e) {
             \Log::error('Error converting ticket to sale', [

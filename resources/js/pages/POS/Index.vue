@@ -808,6 +808,68 @@
       </div>
     </div>
   </div>
+  <div v-if="showSalesReceipt" class="fixed inset-0 bg-gray-100 z-50">
+    <!-- Main Payment Interface -->
+    <div class="flex h-full">
+      <!-- Left Panel: Ticket Summary -->
+      <div class="w-1/3 bg-white border-r border-gray-200">
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold">Ticket</h2>
+            <div class="flex items-center space-x-2">
+              <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <button @click="toggleTopMenu" class="p-1 hover:bg-gray-100 rounded">
+                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Cart Items -->
+          <div class="space-y-3 mb-4">
+            <div v-for="item in cart" :key="item.id" class="flex justify-between items-center py-2 border-b border-gray-100">
+              <div class="flex-1">
+                <div class="font-medium">{{ item.name }}</div>
+                <div class="text-sm text-gray-500">x{{ item.qty }}</div>
+              </div>
+              <div class="text-right">
+                <div class="font-medium">KES {{ (item.price * item.qty).toFixed(2) }}</div>
+                <div class="text-sm text-gray-500">KES {{ item.price.toFixed(2) }} each</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Summary -->
+          <div class="border-t pt-4 space-y-2">
+            <div class="flex justify-between">
+              <span class="text-gray-600">Discounts</span>
+              <span class="font-medium">KES {{ discount.toFixed(2) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Tax (included)</span>
+              <span class="font-medium">KES {{ tax.toFixed(2) }}</span>
+            </div>
+            <div class="flex justify-between text-lg font-bold">
+              <span>Total</span>
+              <span>KES {{ total.toFixed(2) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Panel: Payment Interface -->
+      <div class="w-2/3 bg-gray-50 p-6">
+     <SalesReceipt v-if="currentSale" :sale="currentSale"
+        @back="back"
+     />
+      </div>
+    </div>
+  </div>
   
   <!-- Split payment view is now handled by PaymentPanel component -->
 </template>
@@ -816,6 +878,7 @@ import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 import axios from 'axios';
 import PaymentPanel from '@/components/POS/PaymentPanel.vue';
+import SalesReceipt from '@/components/SalesReceipt.vue';
 
 const page = usePage();
 const props = defineProps({ 
@@ -890,7 +953,9 @@ const showShiftView = ref(false);
 const showSettingsView = ref(false);
 const selectedSetting = ref('printers');
 const showPaymentView = ref(false);
+const showSalesReceipt = ref(false);
 const currentTicketId = ref(null);
+const currentSale = ref(null);
 
 // Add missing computed properties and functions
 const filteredItems = computed(() => {
@@ -936,9 +1001,15 @@ const discounts = computed(() => {
 });
 
 const tax = computed(() => {
-  const subtotal = cart.value.reduce((sum, item) => sum + ((Number(item.price) || 0) * (Number(item.qty) || 0)), 0);
-  return subtotal * 0.16; // 16% tax rate
+  return cart.value.reduce((sum, item) => {
+    const subtotal = (Number(item.price) || 0) * (Number(item.qty) || 0);
+    if (item.is_taxable && item.tax_group?.rate) {
+      return sum + subtotal * (Number(item.tax_group.rate) / 100);
+    }
+    return sum;
+  }, 0);
 });
+
 
 const total = computed(() => {
   const subtotal = cart.value.reduce((sum, item) => sum + ((Number(item.price) || 0) * (Number(item.qty) || 0)), 0);
@@ -1281,6 +1352,12 @@ function backToPOS() {
   }
 }
 
+function back(){
+  showSalesReceipt.value = false;
+  showPaymentView.value = false;
+  clearCurrentTicket();
+}
+
 async function loadTicketItemsToCart() {
   if (!currentTicketId.value) return;
   
@@ -1410,25 +1487,59 @@ function handlePartialUpdate(paymentData) {
 
 async function handlePaymentComplete(paymentData) {
   console.log('Payment complete received from PaymentPanel', paymentData);
-    if (paymentData.cancelled) {
-      showToaster('Order cancelled.', 'success');
-      showPaymentView.value = false;
-      currentTicketId.value = null;
-      cart.value = [];
-      return;
-    }
 
-  
+  if (paymentData.cancelled) {
+    showToaster('Order cancelled.', 'success');
+    showPaymentView.value = false;
+    currentTicketId.value = null;
+    cart.value = [];
+    return;
+  }
+
   try {
     const response = await axios.post(`/pos/ticket/${currentTicketId.value}/convert-to-sale`, {
       customer_id: selectedCustomer.value?.id || null
     });
-    
+
     if (response.data.success) {
       console.log('Sale created successfully:', response.data.sale);
       showToaster('Sale completed successfully!', 'success');
 
+        currentSale.value = {
+          reference: response.data.sale.reference,
+          receipt_reference: response.data.receipt.reference,
+          created_at: response.data.sale.sale_date,
+          seller: response.data.sale.seller,
+          cashier: response.data.sale.seller?.name || '', 
+          customer: response.data.sale.customer,
+          branch: {
+            name: response.data.sale.branch.name,
+            business: {
+              name: response.data.sale.business.name,
+              logo_url: response.data.sale.business.logo_url,
+              receipt_footer: response.data.sale.business.receipt_footer,
+              terms_and_conditions: response.data.sale.business.terms_and_conditions,
+              contact_information: response.data.sale.business.contact_information
+            }
+          },
+          receipt_items: response.data.receipt.items.map(item => ({
+            id: item.id,
+            product_name: item.stock_item?.item?.name || 'Unknown', 
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            total: item.total
+          })),
+          subtotal: response.data.receipt.subtotal,
+          tax: response.data.receipt.tax,
+          discount: response.data.receipt.discount,
+          total: response.data.receipt.total,
+          payment_method: Object.keys(response.data.sale.payment_methods).join(', '),
+          receipt_barcode: response.data.receipt.reference
+        };
+
+
       showPaymentView.value = false;
+      showSalesReceipt.value = true;
       currentTicketId.value = null;
       cart.value = [];
       selectedCustomer.value = null;
@@ -1437,8 +1548,6 @@ async function handlePaymentComplete(paymentData) {
     }
   } catch (error) {
     console.error('Error creating sale:', error);
-    
-    // Show error message
     showToaster(error.response?.data?.error || 'Failed to create sale. Please try again.', 'error');
   }
 }

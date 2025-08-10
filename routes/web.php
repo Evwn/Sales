@@ -255,7 +255,7 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/sales/receipt/{reference}', [App\Http\Controllers\SaleController::class, 'publicReceipt'])->name('sales.public-receipt');
 
 Route::get('/sales/verify-barcode', [SaleController::class, 'verifyBarcode'])->name('sales.verify-barcode');
-Route::get('/sales/{sale}/print-receipt', [SaleController::class, 'printReceipt'])->name('sales.print-receipt');
+Route::get('/sales/{reference}/print-receipt', [SaleController::class, 'printReceipt']);
 
 // Test low stock notification
 Route::post('/test-low-stock-notification', [App\Http\Controllers\SaleController::class, 'testLowStockNotification'])
