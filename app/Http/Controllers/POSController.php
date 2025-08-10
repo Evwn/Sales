@@ -21,9 +21,7 @@ use App\Models\Payment;
 class POSController extends Controller
 {
     public function loginWithPin(Request $request)
-    {   \Log::info('PosController', [
-            'Login with pin ' => $request,
-        ]);
+    {
         $request->validate([
             'pin_code' => 'required|digits:4',
             'device_uuid' => 'required|string',
@@ -75,9 +73,7 @@ class POSController extends Controller
     }
 
     public function verifyPin(Request $request)
-    {   \Log::info('PosController', [
-            'verify pin' => $request,
-        ]);
+    {
         $request->validate([
             'pin_code' => 'required|digits:4',
             'device_uuid' => 'required|string',
@@ -267,16 +263,7 @@ class POSController extends Controller
                     ->count();
             }
         }
-                                            // Debug logging
-        \Log::info('stock items', [
-            'shiftIsOpen' => $shiftIsOpen,
-            'shiftId' => $shiftId,
-            'openShift' => $openShift,
-            'shiftNumber' => $shiftNumber,
-            'cashDrawerData' => $cashDrawerData,
-            'userBranchId' => $user->branch_id,
-            'userId' => $user->id,
-        ]);
+
         return Inertia::render('POS/Index', [
             'stockItems' => $stockItems,
             'categories' => $categories,
@@ -512,9 +499,7 @@ class POSController extends Controller
     }
 
     public function logout(Request $request)
-    {   \Log::info('PosController', [
-            'logout' => $request,
-        ]);
+    {  
         // Clock out the user if they have an open time clock entry
         $user = Auth::user();
         if ($user && $user->branch_id) {
@@ -602,8 +587,7 @@ class POSController extends Controller
                 ]);
                 $saleItemsCreated++;
             } else {
-                // Log error if stock item not found
-                \Log::error('Stock item not found for item_id: ' . $ticketItem->item_id . ' and location_id: ' . $user->branch_id);
+
             }
         }
 
@@ -659,18 +643,11 @@ class POSController extends Controller
                 ]);
                 $receiptItemsCreated++;
             } else {
-                // Log error if stock item not found
-                \Log::error('Stock item not found for receipt item_id: ' . $ticketItem->item_id . ' and location_id: ' . $user->branch_id);
             }
         }
 
         // Mark the ticket as converted
         $ticket->update(['status' => 'completed']);
-        \Log::info('Ticket converted to sale', [
-            'sale' => $sale->load(['items', 'payments', 'customer', 'seller', 'business', 'branch'])->toArray(),
-            'receipt' => $receipt->load(['items'])->toArray(),
-        ]);
-
         return response()->json([
             'success' => true,
             'sale' => $sale->load([
@@ -689,11 +666,6 @@ class POSController extends Controller
 
         
         } catch (\Exception $e) {
-            \Log::error('Error converting ticket to sale', [
-                'ticket_id' => $ticketId,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
             
             return response()->json([
                 'success' => false,

@@ -1,14 +1,5 @@
 <template>
   <div class="receipt scrollable-receipt" ref="receiptRef">
-    <div class="flex items-center justify-between bg-green-600 text-white px-6 py-4 rounded-t-lg">
-      <div class="flex items-center space-x-2">
-        <button @click="$emit('back')" class="focus:outline-none">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-          </svg> Back
-        </button>
-    </div>
-    </div>
     <!-- Front Side -->
     <div class="receipt-side front">
       <div class="receipt-header">
@@ -27,7 +18,7 @@
         </div>
         <div class="info-row">
           <span>Date:</span>
-          <span>{{ formatDate(sale.created_at) }}</span>
+         <span>{{ formatDate(sale.created_at) }}</span>
         </div>
         <div class="info-row">
           <span>Cashier:</span>
@@ -49,8 +40,8 @@
         <div v-for="item in (sale.receipt_items || sale.items)" :key="item.id" class="item-row">
           <span>{{ item.product_name || item.product?.name ||item.stock_item?.item?.name || 'N/A' }}</span>
           <span>{{ item.quantity }}</span>
-          <span>{{ Number(item.unit_price || item.price).toFixed(2) }}</span>
-          <span>{{ Number(item.total || item.total_price || item.subtotal).toFixed(2) }}</span>
+          <span>{{ Number(item.unit_price ?? item.price ?? 0).toFixed(2) }}</span>
+          <span>{{ Number(item.total ?? item.total_price ?? item.subtotal ?? 0).toFixed(2) }}</span>
         </div>
       </div>
 
@@ -107,20 +98,6 @@
         </div>
       </div>
     </div>
-    <div class="receipt-actions flex justify-end space-x-2 mt-4 px-4">
-  <button 
-    @click="$emit('back')" 
-    class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded">
-    Cancel
-  </button>
-
-  <button 
-    @click="printReceipt" 
-    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
-    Print
-  </button>
-</div>
-
   </div>
 </template>
 
@@ -190,14 +167,9 @@ const contactInformation = computed(() => {
   return props.sale.branch?.business?.contact_information || 'For any queries, please contact us.';
 });
 
-const printReceipt = () => {
-  const reference = props.sale.reference;
-  window.location.href = `/sales/${reference}/print-receipt`; 
-};
-
-
 const formatDate = (date) => {
-  return new Date(date).toLocaleString();
+  const validDate = date ? new Date(date) : new Date();
+  return validDate.toLocaleString();
 };
 
 const formatCurrency = (amount) => {

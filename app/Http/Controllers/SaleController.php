@@ -456,10 +456,26 @@ public function printReceipt($reference)
     $sale = Sale::with(['customer', 'seller', 'business', 'branch', 'items.stockItem','items.stockItem.item'])
         ->where('reference', $reference)
         ->firstOrFail();
-
+    $ref=$sale->sales_receipts()->first();
     return Inertia::render('Sales/PrintReceipt', [
-        'sale' => $sale
+        'sale' => [
+            'id' => $sale->id,
+            'reference' => $ref->reference,
+            'items' => $sale->items->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'product_name' => $item->stockItem->item->name ?? 'N/A',
+                    'quantity' => (float) $item->quantity,
+                    'unit_price' => (float) $item->unit_price,
+                    'total' => (float) $item->total,
+                ];
+            }),
+            'subtotal' => (float) $sale->items->sum('total'),
+            'total' => (float) $sale->amount,
+            'payment_method' => $sale->payment_method
+        ]
     ]);
+
 }
 
 

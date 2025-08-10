@@ -863,10 +863,32 @@
       </div>
 
       <!-- Right Panel: Payment Interface -->
+      <div class="flex items-center justify-between bg-green-600 text-white px-6 py-4 rounded-t-lg">
+      <div class="flex items-center space-x-2">
+        <button @click="back" class="focus:outline-none">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg> Back
+        </button>
+    </div>
+    </div>
       <div class="w-2/3 bg-gray-50 p-6">
      <SalesReceipt v-if="currentSale" :sale="currentSale"
         @back="back"
      />
+    <div class="receipt-actions flex justify-end space-x-2 mt-4 px-4">
+      <button 
+        @click="back" 
+        class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded">
+        Cancel
+      </button>
+
+      <button 
+        @click="printReceipt" 
+        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+        Print
+      </button>
+    </div>
       </div>
     </div>
   </div>
@@ -956,6 +978,7 @@ const showPaymentView = ref(false);
 const showSalesReceipt = ref(false);
 const currentTicketId = ref(null);
 const currentSale = ref(null);
+const saleReference = ref('');
 
 // Add missing computed properties and functions
 const filteredItems = computed(() => {
@@ -974,7 +997,10 @@ const filteredItems = computed(() => {
     // This includes: ordinary items, composite items, variants of both
     return items;
   });
-
+const printReceipt = () => {
+  const reference =saleReference.value;
+  window.location.href = `/sales/${reference}/print-receipt`; 
+};
   const filteredCustomers = computed(() => {
     if (!props.customers) return [];
 
@@ -1504,6 +1530,7 @@ async function handlePaymentComplete(paymentData) {
     if (response.data.success) {
       console.log('Sale created successfully:', response.data.sale);
       showToaster('Sale completed successfully!', 'success');
+      saleReference.value = response.data.sale.reference;
 
         currentSale.value = {
           reference: response.data.sale.reference,
