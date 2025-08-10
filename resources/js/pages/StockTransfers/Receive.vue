@@ -2,7 +2,7 @@
 <template>
   <app-layout title="Stock Transfer">
     <PageHeader title="Receive Stock Transfer" :button="{ text: 'Back', link: '/stock-transfers' }" />
- <div class="min-h-screen bg-gradient-to-br from-purple-900 to-gray-900 flex items-center justify-center p-6">
+ <div class="min-h-screen bg-gradient-to-br from-white/20 to-gray-900 flex items-center justify-center p-6">
     <div class="w-full max-w-2xl backdrop-blur-md bg-white/10 border border-purple-500 rounded-2xl shadow-xl p-8">
       <h1 class="text-3xl font-bold text-white/80 mb-6">Receive Stock Transfer</h1>
 
@@ -15,7 +15,7 @@
 
       <form @submit.prevent="submit">
         <div v-for="(item, idx) in items" :key="item.id" class="mb-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-white/10 p-4 rounded-xl border border-purple-300">
-          <span class="text-white font-medium w-full sm:w-1/2">{{ item.product?.name }}</span>
+          <span class="text-white font-medium w-full sm:w-1/2">{{ items.stockItem.item?.name }}</span>
           <div class="flex items-center gap-2 w-full sm:w-1/2">
             <input
               v-model.number="item.received_quantity"
@@ -40,14 +40,14 @@
             >
               Mark as Received
             </button>
-            or
+            <!-- or
             <button
               type="button"
               @click="returnRemaining"
               class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold shadow-lg transition"
             >
               Return the Items
-            </button>
+            </button> -->
           </div>
       </form>
     </div>

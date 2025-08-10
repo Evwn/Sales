@@ -40,11 +40,6 @@ class StockTransferController extends Controller
     public function create()
     {   $user = auth()->user();
         $locations = Location::whereIn('business_id', auth()->user()->ownedBusinesses()->pluck('id'))->get();
-
-        \Log::info('Stock Transfer', [
-            'Location' => $locations,
-
-        ]);
         
         $items = \App\Models\Item::with('variants')->get();
         $itemData = collect();
@@ -101,12 +96,7 @@ class StockTransferController extends Controller
     }
 
     public function store(Request $request)
-    {    \Log::info('Stock Transfer', [
-            'Store from' => $request->from_store_id,
-            'Store to' => $request->to_store_id,
-            'notes' => $request->notes,
-            'items' => $request->items,
-        ]);
+    { 
         $validated = $request->validate([
             'from_store_id' => 'required|exists:locations,id',
             'to_store_id' => 'required|exists:locations,id|different:from_store_id',
@@ -114,9 +104,6 @@ class StockTransferController extends Controller
             'items' => 'required|array|min:1',
             'items.*.item_id' => 'required|exists:items,id',
             'items.*.quantity' => 'required|numeric|min:1',
-        ]);
-        \Log::info('Stock Transfer', [
-            'Validation' => $validated,
         ]);
         $reference=StockTransfer::generateReference();
 
@@ -130,9 +117,6 @@ class StockTransferController extends Controller
             'reference' => $reference,
             'notes' => $validated['notes'] ?? null,
             'status' => 'pending',
-        ]);
-         \Log::info('Stock Transfer', [
-            'Reference' => $reference,
         ]);
         foreach ($validated['items'] as $item) {
             $transfer->items()->create([
@@ -158,9 +142,6 @@ class StockTransferController extends Controller
             } catch (\Exception $e) {
         DB::rollBack();
 
-        \Log::error('Failed to create stock transfer', [
-            'error' => $e->getMessage(),
-        ]);
 
          return back()->withErrors(['error' => 'Failed to create stock transfer: ' . $e->getMessage()]);
     }
@@ -173,11 +154,6 @@ class StockTransferController extends Controller
             'items' => 'required|array|min:1',
             'items.*.id' => 'required|exists:stock_transfer_items,id',
             'items.*.received_quantity' => 'required|numeric|min:0',
-        ]);
-
-        \Log::info('receive save', [
-            'receive save' => $validated,
-            'Stock being updated' => $stockTransfer
         ]);
 
         DB::beginTransaction();
@@ -233,11 +209,6 @@ class StockTransferController extends Controller
         } catch (\Throwable $e) {
             DB::rollBack();
 
-            \Log::error('Failed to receive stock transfer', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
             return redirect()->back()->with('error', 'Failed to receive stock transfer. Please try again.');
         }
     }
@@ -246,7 +217,7 @@ class StockTransferController extends Controller
 
     public function receiveForm(StockTransfer $stockTransfer)
     {
-        $stockTransfer->load(['items.product', 'fromStore', 'toStore']);
+        $stockTransfer->load(['items,items.stockItem.item', 'fromStore', 'toStore']);
 
         $filteredItems = $stockTransfer->items->filter(function ($item) {
             return ($item->quantity - $item->quantity_received) > 0;
@@ -257,10 +228,6 @@ class StockTransferController extends Controller
         })->values();
 
         $stockTransfer->setRelation('items', $filteredItems);
-
-        \Log::info('receive form', [
-            'transfer' => $stockTransfer,
-        ]);
 
         return Inertia::render('StockTransfers/Receive', [
             'transfer' => $stockTransfer,

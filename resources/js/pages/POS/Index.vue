@@ -63,18 +63,18 @@
         <div class="py-4">
           <!-- Sales Section -->
           <div class="px-6 py-2">
-            <div class="flex items-center text-green-600 font-semibold mb-2">
+            <div class="flex items-center text-green-600 font-semibold mb-2" disable>
               <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
               Sales
             </div>
-            <div class="ml-8 space-y-2">
-              <button class="flex items-center w-full text-left py-2 px-3 rounded hover:bg-gray-100 transition-colors">
+            <div class="ml-8 space-y-2" >
+              <button disabled @click="showRecieptView = true; showSidebar = false" class="flex items-center cursor-not-allowed text-gray-400 w-full text-left py-2 px-3 rounded hover:bg-gray-100 transition-colors">
                 <svg class="w-4 h-4 mr-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                Receipts
+                Receipts (coming soon)
               </button>
               <button @click="showShiftView = true; showSidebar = false" class="flex items-center w-full text-left py-2 px-3 rounded hover:bg-gray-100 transition-colors">
                 <svg class="w-4 h-4 mr-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,11 +82,11 @@
                 </svg>
                 Shift
               </button>
-              <button class="flex items-center w-full text-left py-2 px-3 rounded hover:bg-gray-100 transition-colors">
+              <!-- <button disabled class="cursor-not-allowed text-gray-400 flex items-center w-full text-left py-2 px-3 rounded hover:bg-gray-100 transition-colors" disable>
                 <svg class="w-4 h-4 mr-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
-                Items
+                Items (coming soon)
               </button>
               <button @click="showSettingsView = true; showSidebar = false" class="flex items-center w-full text-left py-2 px-3 rounded hover:bg-gray-100 transition-colors">
                 <svg class="w-4 h-4 mr-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,38 +94,46 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
                 Settings
-              </button>
+              </button> -->
             </div>
           </div>
 
-          <div class="border-t border-gray-200 my-4"></div>
+        
 
           <!-- Other Sections -->
           <div class="px-6 space-y-2">
-            <button class="flex items-center w-full text-left py-2 px-3 rounded hover:bg-gray-100 transition-colors">
+            <!-- <button disabled class=" cursor-not-allowed text-gray-400 flex items-center w-full text-left py-2 px-3 rounded hover:bg-gray-100 transition-colors">
               <svg class="w-5 h-5 mr-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
-              Back office
+              Back office (coming soon)
             </button>
-            <button class="flex items-center w-full text-left py-2 px-3 rounded hover:bg-gray-100 transition-colors">
+            <button disabled class="cursor-not-allowed text-gray-400 flex items-center w-full text-left py-2 px-3 rounded hover:bg-gray-100 transition-colors">
               <svg class="w-5 h-5 mr-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
               </svg>
-              Apps
+              Apps (coming soon)
             </button>
-            <button class="flex items-center w-full text-left py-2 px-3 rounded hover:bg-gray-100 transition-colors">
+            <button disabled class="cursor-not-allowed text-gray-400 flex items-center w-full text-left py-2 px-3 rounded hover:bg-gray-100 transition-colors">
               <svg class="w-5 h-5 mr-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Support
-            </button>
+              Support (coming soon)
+            </button> -->
           </div>
         </div>
-
+        <div class="px-4 py-4 border-t border-gray-200">
+          <div class="text-sm text-gray-600 mb-3">{{ props.user?.email || '' }}</div>
+          <button
+            @click="clockOut"
+            class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-colors"
+          >
+            CLOCK OUT
+          </button>
+        </div>
         <!-- Version -->
         <div class="absolute bottom-4 left-6 text-xs text-gray-400">
-          v. 2.25.2
+          v. 1.0.0
         </div>
       </div>
     </div>
@@ -151,8 +159,8 @@
       <div class="flex-1 overflow-y-auto p-6">
         <!-- Top Buttons -->
         <div class="flex gap-4 mb-6">
-          <button class="px-6 py-3 border border-green-600 text-green-600 rounded-lg font-semibold hover:bg-green-50 transition-colors">
-            CASH MANAGEMENT
+          <button disabled class="cursor-not-allowed text-gray-400 px-6 py-3 border border-green-600 text-green-600 rounded-lg font-semibold hover:bg-green-50 transition-colors">
+            CASH MANAGEMENT (coming soon)
           </button>
           <button @click="closeShift" class="px-6 py-3 border border-green-600 text-green-600 rounded-lg font-semibold hover:bg-green-50 transition-colors">
             CLOSE SHIFT
@@ -306,7 +314,7 @@
 
         <!-- User Info and Logout -->
         <div class="px-4 py-4 border-t border-gray-200">
-          <div class="text-sm text-gray-600 mb-3">{{ user?.email || 'user@example.com' }}</div>
+          <div class="text-sm text-gray-600 mb-3">{{ props.user?.email || '' }}</div>
           <button
             @click="clockOut"
             class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-colors"
@@ -959,6 +967,32 @@ const expectedCash = ref(0);
 const realCash = ref('');
 const closingNote = ref('');
 const closingReason = ref('');
+const receipts = ref([
+  {
+    id: 1,
+    reference: "RCP-001",
+    date: "2025-08-10",
+    customer: "John Doe",
+    total: "$45.00",
+    items: [
+      { id: 1, name: "Product A", qty: 2, price: "$10.00" },
+      { id: 2, name: "Product B", qty: 1, price: "$25.00" }
+    ]
+  },
+  {
+    id: 2,
+    reference: "RCP-002",
+    date: "2025-08-09",
+    customer: "Jane Smith",
+    total: "$30.00",
+    items: [
+      { id: 3, name: "Product C", qty: 3, price: "$10.00" }
+    ]
+  }
+]);
+
+const selectedReceipt = ref(null);
+
 // Toaster notifications
 const toaster = ref({
   show: false,
@@ -972,6 +1006,7 @@ const showSidebar = ref(false);
 const user = ref(props.auth?.user || null);
 const business = ref(null);
 const showShiftView = ref(false);
+const showRecieptView = ref(false);
 const showSettingsView = ref(false);
 const selectedSetting = ref('printers');
 const showPaymentView = ref(false);
