@@ -14,8 +14,11 @@
       </div>
 
       <form @submit.prevent="submit">
-        <div v-for="(item, idx) in items" :key="item.id" class="mb-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-white/10 p-4 rounded-xl border border-purple-300">
-          <span class="text-white font-medium w-full sm:w-1/2">{{ items.stockItem.item?.name }}</span>
+        <div v-for="(item, idx) in items" :key="item.id" class="mb-4 flex flex-col sm:flex-row items-start sm:items-center bg-white/10 p-4 rounded-xl border border-purple-300">
+          <span class="text-black font-medium w-full sm:w-1/2">
+            {{ item.product.item?.name }}
+          </span>
+
           <div class="flex items-center gap-2 w-full sm:w-1/2">
             <input
               v-model.number="item.received_quantity"

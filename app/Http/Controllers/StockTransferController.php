@@ -217,7 +217,7 @@ class StockTransferController extends Controller
 
     public function receiveForm(StockTransfer $stockTransfer)
     {
-        $stockTransfer->load(['items,items.stockItem.item', 'fromStore', 'toStore']);
+        $stockTransfer->load(['items.product.item','items.product', 'fromStore', 'toStore']);
 
         $filteredItems = $stockTransfer->items->filter(function ($item) {
             return ($item->quantity - $item->quantity_received) > 0;
