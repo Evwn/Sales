@@ -340,6 +340,9 @@ watch(() => page.props.flash, () => {
                                             <DropdownMenuItem as-child>
                                                 <Link href="/stock-transfers" :class="{'font-bold text-blue-600': isCurrentRoute('/stock-transfers')}">Stock Transfers</Link>
                                             </DropdownMenuItem>
+                                            <DropdownMenuItem as-child>
+                                                <Link href="/stock-adjustment" :class="{'font-bold text-blue-600': isCurrentRoute('/stock-adjustment')}">Stock Adjustment</Link>
+                                            </DropdownMenuItem>                                            
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                     <DropdownMenu v-if="canViewInventory" class="ml-2">

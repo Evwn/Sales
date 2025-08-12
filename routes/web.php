@@ -18,6 +18,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\BusinessAccess;
 use App\Http\Middleware\CheckBranchAccess;
+use App\Http\Controllers\StockAdjustment;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -325,6 +326,8 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/api/items/search', [\App\Http\Controllers\ItemController::class, 'search'])->name('items.search');
 
 Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::class])->group(function () {
+    Route::get('/stock-adjustment',[StockAdjustment::class,'index'])->name('stock.adjust');
+    Route::put('/stock-items/{stockItem}', [StockAdjustment::class, 'update']);
     Route::get('/employers', [\App\Http\Controllers\EmployerController::class, 'index'])->name('employers.index');
     Route::get('/employers/create', [\App\Http\Controllers\EmployerController::class, 'create'])->name('employers.create');
     Route::post('/employers', [\App\Http\Controllers\EmployerController::class, 'store'])->name('employers.store');
@@ -416,6 +419,6 @@ Route::get('/pos/purchase/{id}', function ($id) {
 
 // Backoffice area (requires password login)
 Route::middleware(['auth', 'backoffice.only'])->group(function () {
-    Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index']);
+    Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
     // ...other backoffice routes
 });

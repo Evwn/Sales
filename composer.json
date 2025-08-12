@@ -17,6 +17,7 @@
         "laravel/framework": "^11.0",
         "laravel/sanctum": "^4.1",
         "laravel/tinker": "^2.10.1",
+        "payherokenya/payhero-php": "^1.0",
         "pusher/pusher-php-server": "^7.2",
         "spatie/laravel-permission": "^6.20",
         "twilio/sdk": "^8.6"

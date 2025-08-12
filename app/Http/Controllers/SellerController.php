@@ -9,7 +9,7 @@ use App\Models\Seller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
+
 use Inertia\Inertia;
 use App\Mail\SellerAccountCreatedMail;
 use Illuminate\Support\Facades\Mail;

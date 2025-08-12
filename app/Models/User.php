@@ -237,13 +237,13 @@ class User extends Authenticatable implements MustVerifyEmail
         return 'offline';
     }
 
-    public function allStores()
+    public function allLocation()
     {
-        return Store::whereIn('business_id', $this->ownedBusinesses()->pluck('id'))->get();
+        return Location::whereIn('business_id', $this->ownedBusinesses()->pluck('id'))->get();
     }
     public function allStoreIds()
     {
-        return $this->allStores()->pluck('id');
+        return $this->allLocation()->pluck('id');
     }
 
     /**

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use App\Services\MpesaService;
 use App\Models\BranchMpesaCredential;
@@ -786,17 +785,9 @@ class POSMpesaController extends Controller
                     'is_active' => true
                 ]);
                 
-                \Log::info('Created POS M-PESA callback URL', [
-                    'branch_id' => $credentials->branch_id,
-                    'environment' => $credentials->environment,
-                    'callback_url' => $callbackUrl
-                ]);
             }
         } catch (\Exception $e) {
-            \Log::error('Failed to ensure POS callback URL exists', [
-                'branch_id' => $credentials->branch_id,
-                'error' => $e->getMessage()
-            ]);
+
         }
     }
 } 

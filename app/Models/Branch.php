@@ -129,4 +129,5 @@ class Branch extends Model
         $this->save();
         return $barcode;
     }
+    
 } 

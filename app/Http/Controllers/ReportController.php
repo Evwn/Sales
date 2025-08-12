@@ -195,10 +195,6 @@ class ReportController extends Controller
 
     public function export(Request $request)
     {
-        \Log::info('report.export', [
-            'user_id' => auth()->id(),
-            'request' => $request->all(),
-        ]);
         $user = auth()->user();
         $userBusinesses = Business::where('owner_id', $user->id)
             ->orWhereHas('admins', function ($q) use ($user) {

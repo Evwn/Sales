@@ -16,7 +16,6 @@ use App\Services\BarcodeService;
 use App\Services\PDFService;
 use App\Services\WhatsAppService;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
 use App\Services\ActivityLogger;
 
 class SaleController extends Controller

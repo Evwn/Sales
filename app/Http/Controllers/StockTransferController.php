@@ -146,10 +146,8 @@ class StockTransferController extends Controller
          return back()->withErrors(['error' => 'Failed to create stock transfer: ' . $e->getMessage()]);
     }
     }
-   public function receive(Request $request, StockTransfer $stockTransfer)
+    public function receive(Request $request, StockTransfer $stockTransfer)
     {
-        $user = auth()->user();
-
         $validated = $request->validate([
             'items' => 'required|array|min:1',
             'items.*.id' => 'required|exists:stock_transfer_items,id',
@@ -159,26 +157,34 @@ class StockTransferController extends Controller
         DB::beginTransaction();
 
         try {
-            $allReceived = true; // Flag to track if all items are fully received
+            $allReceived = true;
 
             foreach ($validated['items'] as $itemData) {
-                $transferItem = $stockTransfer->items()->findOrFail($itemData['id']);
 
-               $remainingQty = $transferItem->quantity - $transferItem->quantity_received;
-                $qtyToAdd = min($itemData['received_quantity'], $remainingQty);
+                // Always fetch the latest data from DB
+                $transferItem = $stockTransfer->items()->where('id', $itemData['id'])->firstOrFail();
+                $transferItem->refresh();
 
-                $transferItem->increment('quantity_received', $qtyToAdd);
+                $requestedQty = (float) $itemData['received_quantity'];
+                $remainingQty = (float) $transferItem->quantity - (float) $transferItem->quantity_received;
 
-                // Check if this item is fully received
+                $qtyToAdd = min($requestedQty, $remainingQty);
+                if ($qtyToAdd <= 0) {
+                    continue;
+                }
+
+                // Update stock_transfer_items (increment quantity_received)
+                $transferItem->quantity_received += $qtyToAdd;
+                $transferItem->save();
+
                 if ($transferItem->quantity_received < $transferItem->quantity) {
                     $allReceived = false;
                 }
 
-                // Update destination stock
                 $itemId = $transferItem->stockItem->item_id;
                 $variantId = $transferItem->stockItem->variant_id;
-                $receivedQty = $itemData['received_quantity'];
 
+                // Update destination stock
                 $toStock = \App\Models\StockItem::where([
                     'location_id' => $stockTransfer->to_location_id,
                     'item_id'     => $itemId,
@@ -186,28 +192,34 @@ class StockTransferController extends Controller
                 ])->first();
 
                 if ($toStock) {
-                    $toStock->increment('quantity', $receivedQty);
+                    $toStock->increment('quantity', $qtyToAdd);
                 } else {
                     \App\Models\StockItem::create([
-                        'location_id' => $stockTransfer->to_location_id,
-                        'item_id'     => $itemId,
-                        'variant_id'  => $variantId,
-                        'quantity'    => $receivedQty,
+                        'location_id'     => $stockTransfer->to_location_id,
+                        'item_id'         => $itemId,
+                        'variant_id'      => $variantId,
+                        'quantity'        => $qtyToAdd,
                         'min_stock_level' => 0,
                         'max_stock_level' => 0,
                     ]);
                 }
             }
 
-            // Update stock transfer status
-            $status = $allReceived ? 'completed' : 'partially_received';
-            $stockTransfer->update(['status' => $status]);
+            $stockTransfer->update([
+                'status' => $allReceived ? 'completed' : 'partially_received'
+            ]);
 
             DB::commit();
 
             return redirect()->route('stock-transfers.index')->with('success', 'Stock transfer received.');
+
         } catch (\Throwable $e) {
             DB::rollBack();
+
+            \Log::error('Stock receive error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             return redirect()->back()->with('error', 'Failed to receive stock transfer. Please try again.');
         }

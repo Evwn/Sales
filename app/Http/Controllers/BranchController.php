@@ -276,7 +276,6 @@ class BranchController extends Controller
                 \Mail::to($business->owner->email)->send(new \App\Mail\BranchDeletedMail($branchName, $business->name, auth()->user()));
             }
         } catch (\Exception $e) {
-            \Log::error('Failed to send branch deleted email: ' . $e->getMessage());
         }
 
         // If the request expects JSON (axios/fetch), return JSON for SweetAlert

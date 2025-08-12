@@ -119,6 +119,10 @@ class Business extends Model
     {
         return $this->hasMany(Store::class);
     }
+      public function location()
+    {
+        return $this->hasMany(Location::class);
+    }
 
     public function getLogoUrlAttribute()
     {

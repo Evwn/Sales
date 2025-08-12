@@ -51,6 +51,8 @@ class RoleRouteAccess
                 'customers*',
                 'suppliers*',
                 'devices*',
+                'stock-adjustment*',
+                'stock-items*',
             ],
             'administrator' => [
                 'dashboard*',
@@ -77,6 +79,8 @@ class RoleRouteAccess
                 'customers*',
                 'suppliers*',
                 'devices*',
+                'stock-adjustment*',
+                'stock-items*', 
             ],
             'manager' => [
                 'dashboard*',
@@ -103,6 +107,8 @@ class RoleRouteAccess
                 'customers*',
                 'suppliers*',
                 'devices*',
+                'stock-adjustment*',
+                'stock-items*',
             ],
             'admin' => ['*'], // admin can access everything
         ];

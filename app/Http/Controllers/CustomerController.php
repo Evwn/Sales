@@ -11,7 +11,6 @@ class CustomerController extends Controller
 {
     public function store(Request $request)
     {
-        \Log::info('Customer creation request received', $request->all());
         
         try {
             $request->validate([
@@ -21,16 +20,10 @@ class CustomerController extends Controller
                 'address' => 'nullable|string',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('Validation failed', ['errors' => $e->errors()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $e->errors()
-            ], 422);
+
         }
 
         $user = Auth::user();
-        \Log::info('User authenticated', ['user_id' => $user->id, 'business_id' => $user->business_id, 'branch_id' => $user->branch_id]);
 
         try {
             $customer = Customer::create([
@@ -43,19 +36,8 @@ class CustomerController extends Controller
                 'status' => 1,
             ]);
 
-            \Log::info('Customer created successfully', ['customer_id' => $customer->id]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Customer created successfully!',
-                'customer' => $customer
-            ]);
         } catch (\Exception $e) {
-            \Log::error('Failed to create customer', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'request_data' => $request->all()
-            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create customer. Please try again.',
