@@ -27,7 +27,9 @@
         <div v-if="errorMsg" class="text-red-600 text-sm mb-2 text-center">{{ errorMsg }}</div>
         <div class="keypad-grid mb-2 expanded-keypad">
           <button v-for="n in 9" :key="n" class="keypad-btn" :disabled="isLoggingIn" @click="onKeypad(n.toString())">{{ n }}</button>
-          <div></div>
+          <button class="keypad-btn bg-blue-600 text-white" :disabled="isLoggingIn" @click="goToWelcome">
+            Back
+          </button>
           <button class="keypad-btn" :disabled="isLoggingIn" @click="onKeypad('0')">0</button>
           <button class="keypad-btn" :disabled="isLoggingIn" @click="onKeypad('clear')">Clear</button>
         </div>
@@ -94,6 +96,10 @@ function onKeypad(val) {
   }
   }
 }
+const goToWelcome = () => {
+  router.visit('/') 
+}
+
 function onKeydown(e) {
   if (isLoggingIn.value) return;
   if (e.key === 'Backspace') {
