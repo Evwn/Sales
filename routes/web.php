@@ -19,6 +19,12 @@ use App\Http\Controllers\UserController;
 use App\Http\Middleware\BusinessAccess;
 use App\Http\Middleware\CheckBranchAccess;
 use App\Http\Controllers\StockAdjustment;
+use App\Http\Controllers\RequisitionController;
+use App\Http\Controllers\QuotationController;
+use App\Http\Controllers\PurchaseOrderController;
+use App\Http\Controllers\GoodsReceiptController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\PaymentController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -92,6 +98,16 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::cla
     });
 
     // Main navigation routes
+    Route::resource('requisitions', RequisitionController::class);
+    Route::put('requisitions/{requisition}/status', [RequisitionController::class, 'updateStatus']);
+    Route::put('requisitions/{requisition}/items', [RequisitionController::class, 'updateItems']);
+    Route::delete('/requisitions/{requisition}/items/{item}', [RequisitionController::class, 'destroyItem'])
+    ->name('requisitions.items.destroy');
+    Route::resource('quotations', QuotationController::class);
+    Route::resource('purchase-orders', PurchaseOrderController::class);
+    Route::resource('goods-receipts', GoodsReceiptController::class);
+    Route::resource('invoices', InvoiceController::class);
+    Route::resource('payments', PaymentController::class);
     Route::get('/branches', [BranchController::class, 'all'])->name('branches.all');
     Route::get('/sellers', [SellerController::class, 'all'])->name('sellers.all');
     Route::get('/sales', [SaleController::class, 'all'])->name('sales.all');

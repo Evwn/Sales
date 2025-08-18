@@ -4,14 +4,18 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PurchaseItem extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'purchase_id', 'stock_item_id', 'item_id', 'variant_id', 'quantity_ordered', 'quantity_received', 'purchase_cost', 'proportional_additional_cost', 'status', 'unit_price', 'discount', 'tax'
+        protected $fillable = [
+        'purchase_id', 'stock_item_id', 'unit_price', 'discount', 'tax',
+        'item_id', 'variant_id', 'quantity_ordered', 'quantity_received',
+        'purchase_cost', 'proportional_additional_cost', 'status'
     ];
 
     protected $casts = [
@@ -49,5 +53,9 @@ class PurchaseItem extends Model
     public function getTotalAttribute(): float
     {
         return $this->subtotal - $this->discount + $this->tax;
+    }
+        public function goodsReceiptItems()
+    {
+        return $this->hasMany(GoodsReceiptItem::class, 'purchase_order_item_id');
     }
 } 

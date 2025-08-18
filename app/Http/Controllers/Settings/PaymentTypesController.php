@@ -28,12 +28,11 @@ class PaymentTypesController extends Controller
     {
         $user = auth()->user();
         
-        // Get all businesses the user has access to
-        $businesses = Business::whereHas('branches.users', function($query) use ($user) {
-            $query->where('id', $user->id);
-        })->orWhereHas('users', function($query) use ($user) {
-            $query->where('id', $user->id);
-        })->get();
+        $businesses = Business::where('owner_id', $user->id)
+                ->orWhereHas('admins', function ($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                })
+                ->get();
         
         // Get current business and branch
         $currentBusiness = null;
@@ -59,7 +58,6 @@ class PaymentTypesController extends Controller
                 $this->ensureCallbackUrlExists($mpesaCredentials);
             }
         }
-        
         return inertia('settings/PaymentTypes', [
             'businesses' => $businesses,
             'currentBusiness' => $currentBusiness,
@@ -198,7 +196,7 @@ class PaymentTypesController extends Controller
             
             // Create temporary credentials for testing
             $tempCredentials = new BranchMpesaCredential([
-                'branch_id' => $user->branch_id ?? 1, // Use current branch or default
+                'branch_id' => $user->branch_id, // Use current branch or default
                 'consumer_key' => $request->consumer_key,
                 'consumer_secret' => $request->consumer_secret,
                 'business_shortcode' => $request->business_shortcode,

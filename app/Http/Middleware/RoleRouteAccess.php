@@ -53,6 +53,7 @@ class RoleRouteAccess
                 'devices*',
                 'stock-adjustment*',
                 'stock-items*',
+                'requisitions*',
             ],
             'administrator' => [
                 'dashboard*',
@@ -81,6 +82,7 @@ class RoleRouteAccess
                 'devices*',
                 'stock-adjustment*',
                 'stock-items*', 
+                'requisitions*',
             ],
             'manager' => [
                 'dashboard*',

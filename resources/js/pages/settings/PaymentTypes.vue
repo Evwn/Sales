@@ -977,7 +977,6 @@ const testMpesaCredentials = async () => {
     sendingDialog.close();
 
     if (result.success) {
-      // Show waiting dialog for callback response
       const waitingDialog = Swal.fire({
         title: 'Waiting for Payment Response',
         html: `
@@ -1490,7 +1489,7 @@ const updateCallbackUrl = async (urlId, newUrl, description) => {
       Swal.fire({
         icon: 'error',
         title: 'Update Failed',
-        text: result.message || 'Failed to update callback URL',
+        text: 'Failed to update callback URL',
       });
     }
   } catch (error) {

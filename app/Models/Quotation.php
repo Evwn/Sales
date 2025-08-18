@@ -11,22 +11,42 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Quotation extends Model
 {
-    use HasFactory, SoftDeletes;
+     use SoftDeletes;
 
     protected $fillable = [
-        'reference',
-        'customer_id',
-        'total_amount',
-        'status',
-        'valid_until',
-        'business_id',
-        'branch_id',
+        'requisition_id', 'reference', 'supplier_id',
+        'user_id', 'total_amount', 'status', 'valid_until'
     ];
 
-    protected $casts = [
+        protected $casts = [
         'total_amount' => 'decimal:2',
         'valid_until' => 'datetime',
     ];
+
+    public function requisition()
+    {
+        return $this->belongsTo(Requisition::class);
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function items()
+    {
+        return $this->hasMany(QuotationItem::class);
+    }
+
+    public function purchase()
+    {
+        return $this->hasOne(Purchase::class);
+    }
 
     public function customer(): BelongsTo
     {
@@ -89,4 +109,21 @@ class Quotation extends Model
     {
         return $this->valid_until->format('Y-m-d H:i:s');
     }
+        public static function generateReference()
+    {
+        $prefix = 'QUO';
+        $date = now()->format('Ymd');
+        $lastReceipt = self::where('reference', 'like', "{$prefix}-{$date}-%")
+            ->orderBy('reference', 'desc')
+            ->first();
+
+        if ($lastReceipt) {
+            $lastNumber = (int) substr($lastReceipt->reference, -4);
+            $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+        } else {
+            $newNumber = '0001';
+        }
+
+        return "{$prefix}-{$date}-{$newNumber}";
+        }
 } 

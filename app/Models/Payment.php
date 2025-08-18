@@ -67,4 +67,21 @@ class Payment extends Model
     {
         return $this->status === 'failed';
     }
+        public static function generateReference()
+    {
+        $prefix = 'PV';
+        $date = now()->format('Ymd');
+        $lastReceipt = self::where('reference', 'like', "{$prefix}{$date}%")
+            ->orderBy('reference', 'desc')
+            ->first();
+
+        if ($lastReceipt) {
+            $lastNumber = (int) substr($lastReceipt->reference, -4);
+            $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+        } else {
+            $newNumber = '0001';
+        }
+
+        return "{$prefix}{$date}{$newNumber}";
+    }
 } 

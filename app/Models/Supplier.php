@@ -29,6 +29,21 @@ class Supplier extends Model
         'balance' => 'decimal:2',
     ];
 
+        public function quotations()
+    {
+        return $this->hasMany(Quotation::class);
+    }
+
+    public function invoices()
+    {
+        return $this->hasMany(SupplierInvoice::class);
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(SupplierPayment::class);
+    }
+
     public function business(): BelongsTo
     {
         return $this->belongsTo(Business::class);
@@ -43,12 +58,6 @@ class Supplier extends Model
     {
         return $this->hasMany(Purchase::class);
     }
-
-    public function invoices(): HasMany
-    {
-        return $this->hasMany(Invoice::class);
-    }
-
     public function getTotalDueAttribute(): float
     {
         return $this->invoices()->where('status', '!=', 'paid')->sum('amount');

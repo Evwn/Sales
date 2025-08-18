@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Models\Business;
+use App\Models\Requisition;
 use App\Policies\BusinessPolicy;
+use App\Policies\RequisitionPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use App\Models\Item;
 use App\Policies\ItemPolicy;
@@ -18,6 +20,7 @@ class AuthServiceProvider extends ServiceProvider
     protected $policies = [
         Business::class => BusinessPolicy::class,
         Item::class => ItemPolicy::class,
+        Requisition::class => RequisitionPolicy::class,
     ];
 
     /**

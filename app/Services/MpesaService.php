@@ -93,7 +93,7 @@ class MpesaService
                 'PartyA' => $phone,
                 'PartyB' => $this->credentials->business_shortcode,
                 'PhoneNumber' => $phone,
-                'CallBackURL' => $this->credentials->getCallbackUrl($paymentType),
+                'CallBackURL' => config('app.url') . '/api/mpesa/callback',
                 'AccountReference' => $this->credentials->getAccountReference(),
                 'TransactionDesc' => $transactionDesc ?? 'Payment via ' . $this->credentials->getBusinessName()
             ];
@@ -219,7 +219,7 @@ class MpesaService
                 'PartyA' => $phone,
                 'PartyB' => $this->credentials->business_shortcode,
                 'PhoneNumber' => $phone,
-                'CallBackURL' => $this->credentials->getCallbackUrl(),
+                'CallBackURL' => config('app.url') . '/api/mpesa/callback',
                 'AccountReference' => $this->credentials->getAccountReference() . '_check',
                 'TransactionDesc' => 'Transaction status check'
             ];

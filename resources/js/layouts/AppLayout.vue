@@ -264,8 +264,8 @@ watch(() => page.props.flash, () => {
         ></span>
         <div class="min-h-screen bg-[url('images/reading.png')] background bg-cover bg-center">
             <nav class="bg-white/1 border-b border-gray-100 backdrop-blur-sm overflow-hidden">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="flex justify-between h-16">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8  sm:ml-10">
+                    <div class="flex justify-between h-16 ">
                         <div class="flex items-center">
                             <!-- Mobile menu button -->
                             <button @click="showingNavigationDropdown = !showingNavigationDropdown" class="sm:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
@@ -286,7 +286,7 @@ watch(() => page.props.flash, () => {
                                 </Link>
                             </div>
 
-                            <div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex sm:items-center">
+                            <div class="hidden space-x-8 sm:ml-1 sm:-my-px sm:flex sm:items-center">
                                 <template v-if="isOwner || isSeller">
                                     <NavLink v-if="canViewDashboard" href="/dashboard">
                                         <Link href="/dashboard" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/dashboard') ? 'text-black font-bold' : 'text-white/90 font-medium'">
@@ -330,10 +330,12 @@ watch(() => page.props.flash, () => {
                                                 <ChevronDown class="size-4" />
                                             </Button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent :align="dropdownAlign" class="w-48 backdrop-blur-sm bg-white/1">
+                                        <DropdownMenuContent :align="dropdownAlign" class="w-48 backdrop-blur-sm bg-white/1">   
                                             <DropdownMenuItem as-child>
-                                                <Link href="/purchases" :class="{'font-bold text-blue-600': isCurrentRoute('/purchases')}">Purchases</Link>
-                                            </DropdownMenuItem>
+                                                <Link href="/purchases" :class="{'font-bold text-blue-600': isCurrentRoute('/purchases')}">
+                                                    Purchase Orders
+                                                </Link>
+                                            </DropdownMenuItem>                                                      
                                             <DropdownMenuItem as-child>
                                                 <Link href="/purchase-items" :class="{'font-bold text-blue-600': isCurrentRoute('/purchase-items')}">Purchase Items</Link>
                                             </DropdownMenuItem>
@@ -367,6 +369,51 @@ watch(() => page.props.flash, () => {
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
+                                    <!-- <DropdownMenu v-if="canViewInventory" class="ml-2">
+                                        <DropdownMenuTrigger as-child>
+                                            <Button variant="ghost" class="flex items-center gap-1 text-white/90 hover:text-gray-700">
+                                                <span class=" leading-tight font-medium">Procurements</span>
+                                                <ChevronDown class="size-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent :align="dropdownAlign" class="w-48 backdrop-blur-sm bg-white/1">
+                                            <DropdownMenuItem as-child>
+                                                <Link href="/requisitions" :class="{'font-bold text-blue-600': isCurrentRoute('/requisitions')}">
+                                                    Requisitions
+                                                </Link>
+                                            </DropdownMenuItem>
+
+                                            <DropdownMenuItem as-child>
+                                                <Link href="/quotations" :class="{'font-bold text-blue-600': isCurrentRoute('/quotations')}">
+                                                    Quotations
+                                                </Link>
+                                            </DropdownMenuItem>
+
+                                            <DropdownMenuItem as-child>
+                                                <Link href="/purchases" :class="{'font-bold text-blue-600': isCurrentRoute('/purchases')}">
+                                                    Purchase Orders
+                                                </Link>
+                                            </DropdownMenuItem>
+
+                                            <DropdownMenuItem as-child>
+                                                <Link href="/goods-receipts" :class="{'font-bold text-blue-600': isCurrentRoute('/goods-receipts')}">
+                                                    Goods Received
+                                                </Link>
+                                            </DropdownMenuItem>
+
+                                            <DropdownMenuItem as-child>
+                                                <Link href="/invoices" :class="{'font-bold text-blue-600': isCurrentRoute('/invoices')}">
+                                                    Invoices
+                                                </Link>
+                                            </DropdownMenuItem>
+
+                                            <DropdownMenuItem as-child>
+                                                <Link href="/payments" :class="{'font-bold text-blue-600': isCurrentRoute('/payments')}">
+                                                    Payments
+                                                </Link>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu> -->
                                     <NavLink v-if="canViewReports" href="/devices">
                                       <Link href="/reports" class="flex flex-col items-center flex-shrink-0 px-4 py-2" :class="isCurrentRoute('/reports') ? 'text-black font-bold' : 'text-white/90 font-medium'">
                                         <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M16 3v4M8 3v4"/></svg>

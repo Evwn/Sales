@@ -8,17 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class QuotationItem extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
-        'quotation_id',
-        'product_id',
-        'quantity',
-        'unit_price',
-        'discount',
-        'tax',
+        'quotation_id', 'item_id', 'quantity',
+        'unit_price', 'discount', 'tax', 'barcode'
     ];
 
+    
     protected $casts = [
         'quantity' => 'decimal:2',
         'unit_price' => 'decimal:2',
@@ -26,14 +21,14 @@ class QuotationItem extends Model
         'tax' => 'decimal:2',
     ];
 
-    public function quotation(): BelongsTo
+    public function quotation()
     {
         return $this->belongsTo(Quotation::class);
     }
 
-    public function product(): BelongsTo
+    public function item()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Item::class);
     }
 
     public function getSubtotalAttribute(): float

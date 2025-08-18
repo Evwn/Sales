@@ -11,26 +11,59 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Purchase extends Model
 {
-    use HasFactory, SoftDeletes;
+     use SoftDeletes;
 
     protected $fillable = [
-        'reference', 'owner_id', 'business_id', 'branch_id', 'location_id', 'supplier_id', 'status', 'order_date', 'expected_date', 'notes', 'additional_costs', 'total_cost', 'total_amount', 'discount', 'tax', 'payment_status', 'created_by', 'updated_by'
+        'reference', 'supplier_id', 'quotation_id', 'location_id',
+        'total_amount', 'discount', 'tax', 'status', 'payment_status',
+        'order_date', 'expected_date', 'notes', 'additional_costs',
+        'total_cost', 'created_by', 'updated_by'
     ];
 
-    protected $casts = [
+        protected $casts = [
         'additional_costs' => 'array',
         'order_date' => 'date',
         'expected_date' => 'date',
     ];
 
-    public function supplier(): BelongsTo
+    public function supplier()
     {
         return $this->belongsTo(Supplier::class);
     }
 
+    public function quotation()
+    {
+        return $this->belongsTo(Quotation::class);
+    }
+
     public function location()
     {
-        return $this->belongsTo(Location::class, 'location_id');
+        return $this->belongsTo(Location::class);
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function updater()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function items()
+    {
+        return $this->hasMany(PurchaseItem::class);
+    }
+
+    public function goodsReceipts()
+    {
+        return $this->hasMany(GoodsReceipt::class, 'purchase_order_id');
+    }
+
+    public function invoices()
+    {
+        return $this->hasMany(SupplierInvoice::class);
     }
 
     public function business(): BelongsTo
@@ -41,11 +74,6 @@ class Purchase extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
-    }
-
-    public function items(): HasMany
-    {
-        return $this->hasMany(PurchaseItem::class);
     }
 
     public function stockItems()
@@ -85,6 +113,19 @@ class Purchase extends Model
 
     public static function generateReference()
     {
-        return 'PO-' . strtoupper(uniqid());
+        $prefix = 'PO';
+        $date = now()->format('Ymd');
+        $lastReceipt = self::where('reference', 'like', "{$prefix}{$date}%")
+            ->orderBy('reference', 'desc')
+            ->first();
+
+        if ($lastReceipt) {
+            $lastNumber = (int) substr($lastReceipt->reference, -4);
+            $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+        } else {
+            $newNumber = '0001';
+        }
+
+        return "{$prefix}{$date}{$newNumber}";
     }
 } 
