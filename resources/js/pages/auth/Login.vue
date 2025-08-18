@@ -117,6 +117,15 @@ const submit = () => {
                         Sign up
                     </Link>
                 </p>
+                
+                <p class="mt-4 text-center text-sm text-gray-600">
+                    <Link
+                        href="/"
+                        class="font-medium text-indigo-600 hover:text-indigo-500"
+                    >
+                        Back
+                    </Link>
+                </p>
             </div>
         </div>
 

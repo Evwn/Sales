@@ -436,22 +436,34 @@
             </div>
           </div>
         </div>
-        <div v-if="showCashModal" class="cash-modal-overlay">
-          <div class="cash-modal">
-            <div class="text-2xl font-bold text-gray-700 mb-2">Cash in drawer</div>
-            <div class="text-gray-500 mb-4">Enter the amount of cash in the drawer at the start of the shift.</div>
-            <input v-model="cashInDrawer" type="number" min="0" step="0.01" class="cash-input" placeholder="KES" />
-            <div v-if="cashError" class="text-red-500 text-sm mt-1">{{ cashError }}</div>
-           <button 
-  type="button"
-  class="start-shift-btn bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-3 rounded text-lg mt-4" 
-  @click="startShift"
->
-  START SHIFT
-</button>
+          <div v-if="showCashModal" class="cash-modal-overlay">
+            <div class="cash-modal">
+              <div class="text-2xl font-bold text-gray-700 mb-2">Cash in drawer</div>
+              <div class="text-gray-500 mb-4">
+                Enter the amount of cash in the drawer at the start of the shift.
+              </div>
+              <form @submit.prevent>
+                <input
+                  v-model="cashInDrawer"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  class="cash-input"
+                  placeholder="KES"
+                />
+                <div v-if="cashError" class="text-red-500 text-sm mt-1">{{ cashError }}</div>
+                <div> </div>
 
+                <button
+                  type="button"
+                  class="start-shift-btn bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-3 rounded text-lg mt-4"
+                  @click="startShift"
+                >
+                  START SHIFT
+                </button>
+              </form>
+            </div>
           </div>
-        </div>
         <div v-if="showClockOutModal" class="cash-modal-overlay">
           <div class="cash-modal">
             <div class="text-2xl font-bold text-gray-700 mb-2">Close Shift</div>
