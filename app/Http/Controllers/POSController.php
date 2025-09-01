@@ -388,7 +388,7 @@ class POSController extends Controller
     }
 
     public function updateTicketPayment(Request $request, $id)
-    {    $this->authorize('pos.accept payments');
+    {
         $request->validate([
             'payments' => 'required|array|min:1',
             'payments.*.method' => 'required|string',
@@ -436,7 +436,7 @@ class POSController extends Controller
      * Update an existing ticket with new items and totals
      */
     public function updateTicket(Request $request, $id)
-    {   $this->authorize('pos.manage all open tickets');
+    { 
         $request->validate([
             'items' => 'required|array|min:1',
             'items.*.item_id' => 'required|integer',
@@ -490,7 +490,7 @@ class POSController extends Controller
      * List all active tickets with items and payments
      */
     public function listActiveTickets()
-    {   $this->authorize('pos.manage all open tickets');
+    {  
         $tickets = PosTicket::with(['items', 'payments'])
             ->where('status', 'active')
             ->orderBy('created_at', 'desc')

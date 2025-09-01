@@ -25,7 +25,7 @@ class POSMpesaController extends Controller
      * Initiate M-PESA STK Push for POS payment
      */
     public function initiateStkPush(Request $request)
-    {    $this->authorize('pos.accept payments');
+    { 
         $request->validate([
             'ticket_id' => 'required|integer|exists:pos_tickets,id',
             'amount' => 'required|numeric|min:1|max:100000',
@@ -240,7 +240,7 @@ class POSMpesaController extends Controller
      * Check M-PESA payment status (manual check only - no polling)
      */
     public function checkPaymentStatus(Request $request)
-    {    $this->authorize('pos.accept payments');
+    { 
         $request->validate([
             'checkout_request_id' => 'required|string',
             'ticket_id' => 'required|integer|exists:pos_tickets,id'
@@ -513,7 +513,7 @@ class POSMpesaController extends Controller
      * Update ticket totals after successful payment
      */
     private function updateTicketTotals($ticket)
-    {    $this->authorize('pos.accept payments');
+    {  
         try {
             $completedPayments = PosTicketPayment::where('ticket_id', $ticket->id)
                 ->where('status', 'completed')

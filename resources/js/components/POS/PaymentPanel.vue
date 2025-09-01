@@ -58,7 +58,6 @@
                       v-model.number="split.cashReceived"
                       type="number"
                       :min="0"
-                      :max="getSplitMaxPayableWithTolerance(split.originalIndex)"
                       step="1"
                       class="w-24 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-right"
                       placeholder="Cash given"
