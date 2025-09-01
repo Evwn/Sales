@@ -1291,9 +1291,9 @@ async function processPayment() {
     const roundedCash = customRound(cashAmount);
     
     // Allow cash to be less than total (partial payment) or up to smart tolerance more than total
-    // if (roundedCash > 0 && roundedCash <= maxAllowed) {
-    //   paymentCompleted.value = true;
-    // }
+    if (roundedCash > 0) {
+      paymentCompleted.value = true;
+    }
   } else if (selectedPaymentMethod.value === 'card') {
     if (!cardNumber.value || !cardExpiry.value || !cardCvv.value) return;
     paymentCompleted.value = true;
