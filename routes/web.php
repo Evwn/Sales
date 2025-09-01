@@ -228,7 +228,6 @@ Route::middleware(['auth', 'verified','backoffice.only', \App\Http\Middleware\Ro
     Route::get('/settings/profile', function() {
     return redirect('/profile');
     });
-    Route::get('/sales/receipt/{reference}', [App\Http\Controllers\SaleController::class, 'publicReceipt'])->name('sales.public-receipt');
     Route::get('/sales/verify-barcode', [SaleController::class, 'verifyBarcode'])->name('sales.verify-barcode');
     Route::get('/sales/{reference}/print-receipt', [SaleController::class, 'printReceipt']);
     Route::post('/test-low-stock-notification', [App\Http\Controllers\SaleController::class, 'testLowStockNotification'])
@@ -313,6 +312,7 @@ Route::get('/mpesa/test-session', [\App\Http\Controllers\POSMpesaController::cla
             'is_disabled' => $device ? (bool)$device->is_disabled : null,
         ]);
     });
+    Route::get('/sales/receipt/{reference}', [App\Http\Controllers\SaleController::class, 'publicReceipt'])->name('sales.public-receipt');
 
 Route::middleware(['guest'])->group(function () {
     Route::get('/', function () {
