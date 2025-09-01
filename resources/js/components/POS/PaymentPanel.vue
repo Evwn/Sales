@@ -253,7 +253,6 @@
           placeholder="0"
           @keydown.enter.prevent
           @keydown.escape.prevent
-          @input="validateCashAmount"
         />
       </div>
       <div class="flex space-x-2 mb-6">
