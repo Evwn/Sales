@@ -442,7 +442,7 @@
               <div class="text-gray-500 mb-4">
                 Enter the amount of cash in the drawer at the start of the shift.
               </div>
-              <form @submit.prevent>
+              <form>
                 <input
                   v-model="cashInDrawer"
                   type="number"

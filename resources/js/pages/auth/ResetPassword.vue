@@ -50,7 +50,6 @@ const submit = () => {
     });
 };
 </script>
-
 <template>
     <AuthLayout title="Reset password" description="Please enter your new password below">
         <Head title="Reset password" />

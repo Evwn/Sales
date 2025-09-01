@@ -39,24 +39,29 @@ class Requisition extends Model
     {
         return $this->hasMany(Quotation::class);
     }
-
-public static function generateReference()
-{
-    $prefix = 'REQ';
-    $date = now()->format('Ymd');
-
-    $lastReceipt = self::where('reference', 'like', "{$prefix}-{$date}-%")
-        ->orderBy('reference', 'desc')
-        ->first();
-
-    if ($lastReceipt) {
-        $lastNumber = (int) substr($lastReceipt->reference, -4);
-        $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-    } else {
-        $newNumber = '0001';
+    public function approved(): bool
+    {
+        return $this->status === 'approved';
     }
 
-    return "{$prefix}-{$date}-{$newNumber}";
-}
+    public static function generateReference()
+    {
+        $prefix = 'REQ';
+        $date = now()->format('Ymd');
+
+        $lastReceipt = self::withTrashed()
+                    ->where('reference', 'like', "{$prefix}-{$date}-%")
+            ->orderBy('reference', 'desc')
+            ->first();
+
+        if ($lastReceipt) {
+            $lastNumber = (int) substr($lastReceipt->reference, -4);
+            $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+        } else {
+            $newNumber = '0001';
+        }
+
+        return "{$prefix}-{$date}-{$newNumber}";
+    }
 
 }

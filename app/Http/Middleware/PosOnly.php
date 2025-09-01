@@ -11,6 +11,6 @@ class PosOnly
         if (session('pos_login')) {
             return $next($request);
         }
-        abort(403, 'POS access only');
+        return redirect('/dashboard');
     }
 } 

@@ -17,7 +17,7 @@ class AuthenticatedSessionController extends Controller
      * Show the login page.
      */
     public function create(Request $request): Response
-    {
+    {   Inertia::clearHistory();
         return Inertia::render('auth/Login', [
             'canResetPassword' => true,
             'status' => $request->session()->get('status'),
@@ -38,11 +38,14 @@ class AuthenticatedSessionController extends Controller
 
         $user = Auth::user();
         if ($user && $user->hasRole('admin')) {
+            Inertia::clearHistory();
             return redirect()->intended(route('users.index'));
         }
         if ($user && $user->hasRole('cashier')) {
+            Inertia::clearHistory();
             return redirect()->intended('/pos/dashboard');
         }
+        Inertia::clearHistory();
         return redirect()->intended('/dashboard');
     }
 
@@ -56,7 +59,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-
+        Inertia::clearHistory();
         return redirect('/');
     }
 }

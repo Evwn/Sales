@@ -737,7 +737,7 @@ const filteredBranches = computed(() => {
             :title="isSeller ? `Welcome to ${props.user.business?.name || 'the business'}` : 'Dashboard'"
         />
         <div v-if="isSeller" class="max-w-2xl mx-auto mt-12">
-          <div class="bg-white shadow-lg rounded-2xl p-8 flex flex-col items-center">
+          <div class="bg-white/40 backdrop-blur-md shadow-lg rounded-2xl p-8 flex flex-col items-center">
             <img
               v-if="props.user.business?.logo_url"
               :src="props.user.business.logo_url"
@@ -765,12 +765,12 @@ const filteredBranches = computed(() => {
             </div>
           </div>
         </div>
-        <div v-else>
-            <div class="min-h-screen bg-gray-100">
-                <div class="py-12">
+        <div v-else >
+            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 backdrop-blur-md dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg min-h-screen bg-[#B76E79]/80 backdrop-blur-md ">
+                <div class="py-12 ">
                     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                         <!-- Filter Section -->
-                        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                        <div class="bg-white/45 backdrop-blur-md overflow-hidden shadow-sm sm:rounded-lg mb-6">
                             <div class="p-6">
                                 <div class="flex flex-wrap gap-4 items-center">
                                 <label class="text-sm font-medium text-gray-700">Time Filter:</label>
@@ -829,7 +829,7 @@ const filteredBranches = computed(() => {
                         <!-- Stats Cards -->
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                             <!-- Total Sales -->
-                            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                            <div class="bg-white/45 backdrop-blur-md overflow-hidden shadow-sm sm:rounded-lg">
                                 <div class="p-6">
                                     <div class="flex items-center">
                                         <div class="flex-shrink-0 bg-indigo-500 rounded-md p-3">
@@ -857,7 +857,7 @@ const filteredBranches = computed(() => {
                             </div>
 
                             <!-- Total Orders -->
-                            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                            <div class="bg-white/45 backdrop-blur-md overflow-hidden shadow-sm sm:rounded-lg">
                                 <div class="p-6">
                                 <div class="flex items-center">
                                         <div class="flex-shrink-0 bg-green-500 rounded-md p-3">
@@ -883,7 +883,7 @@ const filteredBranches = computed(() => {
                         </div>
 
                             <!-- Average Order Value -->
-                            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                            <div class="bg-white/45 backdrop-blur-md overflow-hidden shadow-sm sm:rounded-lg">
                                 <div class="p-6">
                                     <div class="flex items-center">
                                         <div class="flex-shrink-0 bg-yellow-500 rounded-md p-3">
@@ -911,7 +911,7 @@ const filteredBranches = computed(() => {
                         </div>
 
                             <!-- Active Branches -->
-                            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                            <div class="bg-white/45 backdrop-blur-md overflow-hidden shadow-sm sm:rounded-lg">
                                 <div class="p-6">
                                     <div class="flex items-center">
                                         <div class="flex-shrink-0 bg-purple-500 rounded-md p-3">
@@ -937,7 +937,7 @@ const filteredBranches = computed(() => {
                 <!-- Charts Section -->
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                             <!-- Sales Trend -->
-                            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                            <div class="bg-white/45 backdrop-blur-md overflow-hidden shadow-sm sm:rounded-lg">
                                 <div class="p-6">
                         <h3 class="text-lg font-medium text-gray-900 mb-4">Sales Trend</h3>
                             <LineChart
@@ -949,7 +949,7 @@ const filteredBranches = computed(() => {
                     </div>
 
                             <!-- Branch Performance -->
-                            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                            <div class="bg-white/45 backdrop-blur-md overflow-hidden shadow-sm sm:rounded-lg">
                                 <div class="p-6">
                         <h3 class="text-lg font-medium text-gray-900 mb-4">Branch Performance</h3>
                             <BarChart
@@ -965,7 +965,7 @@ const filteredBranches = computed(() => {
 
                         <!-- Payment Methods -->
                         <div v-if="paymentMethods.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                        <div class="bg-white/45 backdrop-blur-md overflow-hidden shadow-sm sm:rounded-lg mb-6">
                             <div class="p-6">
                                 <h3 class="text-lg font-medium text-gray-900 mb-4">Payment Methods</h3>
                                 <div v-if="paymentMethods.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -989,7 +989,7 @@ const filteredBranches = computed(() => {
                                 <p v-else class="text-gray-500 text-center"></p>
 
                     <!-- Recent Activity -->
-                        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                        <div class="bg-white/45 backdrop-blur-md overflow-hidden shadow-sm sm:rounded-lg mb-6">
                             <div class="p-6">
                         <h3 class="text-lg font-medium text-gray-900 mb-4">Recent Activity</h3>
                                 <div v-if="recentActivity.length > 0" class="space-y-4">
@@ -1010,7 +1010,7 @@ const filteredBranches = computed(() => {
                         </div>
 
                         <!-- Recent Sales -->
-                        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="bg-white/45 backdrop-blur-md overflow-hidden shadow-sm sm:rounded-lg">
                             <div class="p-6">
                                 <h3 class="text-lg font-medium text-gray-900 mb-4">Recent Sales</h3>
                                 <div class="overflow-x-auto">
@@ -1023,7 +1023,7 @@ const filteredBranches = computed(() => {
                                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                             </tr>
                                         </thead>
-                                        <tbody class="bg-white divide-y divide-gray-200">
+                                        <tbody class="bg-white/45 backdrop-blur-md divide-y divide-gray-200">
                                             <tr v-for="sale in recentSales" :key="sale.id">
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                     {{ formatDate(sale.created_at) }}

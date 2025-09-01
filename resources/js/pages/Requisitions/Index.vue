@@ -1,7 +1,6 @@
 <template>
   <AppLayout>
-    <!-- Header -->
-    <PageHeader title="Requisitions" />
+    <PageHeader title="Requisitions" :button="{ text: 'New Requisition', link: '/requisitions/create',icon:AddIcon }" />
 
     <div class="py-12">
       <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -13,7 +12,7 @@
               <div class="flex-1">
                 <Input
                   v-model="search"
-                  placeholder=" 🔍 Search by reference, status, date, items..."
+                  placeholder="Search by reference, status, date, items..."
                   class="w-full"
                 />
               </div>
@@ -38,11 +37,6 @@
                   </option>
                 </select>
               </div>
-            </div>
-
-            <!-- New Button -->
-            <div class="mb-4">
-              <Link href="/requisitions/create" class="bg-blue-600 text-white px-4 py-2 rounded">+ New Requisition</Link>
             </div>
 
             <!-- Table -->
@@ -186,6 +180,7 @@ import { Link, router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import { Input } from '@/components/ui/input'
+import AddIcon from '@/components/AddIcon.vue';
 
 const props = defineProps({
   requisitions: { type: Array, default: () => [] },

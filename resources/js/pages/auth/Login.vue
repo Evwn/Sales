@@ -5,6 +5,7 @@ import InputError from '@/components/InputError.vue';
 import InputLabel from '@/components/InputLabel.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import TextInput from '@/components/TextInput.vue';
+import { LoaderCircle } from 'lucide-vue-next';
 
 defineProps<{
     canResetPassword: boolean;
@@ -31,11 +32,26 @@ const submit = () => {
     });
 };
 </script>
+<style scoped>
+.background{
+    background-image: url('/images/Background.png');
+    background-size: cover;
+    background-position: center;
+    height: 100vb;
+    color: rgb(12, 2, 2);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
 
+}
+
+</style>
 <template>
     <Head title="Log in" />
 
-    <div class="min-h-screen flex">
+    <div class=" min-h-screen flex">
         <!-- Left side with form -->
         <div class="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-20 xl:px-24">
             <div class="mx-auto w-full max-w-sm lg:w-96">
@@ -61,6 +77,7 @@ const submit = () => {
                             required
                             autofocus
                             autocomplete="username"
+                            placeholder="Enter your email"
                         />
                         <InputError class="mt-2" :message="form.errors.email" />
                     </div>
@@ -74,6 +91,7 @@ const submit = () => {
                             v-model="form.password"
                             required
                             autocomplete="current-password"
+                            placeholder="Enter password"
                         />
                         <InputError class="mt-2" :message="form.errors.password" />
                     </div>
@@ -103,7 +121,8 @@ const submit = () => {
                             :class="{ 'opacity-25': form.processing }"
                             :disabled="form.processing"
                         >
-                            Log in
+                        <LoaderCircle v-if="form.processing" class="h-4 w-4 animate-spin"> </LoaderCircle>
+                             Log in
                         </PrimaryButton>
                     </div>
                 </form>

@@ -574,7 +574,7 @@ watch(() => page.props.flash, () => {
                 title="Ask AI about your business"
                 style="box-shadow: 0 4px 24px rgba(37,99,235,0.2); font-size: 1.5rem;"
             >
-                🧠
+                AI
             </button>
         </div>
     </div>

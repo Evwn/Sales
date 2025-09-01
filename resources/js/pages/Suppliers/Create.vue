@@ -1,8 +1,6 @@
 <template>
-  <AppLayout>
-    <template #header>
-      <h1 class="text-2xl font-bold text-gray-800">Create Supplier</h1>
-    </template>
+  <AppLayout title="Create Supplier">
+    <PageHeader title=" Create Supplier"  />
     <div class="max-w-5xl mx-auto mt-8 bg-white shadow rounded-lg p-8">
       <form @submit.prevent="submit" class="flex flex-col md:flex-row gap-8">
         <div class="flex-1 space-y-6">
@@ -92,6 +90,7 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { ref } from 'vue';
 import { router } from '@inertiajs/vue3';
+import PageHeader from '@/components/ui/PageHeader.vue';
 import vSelect from 'vue-select';
 import Swal from 'sweetalert2';
 

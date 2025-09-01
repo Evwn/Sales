@@ -5,6 +5,7 @@ import InputLabel from '@/components/InputLabel.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import TextInput from '@/components/TextInput.vue';
 import { ref, computed } from 'vue';
+import { LoaderCircle } from 'lucide-vue-next';
 
 defineProps<{
     quote: {
@@ -39,7 +40,22 @@ const submit = () => {
     });
 };
 </script>
+<style scoped>
+.background{
+    background-image: url('/images/Background.png');
+    background-size: cover;
+    background-position: center;
+    height: 100vb;
+    color: rgb(12, 2, 2);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
 
+}
+
+</style>
 <template>
     <Head title="Register" />
 
@@ -125,6 +141,7 @@ const submit = () => {
                         </Link>
 
                         <PrimaryButton class="ml-4" :disabled="form.processing || !isPasswordValid">
+                            <LoaderCircle v-if="form.processing" class="h-4 w-4 animate-spin">  </LoaderCircle>
                             Register
                         </PrimaryButton>
                     </div>

@@ -133,28 +133,28 @@
         </div>
       </div>
     </div>
-    <div v-if="showEmailModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+    <div v-if="showEmailModal" class="fixed inset-0 z-50 flex items-center justify-center bg-[#B76E79]/70">
       <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
         <h2 class="text-lg font-semibold mb-4">Send purchase order by email</h2>
         <div class="mb-2">
           <label class="block text-xs text-gray-500 mb-1">From</label>
-          <input type="email" class="input w-full" v-model="emailForm.from" readonly />
+          <input type="email" class="input w-full px-3 bg-gray-100 py-2 hover:bg-gray-200 cursor-pointer " v-model="emailForm.from" readonly />
         </div>
         <div class="mb-2">
           <label class="block text-xs text-gray-500 mb-1">To</label>
-          <input type="email" class="input w-full" v-model="emailForm.to" readonly />
+          <input type="email" class="input w-full px-3 bg-gray-100 py-2 hover:bg-gray-200 cursor-pointer" v-model="emailForm.to" readonly />
         </div>
         <div class="mb-2">
           <label class="block text-xs text-gray-500 mb-1">Cc</label>
-          <input type="text" class="input w-full" v-model="emailForm.cc" placeholder="Separate multiple emails with commas" />
+          <input type="text" class="input w-full px-3 bg-gray-100 py-2 hover:bg-gray-200 " v-model="emailForm.cc" placeholder="Separate multiple emails with commas" />
         </div>
         <div class="mb-2">
           <label class="block text-xs text-gray-500 mb-1">Subject</label>
-          <input type="text" class="input w-full" v-model="emailForm.subject" />
+          <input type="text" class="input w-full px-3 bg-gray-100 py-2 hover:bg-gray-200 " v-model="emailForm.subject" />
         </div>
         <div class="mb-2">
           <label class="block text-xs text-gray-500 mb-1">Message</label>
-          <textarea class="input w-full" v-model="emailForm.message" rows="3"></textarea>
+          <textarea class="input w-full px-3 bg-gray-100 py-2 hover:bg-gray-200 " v-model="emailForm.message" rows="3"></textarea>
         </div>
         <div class="mb-4">
           <label class="block text-xs text-gray-500 mb-1">Attachment</label>

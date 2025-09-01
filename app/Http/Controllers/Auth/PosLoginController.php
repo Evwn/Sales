@@ -8,13 +8,13 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\PosDevice;
 use App\Models\TimeClockEntry;
 use App\Models\User;
+use Inertia\Inertia;
+
 
 class PosLoginController extends Controller
 {
     public function login(Request $request)
-    {   \Log::info('PosLoginController', [
-            'login' => $request,
-        ]);
+    { 
         $request->validate([
             'pin_code' => 'required|digits:4',
             'device_uuid' => 'required|string',
@@ -62,13 +62,12 @@ class PosLoginController extends Controller
                 'clock_in' => now(),
             ]);
         }
+        Inertia::clearHistory();
         return redirect('/pos/dashboard');
     }
 
     public function logout(Request $request)
-    {  \Log::info('PosloginController', [
-            'logout' => $request,
-        ]);
+    {   
          $user = Auth::user();
         if ($user && $user->branch_id) {
             $openClock = \App\Models\TimeClockEntry::where('user_id', $user->id)
@@ -88,6 +87,7 @@ class PosLoginController extends Controller
         $request->session()->forget('pos_login');
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+        Inertia::clearHistory();
         return redirect('/pos');
     }
 }

@@ -79,6 +79,10 @@ class Quotation extends Model
     {
         return $this->status === 'draft';
     }
+        public function approved(): bool
+    {
+        return $this->status === 'approved';
+    }
 
     public function isSent(): bool
     {
@@ -109,21 +113,44 @@ class Quotation extends Model
     {
         return $this->valid_until->format('Y-m-d H:i:s');
     }
-        public static function generateReference()
-    {
-        $prefix = 'QUO';
-        $date = now()->format('Ymd');
-        $lastReceipt = self::where('reference', 'like', "{$prefix}-{$date}-%")
-            ->orderBy('reference', 'desc')
-            ->first();
+        public function suppliers() {
+        return $this->belongsToMany(Supplier::class, 'quotation_suppliers')
+            ->withPivot('id','status')
+            ->withTimestamps();
+    }
+public static function generateReference()
+{
+    $prefix = 'QUO';
+    $date = now()->format('Ymd');
 
-        if ($lastReceipt) {
-            $lastNumber = (int) substr($lastReceipt->reference, -4);
-            $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-        } else {
-            $newNumber = '0001';
+    return \DB::transaction(function () use ($prefix, $date) {
+        for ($i = 0; $i < 5; $i++) {
+
+            $lastReceipt = self::withTrashed()
+                ->where('reference', 'like', "{$prefix}-{$date}-%")
+                ->lockForUpdate()
+                ->orderBy('reference', 'desc')
+                ->first();
+
+            if ($lastReceipt) {
+                $lastNumber = (int) substr($lastReceipt->reference, -4);
+                $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+            } else {
+                $newNumber = '0001';
+            }
+
+            $ref = "{$prefix}-{$date}-{$newNumber}";
+            \Log::info($ref);
+
+            if (! self::where('reference', $ref)->exists()) {
+                return $ref;
+            }
+
+            usleep(50000); // wait before retry
         }
 
-        return "{$prefix}-{$date}-{$newNumber}";
-        }
+        throw new \Exception('Unable to generate unique reference after retries.');
+    });
+}
+
 } 

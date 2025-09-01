@@ -278,6 +278,22 @@ class User extends Authenticatable implements MustVerifyEmail
         return !is_null($this->business_id);
     }
 
+        // User.php
+    public function suppliers()
+    {
+        return $this->hasManyThrough(
+            Supplier::class,
+            Branch::class,
+            'business_id',   // Foreign key on branches
+            'branch_id',     // Foreign key on suppliers
+            'id',            // Local key on users (owner id)
+            'id'             // Local key on branches
+        )->whereHas('branch.business', function ($q) {
+            $q->whereColumn('businesses.owner_id', 'users.id');
+        });
+    }
+
+
     /**
      * Get the owner user for this employee (via business)
      */

@@ -153,7 +153,8 @@ class SalesReceipt extends Model
     {
         $prefix = 'REC';
         $date = now()->format('Ymd');
-        $lastReceipt = self::where('reference', 'like', "{$prefix}{$date}%")
+        $lastReceipt = self::withTrashed()
+                ->where('reference', 'like', "{$prefix}{$date}%")
             ->orderBy('reference', 'desc')
             ->first();
 

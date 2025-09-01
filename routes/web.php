@@ -4,8 +4,10 @@ use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\BusinessController;
+use App\Http\Controllers\SupplierResponseController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\QuotationResponseController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\DiscountController;
@@ -49,32 +51,25 @@ use App\Http\Controllers\CashDrawerMovementController;
 use App\Http\Controllers\TimeClockController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\Auth\PosLoginController;
-
+use Inertia\EncryptHistoryMiddleware;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-    ]);
-});
 
-Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::class])->group(function () {
+Route::middleware(['auth', 'verified','backoffice.only', \App\Http\Middleware\RoleRouteAccess::class])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    
-    // Customer routes
+    Route::get('/devices', [DeviceController::class, 'index'])->name('devices.index');
+    Route::post('/devices', [DeviceController::class, 'store'])->name('devices.store');
+    Route::delete('/devices/{device}', [DeviceController::class, 'destroy'])->name('devices.destroy');
     Route::post('/customers', [CustomerController::class, 'store'])->name('customers.store');
-    
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // User Management Routes (Admin Only)
-    Route::group([], function () {
+    Route::group(['role:admin'], function () {
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
@@ -87,7 +82,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::cla
     });
 
     // Admin Business & Branch Management Routes (Admin Only)
-    Route::group([], function () {
+    Route::group(['role:admin'], function () {
         Route::get('/admin/businesses', [BusinessController::class, 'adminIndex'])->name('admin.businesses.index');
         Route::get('/admin/businesses/{business}', [BusinessController::class, 'adminShow'])->name('admin.businesses.show');
         Route::get('/admin/businesses/{business}/edit', [BusinessController::class, 'edit'])->name('admin.businesses.edit');
@@ -104,6 +99,12 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::cla
     Route::delete('/requisitions/{requisition}/items/{item}', [RequisitionController::class, 'destroyItem'])
     ->name('requisitions.items.destroy');
     Route::resource('quotations', QuotationController::class);
+    Route::prefix('quotations/{quotation}')->group(function () {
+        Route::put('/status', [QuotationController::class, 'updateStatus'])->name('quotations.status');
+        Route::post('/send-email', [QuotationController::class, 'sendEmail'])->name('quotations.sendEmail');
+        Route::put('/items', [QuotationController::class, 'upsertItem'])->name('quotations.items.upsert');
+        Route::delete('/items/{item}', [QuotationController::class, 'removeItem'])->name('quotations.items.destroy');
+    });
     Route::resource('purchase-orders', PurchaseOrderController::class);
     Route::resource('goods-receipts', GoodsReceiptController::class);
     Route::resource('invoices', InvoiceController::class);
@@ -145,17 +146,6 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::cla
             Route::post('/{business}/admins', [BusinessController::class, 'addAdmin'])->name('businesses.addAdmin');
             Route::delete('/{business}/admins/{user}', [BusinessController::class, 'removeAdmin'])->name('businesses.removeAdmin');
 
-            // Product routes
-            Route::prefix('{branch}/products')->middleware(['auth', 'verified'])->group(function () {
-                Route::get('/', [ProductController::class, 'index'])->name('products.index');
-                Route::get('/create', [ProductController::class, 'create'])->name('products.create');
-                Route::post('/', [ProductController::class, 'store'])->name('products.store');
-                Route::get('/{product}', [ProductController::class, 'show'])->name('products.show');
-                Route::get('/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
-                Route::put('/{product}', [ProductController::class, 'update'])->name('products.update');
-                Route::delete('/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
-            });
-
             // Branch routes
             Route::prefix('{business}/branches')->group(function () {
                 Route::get('/', [BranchController::class, 'index'])->name('branches.index');
@@ -168,17 +158,6 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::cla
                     Route::put('/{branch}', [BranchController::class, 'update'])->name('branches.update');
                     Route::delete('/{branch}', [BranchController::class, 'destroy'])->name('branches.destroy');
                     Route::patch('/{branch}/toggle-status', [BranchController::class, 'toggleStatus'])->name('branches.toggleStatus');
-
-                    // Seller routes
-                    Route::prefix('{branch}/sellers')->group(function () {
-                        Route::get('/', [SellerController::class, 'index'])->name('sellers.index');
-                        Route::get('/create', [SellerController::class, 'create'])->name('sellers.create');
-                        Route::post('/', [SellerController::class, 'store'])->name('sellers.store');
-                        Route::get('/{seller}', [SellerController::class, 'show'])->name('sellers.show');
-                        Route::get('/{seller}/edit', [SellerController::class, 'edit'])->name('sellers.edit');
-                        Route::put('/{seller}', [SellerController::class, 'update'])->name('sellers.update');
-                        Route::delete('/{seller}', [SellerController::class, 'destroy'])->name('sellers.destroy');
-                    });
 
                     // Sales routes
                     Route::prefix('{branch}/sales')->group(function () {
@@ -209,9 +188,6 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::cla
     Route::get('/sales/receipt-history', [SaleController::class, 'receiptHistory'])
         ->name('sales.receipt-history')
         ->middleware(\Spatie\Permission\Middlewares\RoleMiddleware::class.':owner');
-
-    // PDF Export Routes (Owner Only)
-    Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/sales/{sale}/receipt/pdf', [SaleController::class, 'exportReceiptPDF'])->name('sales.receipt.pdf');
         Route::get('/sales/report/pdf', [SaleController::class, 'exportSalesReportPDF'])->name('sales.report.pdf');
         Route::get('/sales/daily-report/pdf', [SaleController::class, 'exportDailyReportPDF'])->name('sales.daily-report.pdf');
@@ -220,10 +196,6 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::cla
         Route::get('/sales/quarterly-report/pdf', [SaleController::class, 'exportQuarterlyReportPDF'])->name('sales.quarterly-report.pdf');
         Route::get('/sales/yearly-report/pdf', [SaleController::class, 'exportYearlyReportPDF'])->name('sales.yearly-report.pdf');
         Route::post('/sales/batch-receipts/pdf', [SaleController::class, 'exportBatchReceiptsPDF'])->name('sales.batch-receipts.pdf');
-    });
-
-    // Chat routes
-    Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::class])->group(function () {
         Route::get('/chat/messages', [App\Http\Controllers\SellerChatController::class, 'generalHistory']);
         Route::get('/chat/messages/{sellerId}', [App\Http\Controllers\SellerChatController::class, 'getChatMessages']);
         Route::post('/chat/messages', [App\Http\Controllers\SellerChatController::class, 'generalSend']);
@@ -236,7 +208,6 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::cla
         Route::delete('/chat/messages/{messageId}', [App\Http\Controllers\SellerChatController::class, 'deleteMessage']);
         Route::get('/chat/{chatId}/online-status', [App\Http\Controllers\SellerChatController::class, 'getOnlineStatus']);
         Route::get('/chat/unread-count', [App\Http\Controllers\SellerChatController::class, 'getUnreadCount']);
-    });
 
     Route::get('/purchases/location-stock', [\App\Http\Controllers\PurchaseController::class, 'getLocationStock'])->name('purchases.locationStock');
     Route::get('/purchases/supplier-items', [\App\Http\Controllers\PurchaseController::class, 'getSupplierItems'])->name('purchases.supplierItems');
@@ -253,68 +224,16 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::cla
     Route::post('/purchases/{purchase}/send-email', [\App\Http\Controllers\PurchaseController::class, 'sendEmail'])->name('purchases.sendEmail');
     Route::get('/purchases/{purchase}/receive', [\App\Http\Controllers\PurchaseController::class, 'showReceiveForm'])->name('purchases.receiveForm');
     Route::post('/purchases/{purchase}/receive', [\App\Http\Controllers\PurchaseController::class, 'receive'])->name('purchases.receive');
-});
-
-// Inventory Items
-Route::middleware(['auth'])->group(function () {
-    Route::get('/api/inventory/search', [InventoryItemController::class, 'search'])->name('inventory.search');
-});
-
-// Products
-Route::middleware(['auth'])->group(function () {
-    Route::get('/branches/{branch}/products', [ProductController::class, 'index'])->name('products.branch.index');
-    Route::post('/branches/{branch}/products', [ProductController::class, 'store'])->name('products.branch.store');
-    Route::put('/branches/{branch}/products/{product}', [ProductController::class, 'update'])->name('products.branch.update');
-    Route::delete('/branches/{branch}/products/{product}', [ProductController::class, 'destroy'])->name('products.branch.destroy');
-});
-
-// Public receipt route (no auth required)
-Route::get('/sales/receipt/{reference}', [App\Http\Controllers\SaleController::class, 'publicReceipt'])->name('sales.public-receipt');
-
-Route::get('/sales/verify-barcode', [SaleController::class, 'verifyBarcode'])->name('sales.verify-barcode');
-Route::get('/sales/{reference}/print-receipt', [SaleController::class, 'printReceipt']);
-
-// Test low stock notification
-Route::post('/test-low-stock-notification', [App\Http\Controllers\SaleController::class, 'testLowStockNotification'])
-    ->name('test.low.stock.notification');
-
-Route::get('/test-mpesa', [\App\Http\Controllers\PaymentTestController::class, 'testMpesa']);
-
-Route::get('/test', function () {
-    return inertia('FlutterwaveTest');
-})->middleware(['auth']); // Add 'admin' if you have it
-
-Route::get('/settings/profile', function() {
+    Route::get('/test-mpesa', [\App\Http\Controllers\PaymentTestController::class, 'testMpesa']);
+    Route::get('/settings/profile', function() {
     return redirect('/profile');
-});
-
-// Sellers routes
-Route::get('/sellers/all', [SellerController::class, 'all'])->name('sellers.all');
-Route::get('/businesses/{business}/branches/{branch}/sellers', [SellerController::class, 'index'])->name('sellers.index');
-
-// Broadcasting authentication routes for Soketi
-Route::post('/broadcasting/auth', function (Request $request) {
-    return Broadcast::auth($request);
-})->middleware(['auth']);
-
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::resource('tax-groups', App\Http\Controllers\Admin\TaxGroupController::class);
-    Route::post('/tax-groups', [\App\Http\Controllers\Admin\TaxGroupController::class, 'store']);
-});
-
-// Password reset routes
-Route::get('/forgot-password', [PasswordResetLinkController::class, 'create'])->middleware('guest')->name('password.request');
-Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])->middleware('guest')->name('password.email');
-Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])->middleware('guest')->name('password.reset');
-Route::post('/reset-password', [NewPasswordController::class, 'store'])->middleware('guest')->name('password.update');
-
-Route::post('/reports/email', [\App\Http\Controllers\ReportController::class, 'email'])->middleware('auth');
-
-require __DIR__.'/auth.php';
-require __DIR__.'/settings.php';
-
-Route::middleware(['auth', 'role:owner'])->group(function () {
-    Route::resource('stores', StoreController::class);
+    });
+    Route::get('/sales/receipt/{reference}', [App\Http\Controllers\SaleController::class, 'publicReceipt'])->name('sales.public-receipt');
+    Route::get('/sales/verify-barcode', [SaleController::class, 'verifyBarcode'])->name('sales.verify-barcode');
+    Route::get('/sales/{reference}/print-receipt', [SaleController::class, 'printReceipt']);
+    Route::post('/test-low-stock-notification', [App\Http\Controllers\SaleController::class, 'testLowStockNotification'])
+        ->name('test.low.stock.notification');
+        Route::resource('stores', StoreController::class);
     Route::get('/stock-transfers/{stockTransfer}/receive', [StockTransferController::class, 'receiveForm'])->name('stock-transfers.receiveForm');
     Route::resource('stock-transfers', StockTransferController::class);
     Route::post('/stock-transfers', [StockTransferController::class, 'store']);
@@ -323,25 +242,13 @@ Route::middleware(['auth', 'role:owner'])->group(function () {
     Route::post('/employers/roles', [\App\Http\Controllers\EmployerController::class, 'storeRole'])->name('employers.roles.store');
     Route::get('/employers/roles/{role}/edit', [\App\Http\Controllers\EmployerController::class, 'editRole'])->name('employers.roles.edit');
     Route::post('/employers/roles/{role}/update', [\App\Http\Controllers\EmployerController::class, 'updateRole'])->name('employers.roles.update');
-});
-
-// Supplier routes
-Route::middleware(['auth', 'role:owner'])->group(function () {
     Route::get('/suppliers/create', [SupplierController::class, 'create'])->name('suppliers.create');
     Route::post('/suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
     Route::get('/suppliers/{supplier}/edit', [SupplierController::class, 'edit'])->name('suppliers.edit');
     Route::put('/suppliers/{supplier}', [SupplierController::class, 'update'])->name('suppliers.update');
-});
-
-// Public or shared supplier routes
-Route::middleware(['auth'])->group(function () {
     Route::get('/suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
     Route::get('/suppliers/{supplier}', [SupplierController::class, 'show'])->name('suppliers.show');
-});
-
-Route::get('/api/items/search', [\App\Http\Controllers\ItemController::class, 'search'])->name('items.search');
-
-Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::class])->group(function () {
+    Route::get('/api/items/search', [\App\Http\Controllers\ItemController::class, 'search'])->name('items.search');
     Route::get('/stock-adjustment',[StockAdjustment::class,'index'])->name('stock.adjust');
     Route::put('/stock-items/{stockItem}', [StockAdjustment::class, 'update']);
     Route::get('/employers', [\App\Http\Controllers\EmployerController::class, 'index'])->name('employers.index');
@@ -349,24 +256,17 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::cla
     Route::post('/employers', [\App\Http\Controllers\EmployerController::class, 'store'])->name('employers.store');
     Route::get('/employers/access-control', [\App\Http\Controllers\EmployerController::class, 'accessControl'])->name('employers.accessControl');
     Route::get('/employers/roles/create', [\App\Http\Controllers\EmployerController::class, 'createRole'])->name('employers.roles.create');
+    Route::post('/reports/email', [\App\Http\Controllers\ReportController::class, 'email'])->middleware('auth');
+    Route::get('/devices', [DeviceController::class, 'index'])->name('devices.index');
+    Route::post('/devices', [DeviceController::class, 'store'])->name('devices.store');
+    Route::delete('/devices/{device}', [DeviceController::class, 'destroy'])->name('devices.destroy');
+    Route::post('/units', [UnitController::class, 'store']);
+    require __DIR__.'/settings.php';
 });
 
-// POS routes - handle authentication redirects
-Route::get('/pos', function () {
-    // If user is authenticated and has POS access, redirect to dashboard
-    if (Auth::check() && session('pos_login')) {
-        return redirect('/pos/dashboard');
-    }
-    // Otherwise show login page
-    return Inertia::render('POS/Login');
-})->name('pos.login');
-
-// POS login routes (for unauthenticated users)
-Route::post('/pos/login', [PosLoginController::class, 'login']);
-Route::post('/pos/logout', [PosLoginController::class, 'logout'])->name('pos.logout');
-
 // POS area (requires POS login)
-Route::prefix('pos')->middleware(['auth', 'pos.only'])->group(function () {
+Route::middleware(['auth', 'pos.only','verified'])->group(function () {
+Route::prefix('pos')->group(function () {
     Route::post('/ticket/{ticket}/cancel', [POSController::class, 'cancelTicket']);
     Route::get('/dashboard', [\App\Http\Controllers\POSController::class, 'index'])->name('pos.index');
     Route::post('/verify-pin', [\App\Http\Controllers\POSController::class, 'verifyPin']);
@@ -383,58 +283,60 @@ Route::post('/mpesa/check-status', [\App\Http\Controllers\POSMpesaController::cl
 Route::get('/mpesa/credentials', [\App\Http\Controllers\POSMpesaController::class, 'getCredentials'])->name('pos.mpesa.credentials');
 Route::get('/mpesa/test-session', [\App\Http\Controllers\POSMpesaController::class, 'testSession'])->name('pos.mpesa.test-session');
 });
-
-Route::middleware(['auth', 'verified', \App\Http\Middleware\RoleRouteAccess::class])->group(function () {
-    Route::get('/devices', [DeviceController::class, 'index'])->name('devices.index');
-    Route::post('/devices', [DeviceController::class, 'store'])->name('devices.store');
-    Route::delete('/devices/{device}', [DeviceController::class, 'destroy'])->name('devices.destroy');
-});
-
-Route::get('/api/check-device', function (\Illuminate\Http\Request $request) {
-    $uuid = $request->query('uuid');
-    $exists = \App\Models\PosDevice::where('device_uuid', $uuid)
-        ->where('is_disabled', false)
-        ->exists();
-    return response()->json(['deviceRegistered' => $exists]);
-});
-
-Route::get('/api/pos-device-status', function (\Illuminate\Http\Request $request) {
-    $uuid = $request->query('uuid');
-    $device = \App\Models\PosDevice::where('device_uuid', $uuid)->first();
-    return response()->json([
-        'is_disabled' => $device ? (bool)$device->is_disabled : null,
-    ]);
-});
-
-Route::post('/units', [UnitController::class, 'store']);
-
-Route::middleware(['auth'])->group(function () {
     Route::post('/shifts/open', [ShiftController::class, 'open']);
     Route::post('/shifts/close', [ShiftController::class, 'close']);
     Route::post('/cash-drawer-movements', [CashDrawerMovementController::class, 'store']);
     Route::post('/time-clock/clock-in', [TimeClockController::class, 'clockIn']);
     Route::post('/time-clock/clock-out', [TimeClockController::class, 'clockOut']);
-});
-
-Route::get('/pos/purchase/{id}', function ($id) {
+    Route::get('/purchase/{id}', function ($id) {
     return Inertia::render('POS/Purchase', ['id' => $id]);
-})->middleware(['auth', 'verified']);
-
-// PesaPal Payment Routes - Commented out until controller is created
-// Route::prefix('pesapal')->group(function () {
-//     Route::post('/initiate-payment', [\App\Http\Controllers\PesaPalController::class, 'initiatePayment'])->name('pesapal.initiate');
-//     Route::post('/check-status', [\App\Http\Controllers\PesaPalController::class, 'checkStatus'])->name('pesapal.check-status');
-//     Route::post('/callback', [\App\Http\Controllers\PesaPalController::class, 'callback'])->name('pesapal.callback');
-//     Route::get('/test', [\App\Http\Controllers\PesaPalController::class, 'test'])->name('pesapal.test');
-    
-//     // Simple test route for CSRF debugging
-//     Route::post('/test-csrf', function() {
-//         return response()->json(['message' => 'CSRF test successful', 'timestamp' => now()]);
-//     });
-// });
-
-// Backoffice area (requires password login)
-Route::middleware(['auth', 'backoffice.only'])->group(function () {
-    Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
-    // ...other backoffice routes
 });
+    Route::post('/pos/logout', [PosLoginController::class, 'logout'])->name('pos.logout');
+});
+
+    Route::get('/api/check-device', function (\Illuminate\Http\Request $request) {
+        $uuid = $request->query('uuid');
+        $exists = \App\Models\PosDevice::where('device_uuid', $uuid)
+            ->where('is_disabled', false)
+            ->exists();
+        return response()->json(['deviceRegistered' => $exists]);
+    });
+    Route::get('/pos', function () {
+        if (Auth::check() && session('pos_login')) {
+            return redirect('/pos/dashboard');
+        }
+        return Inertia::render('POS/Login');
+    })->name('pos.login');    Route::get('/api/pos-device-status', function (\Illuminate\Http\Request $request) {
+        $uuid = $request->query('uuid');
+        $device = \App\Models\PosDevice::where('device_uuid', $uuid)->first();
+        return response()->json([
+            'is_disabled' => $device ? (bool)$device->is_disabled : null,
+        ]);
+    });
+
+Route::middleware(['guest'])->group(function () {
+    Route::get('/', function () {
+        return Inertia::render('Welcome', [
+            'canLogin' => Route::has('login'),
+            'canRegister' => Route::has('register'),
+        ]);
+    })->name('home');
+
+    Route::get('/supplier/respond/{token}', [SupplierResponseController::class, 'showForm'])->name('supplier.respond');
+    Route::post('/supplier/respond/{token}', [SupplierResponseController::class, 'store'])->name('supplier.respond.store');
+    Route::get('/supplier/response/thankyou', [SupplierResponseController::class, 'thankYou'])->name('supplier.response.thankyou');
+    Route::get('/quotation-response/{qs}', [QuotationResponseController::class, 'form'])->name('quotation.response.form');
+    Route::post('supplier/quotation-response', [QuotationResponseController::class, 'submit'])->name('quotation.response.submit');
+
+    Route::get('/forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
+    Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
+    Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
+    Route::post('/reset-password', [NewPasswordController::class, 'store'])->name('password.update');
+
+    Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:login')->name('login');
+    Route::post('/pos/login', [PosLoginController::class, 'login'])->middleware('throttle:pos-login');
+});
+require __DIR__.'/auth.php';
+
+
+

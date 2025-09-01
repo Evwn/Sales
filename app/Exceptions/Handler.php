@@ -44,14 +44,14 @@ class Handler extends ExceptionHandler
      * @return void
      */
     public function register()
-    {
+    {   \Log::Info('here near 1');
         $this->reportable(function (Throwable $e) {
             //
         });
     }
 
     public function render($request, Throwable $exception)
-    {
+    {   \Log::Info('here near 2');
         $status = $this->isHttpException($exception)
             ? $exception->getStatusCode()
             : 500;

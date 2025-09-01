@@ -63,6 +63,8 @@ class HandleInertiaRequests extends Middleware
                     'all_permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
                     'branch_id' => $user->branch_id,
                     'business_id' => $user->business_id,
+                    'branch_name' => $user->name,
+                    'business_name' => $user->name,
                 ] : null,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',

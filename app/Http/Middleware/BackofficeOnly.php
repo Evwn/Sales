@@ -11,6 +11,6 @@ class BackofficeOnly
         if (!session('pos_login')) {
             return $next($request);
         }
-        abort(403, 'Backoffice access only');
+         return redirect('/pos/dashboard');
     }
 } 

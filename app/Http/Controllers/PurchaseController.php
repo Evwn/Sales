@@ -559,7 +559,7 @@ class PurchaseController extends Controller
     }
 
     public function receive(Request $request, Purchase $purchase)
-    {
+    {   
         $data = $request->validate([
             'items' => 'required|array',
             'items.*.id' => 'required|exists:purchase_items,id',
@@ -568,7 +568,7 @@ class PurchaseController extends Controller
             'additional_costs.*' => 'string',
             'prices' => 'nullable|array', // Accept prices from frontend for missing items
         ]);
-
+        
         $purchase->load(['items', 'items.item', 'items.stockItem']);
 
         // 0. Check for missing prices in items table for items being received
@@ -635,6 +635,7 @@ class PurchaseController extends Controller
 
             foreach ($data['items'] as $itemData) {
                 $purchaseItem = $purchase->items->firstWhere('id', $itemData['id']);
+                $purchaseCost=$purchaseItem->purchase_cost;
                 $toReceive = (int) $itemData['to_receive'];
                 // Save variant_id if present
                 if (array_key_exists('variant_id', $itemData)) {
@@ -667,12 +668,13 @@ class PurchaseController extends Controller
                         $item->price = $submittedPrice;
                         $item->save();
                         $stockItem->price = $submittedPrice;
+                        
                     } else {
                         // No submitted price: use item price for stock item
                         $stockItem->price = $item->price;
                     }
                     // --- PRICE LOGIC END ---
-
+                    $stockItem->cost = $purchaseCost;
                     $stockItem->quantity += $toReceive;
                     $stockItem->save();
 

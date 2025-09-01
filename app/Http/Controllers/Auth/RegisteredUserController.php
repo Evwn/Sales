@@ -21,12 +21,8 @@ class RegisteredUserController extends Controller
      * Show the registration page.
      */
     public function create(): Response
-    {
+    {   Inertia::clearHistory();
         return Inertia::render('auth/Register', [
-            'quote' => [
-                'message' => 'The best way to predict the future is to create it.',
-                'author' => 'Peter Drucker'
-            ]
         ]);
     }
 
@@ -53,7 +49,7 @@ class RegisteredUserController extends Controller
         // Assign the owner role for both guards (lowercase)
         $ownerRolePos = \Spatie\Permission\Models\Role::where('name', 'owner')->where('guard_name', 'pos')->first();
         $ownerRoleBackoffice = \Spatie\Permission\Models\Role::where('name', 'owner')->where('guard_name', 'backoffice')->first();
-
+        
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -80,7 +76,7 @@ class RegisteredUserController extends Controller
         $user->notify(new WelcomeNotification());
 
         Auth::login($user);
-
+        Inertia::clearHistory();
         return redirect('/dashboard');
     }
 }

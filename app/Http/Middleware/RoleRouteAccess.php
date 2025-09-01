@@ -54,6 +54,9 @@ class RoleRouteAccess
                 'stock-adjustment*',
                 'stock-items*',
                 'requisitions*',
+                'quotations*',
+                'quotation-response*',
+                'units*',
             ],
             'administrator' => [
                 'dashboard*',
@@ -83,6 +86,8 @@ class RoleRouteAccess
                 'stock-adjustment*',
                 'stock-items*', 
                 'requisitions*',
+                'quotations*',
+                'units*',
             ],
             'manager' => [
                 'dashboard*',
@@ -111,6 +116,8 @@ class RoleRouteAccess
                 'devices*',
                 'stock-adjustment*',
                 'stock-items*',
+                'quotations*',
+                'units*',
             ],
             'admin' => ['*'], // admin can access everything
         ];
